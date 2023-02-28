@@ -1,0 +1,241 @@
+﻿<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+@model IEnumerable<LaLlamaDelBosque.Models.Credit>
+
+@using System.Web;
+@using Microsoft.AspNetCore.Mvc;
+
+@{
+    ViewData["Title"] = "Créditos de Clientes";
+}
+
+<h1 class="display-4">@ViewData["Title"]</h1>
+
+<!-- Add -->
+<button type="button" class="btn"
+        onclick="location.href='@Url.Action("Create", "Credit")'">
+    <span class="material-icons icon icon-primary">add_circle</span>
+</button>
+
+<div class="container">
+    <div class="row justify-content-md-center">
+        <div class="col-xl-10">
+            <div class="accordion" id="accordionFlushExample">
+                @foreach (var item in Model)
+                {
+                    <div class="accordion-item">
+                        @if (item.Client.Id != (int?)TempData["Id"])
+                        { 
+                            <h2 class="accordion-header" id="flush-headingOne">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-@item.Client.Id" aria-expanded="false" aria-controls="flush-collapse-@item.Client.Id">
+                                    Cliente: @item.Client.Name | Total: @item.CreditSummary.Total
+                                </button>
+                            </h2>
+                            <div id="flush-collapse-@item.Client.Id" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+                            <div class="accordion-body">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th colspan="2">
+                                                <!-- Edit -->
+                                                <button type="button" class="btn"
+                                                    onclick="location.href='@Url.Action("Edit", "Credit", new {Id= item.Client.Id})'">
+                                                    <span class="material-icons icon icon-dark">edit</span>
+                                                </button>
+                                                <!-- Delete -->
+                                                <button type="button" class="btn"
+                                                    onclick="location.href='@Url.Action("Delete", "Credit", new {Id= item.Client.Id})'">
+                                                    <span class="material-icons icon icon-danger">delete</span>
+                                                </button>
+                                            </th>
+                                            <th>
+                                                @if(Model.Any() && TempData["Method"] is not null && Model.FirstOrDefault(x => x.Client.Id == (int)TempData["Id"]) is not null)
+                                                {
+                                                    @switch(TempData["Method"])
+                                                    {
+                                                        case "Edit":
+                                                            <partial name="_Edit" model="@Model.FirstOrDefault(x => x.Client.Id == (int)TempData["Id"])?.Client"></partial>
+                                                            break;
+                                                        case "Delete":
+                                                            <partial name="_Delete" model="@Model.FirstOrDefault(x => x.Client.Id == (int)TempData["Id"])"></partial>
+                                                            break;
+                                                    }
+                                                }
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                                <table class="table">
+                                    <thead>  
+                                        <tr>
+                                            <th>Id</th>
+                                            <th>Fecha</th>
+                                            <th>Descripcion</th>
+                                            <th>Precio</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach(var line in item.CreditLines) {
+                                        <tr>
+                                            <td>@line.Id</td>
+                                            <td>@line.CreatedDate.ToShortDateString()</td>
+                                            <td>@line.Description</td>
+                                            <td>@line.Amount</td>
+                                            <td style="text-align:center">
+                                                <div class="btn-group mx-auto" role="group">
+                                                    <!-- Edit -->
+                                                    <button type="button" class="btn" onclick="location.href='@Url.Action("Edit", "Schedule", new {Id= line.Id})'">
+                                                        <span class="material-icons icon icon-dark">mode_edit</span>
+                                                    </button>
+                                                    <!-- Delete -->
+                                                    <button type="button" class="btn" onclick="location.href='@Url.Action("Delete", "Schedule", new {Id= line.Id})'">
+                                                        <span class="material-icons icon icon-danger">delete</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        }
+                                        <tr>
+                                            <td colspan="5">
+                                                @if(TempData["Id"] is not null && (int?)TempData["Id"] == item.Client.Id && TempData["Method"]?.ToString() == "Add")
+                                                {
+                                                    <partial name="_Add" model="@new CreditLine() { Id = (int?)@TempData["Id"] ?? 0, CreatedDate = DateTime.Today }" />
+                                                }
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="2">
+                                                <!-- Add -->
+                                                <button type="button" class="btn"
+                                                    onclick="location.href='@Url.Action("Add", "Credit", new {id = item.Client.Id})'">
+                                                    <span class="material-icons icon icon-primary">add_circle</span>
+                                                </button>
+                                                <!-- Send -->
+                                                <button type="button" class="btn"
+                                                    onclick="window.open('@HttpUtility.HtmlDecode(String.Format(ConfigurationModel.BalanceMessage, $"https://api.whatsapp.com/send/?phone={@item.Client.Phone}&text=", item.Client.Name, item.Message, item.CreditSummary.Total))')">
+                                                    <span class="material-icons icon icon-dark">send</span>
+                                                </button>
+                                            </td>
+                                            <td></td>
+                                            <td>Total</td>
+                                            <td>@item.CreditSummary.Total</td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+
+                        }
+                        else{
+                            <h2 class="accordion-header" id="flush-headingOne">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-@item.Client.Id" aria-expanded="true" aria-controls="flush-collapse-@item.Client.Id">
+                                    Cliente: @item.Client.Name | Total: @item.CreditSummary.Total
+                                </button>
+                            </h2>
+                            <div id="flush-collapse-@item.Client.Id" class="accordion-collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+                            <div class="accordion-body">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th colspan="2">
+                                                <!-- Edit -->
+                                                <button type="button" class="btn"
+                                                    onclick="location.href='@Url.Action("Edit", "Credit", new {Id= item.Client.Id})'">
+                                                    <span class="material-icons icon icon-dark">edit</span>
+                                                </button>
+                                                <!-- Delete -->
+                                                <button type="button" class="btn"
+                                                    onclick="location.href='@Url.Action("Delete", "Credit", new {Id= item.Client.Id})'">
+                                                    <span class="material-icons icon icon-danger">delete</span>
+                                                </button>
+                                            </th>
+                                            <th>
+                                                @if(Model.Any() && TempData["Method"] is not null && Model.FirstOrDefault(x => x.Client.Id == (int)TempData["Id"]) is not null)
+                                                {
+                                                    @switch(TempData["Method"])
+                                                    {
+                                                        case "Edit":
+                                                            <partial name="_Edit" model="@Model.FirstOrDefault(x => x.Client.Id == (int)TempData["Id"])?.Client"></partial>
+                                                            break;
+                                                        case "Delete":
+                                                            <partial name="_Delete" model="@Model.FirstOrDefault(x => x.Client.Id == (int)TempData["Id"])"></partial>
+                                                            break;
+                                                    }
+                                                }
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                                <table class="table">
+                                    <thead>  
+                                        <tr>
+                                            <th>Id</th>
+                                            <th>Fecha</th>
+                                            <th>Descripcion</th>
+                                            <th>Precio</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach(var line in item.CreditLines) {
+                                        <tr>
+                                            <td>@line.Id</td>
+                                            <td>@line.CreatedDate.ToShortDateString()</td>
+                                            <td>@line.Description</td>
+                                            <td>@line.Amount</td>
+                                            <td style="text-align:center">
+                                                <div class="btn-group mx-auto" role="group">
+                                                    <!-- Edit -->
+                                                    <button type="button" class="btn" onclick="location.href='@Url.Action("Edit", "Schedule", new {Id= line.Id})'">
+                                                        <span class="material-icons icon icon-dark">mode_edit</span>
+                                                    </button>
+                                                    <!-- Delete -->
+                                                    <button type="button" class="btn" onclick="location.href='@Url.Action("Delete", "Schedule", new {Id= line.Id})'">
+                                                        <span class="material-icons icon icon-danger">delete</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        }
+                                        <tr>
+                                            <td colspan="5">
+                                                @if(TempData["Id"] is not null && (int?)TempData["Id"] == item.Client.Id && TempData["Method"]?.ToString() == "Add")
+                                                {
+                                                    <partial name="_Add" model="@new CreditLine() { Id = (int?)@TempData["Id"] ?? 0, CreatedDate = DateTime.Today }" />
+                                                }
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="2">
+                                                <!-- Add -->
+                                                <button type="button" class="btn"
+                                                    onclick="location.href='@Url.Action("Add", "Credit", new {id = item.Client.Id})'">
+                                                    <span class="material-icons icon icon-primary">add_circle</span>
+                                                </button>
+                                                <!-- Send -->
+                                                <button type="button" class="btn"
+                                                    onclick="window.open('@HttpUtility.HtmlDecode(String.Format(ConfigurationModel.BalanceMessage, $"https://api.whatsapp.com/send/?phone={@item.Client.Phone}&text=", item.Client.Name, item.CreditSummary.Total))')">
+                                                    <span class="material-icons icon icon-dark">send</span>
+                                                </button>
+                                            </td>
+                                            <td></td>
+                                            <td>Total</td>
+                                            <td>@item.CreditSummary.Total</td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

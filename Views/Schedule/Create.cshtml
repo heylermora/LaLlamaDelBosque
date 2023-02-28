@@ -1,0 +1,56 @@
+﻿@model LaLlamaDelBosque.Models.Schedule
+
+@{
+    ViewData["Title"] = "Crear Horario";
+}
+
+<h1 class="display-6">@ViewData["Title"]</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <select asp-for="Name" class="form-select">
+                    <option selected disabled>Seleccione un nombre</option>
+                    @if (ViewData["Names"] is not null)
+                    {
+                        @foreach (var item in ViewData["Names"] as IList<Worker> ?? new List<Worker>())
+                        {
+                            <option value="@item.Name">@item.Name</option>
+                        }
+                    }
+                </select>
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label class="control-label">Fecha</label>
+                <input type="date" asp-for="CreatedDate" class="form-control"/>
+                <span asp-validation-for="CreatedDate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label class="control-label">Inicio</label>
+                <input type="time" asp-for="CreatedDate" class="form-control" />
+                <span asp-validation-for="CreatedDate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label class="control-label">Fin</label>
+                <input type="time" asp-for="FinishDate" class="form-control"/>
+                <span asp-validation-for="FinishDate" class="text-danger"></span>
+            </div>
+            <hr />
+            <div class="form-group">
+                <input type="submit" value="Crear" class="btn btn-primary" />
+                &nbsp;&nbsp;&nbsp;
+                <a asp-action="Index" style="color: var(--dark);">Volver</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -1,0 +1,39 @@
+﻿@model LaLlamaDelBosque.Models.Note
+
+@{
+    ViewData["Title"] = "Crear Nota";
+}
+
+<h1 class="display-6">@ViewData["Title"]</h1>
+
+<hr />
+
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="Title" class="control-label">Proveedor</label>
+                <input asp-for="Title" class="form-control" id="title" />
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Description" class="control-label">Productos</label>
+                <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Description" class="text-danger" id="description"></span>
+            </div>
+            <hr />
+            <div class="form-group">
+                <input type="submit" value="Crear" class="btn btn-primary" />
+                &nbsp;&nbsp;&nbsp;
+                <a asp-action="Index" style="color: var(--dark);">Volver</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

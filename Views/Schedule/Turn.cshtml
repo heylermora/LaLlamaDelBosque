@@ -1,0 +1,55 @@
+﻿<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+@model IEnumerable<LaLlamaDelBosque.Models.Schedule>
+
+@{
+    ViewData["Title"] = "Turnos";
+}
+
+<h1 class="display-4">@ViewData["Title"] del @DateTime.Today.ToShortDateString()</h1>
+
+<div class="table-responsive container">
+    <div class="row justify-content-md-center">
+        <div class="col-lg-6">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Nombre</th>
+                        <th>Horas</th>
+                        <th>Salario</th>
+                        <th>Terminar</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach(var item in Model)
+                    {
+                        <tr class="align-middle">
+                            <td>
+                                @item.Id
+                            </td>
+                            <td>
+                                @item.Name
+                            </td>
+                            <td>
+                                @item.Hours
+                            </td>
+                            <td>
+                                @item.Salary
+                            </td>
+                            <td style="text-align:center">
+                                <div class="btn-group mx-auto" role="group">
+                                    <!-- Check -->
+                                    <button type="button" class="btn" onclick="location.href='@Url.Action("Finish", "Schedule", new {Id= item.Id, Collection = item})'" >
+                                        <span class="material-icons" style="color: var(--dark);">check_circle</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,24 @@
+﻿@model LaLlamaDelBosque.Models.Schedule
+
+<div>
+    <h4>Horario de @Html.DisplayFor(model => model.Name)</h4>
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-2">Id</dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Id)
+        </dd>
+        <dt class="col-sm-2">Fecha</dt>
+        <dd class = "col-sm-10">
+            @Model.CreatedDate.ToShortDateString()
+        </dd>
+        <dt class = "col-sm-2">Horas</dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Hours)
+        </dd>
+        <dt class="col-sm-2">Salario</dt>
+        <dd class="col-sm-10">
+                @Html.DisplayFor(model => model.Salary)
+        </dd>
+    </dl>
+</div>

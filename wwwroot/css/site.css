@@ -1,0 +1,82 @@
+:root {
+    --background: #189AB4;
+    --danger: #EF5B5B;
+    --dark: #05445E;
+    --light: #D4F1F4;
+    --primary: #3C79F5;
+    --secondary: #2DCDDF;
+    --success: #0CF574;
+}
+
+
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+    background: linear-gradient(0deg, var(--background) 0%, var(--light) 100%);
+    margin-bottom: 60px;
+}
+
+nav {
+    background: var(--dark);
+}
+
+.nav-link {
+    color: var(--background);
+}
+
+.nav-link:hover {
+    color: var(--light);
+}
+
+
+.navbar-text {
+    color: var(--light);
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    color: var(--light);
+}
+
+.btn-danger {
+    background-color: var(--danger);
+    color: var(--light);
+}
+
+.btn {
+    border-radius: .45rem;
+    width: 96px;
+}
+
+span.material-icons.icon {
+    font-size: 200%;
+}
+
+.icon-danger {
+    color: var(--danger);
+}
+
+.icon-dark {
+    color: var(--dark);
+}
+
+.icon-primary {
+    color: var(--primary);
+}
+
+.icon-success {
+    color: var(--success);
+}

@@ -1,0 +1,64 @@
+﻿<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+
+@model IEnumerable<LaLlamaDelBosque.Models.Note>
+
+@{
+    ViewData["Title"] = "Notas de pedidos";
+}
+
+<h1 class="display-4">@ViewData["Title"]</h1>
+
+
+<!-- Add -->
+<button type="button" class="btn"
+        onclick="location.href='@Url.Action("Create", "Note")'">
+    <span class="material-icons icon icon-primary">add_circle</span>
+</button>
+
+@if(Model.Any() && TempData["Method"] is not null && Model.FirstOrDefault(x => x.Id == (int)TempData["Id"]) is not null)
+{
+    @switch(TempData["Method"])
+    {
+        case "Delete":
+            @Html.Partial("_Delete", Model.FirstOrDefault(n => n.Id == (int)TempData["Id"]))
+            ;
+            break;
+    }
+}
+
+<div class="container">
+    <div class="d-flex justify-content-around flex-wrap">
+        @foreach(var item in Model)
+        {
+            <div class="card" style="width: 18rem; margin-bottom: 12px; margin-top: 12px;">
+                    <div class="card-header">
+                        <h5 class="card-title">@item.Title</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="btn-group mx-auto" role="group">
+                            <!-- Edit -->
+                            <button type="button" class="btn"
+                                onclick="location.href='@Url.Action("Edit", "Note", new {Id= item.Id})'">
+                                <span class="material-icons icon icon-dark">edit</span>
+                            </button>
+                            <!-- Delete -->
+                            <button type="button" class="btn"
+                                onclick="location.href='@Url.Action("Delete", "Note", new {Id= item.Id})'">
+                                <span class="material-icons icon icon-danger">delete</span>
+                            </button>
+                        </div>
+
+                        <hr>
+
+                        <ul class="list-group list-group-flush">
+                            @foreach( var desc in item.Description.Split('\n'))
+                            {
+                                <li class="list-group-item">@desc</li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            }
+        </div>
+</div>
