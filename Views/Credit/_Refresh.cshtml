@@ -1,0 +1,41 @@
+﻿@model LaLlamaDelBosque.Models.CreditLine
+
+<tr>
+    <form asp-action="Refresh" asp-route-clientid="@TempData["Id"]" class="row g-3">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <td>
+            <div class="form-group col-auto">
+                <input asp-for="Id" class="form-control" readonly/>
+                <span asp-validation-for="Id" class="text-danger"></span>
+            </div>
+        </td>
+        <td>
+            <div class="form-group col-auto">
+                <input asp-for="CreatedDate" class="form-control" readonly/>
+                <span asp-validation-for="CreatedDate" class="text-danger"></span>
+            </div>
+        </td>
+        <td>
+            <div class="form-group col-auto">
+                <input asp-for="Description" class="form-control"/>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+        </td>
+        <td>
+            <div class="form-group col-auto">
+                <input asp-for="Amount" class="form-control"/>
+                <span asp-validation-for="Amount" class="text-danger"></span>
+            </div>
+        </td>
+        <td></td>
+        <td>
+            <div class="form-group">
+                <input type="submit" value="Guardar" class="btn btn-primary"/>
+            </div>
+        </td>
+    </form>
+</tr>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

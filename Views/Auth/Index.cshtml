@@ -1,0 +1,43 @@
+﻿@{
+    Layout = "";
+    ViewData["Title"] = "Acceder";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>@ViewData["Title"] - La Llama Del Bosque</title>
+        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+        <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/LaLlamaDelBosque.styles.css" asp-append-version="true" />
+    </head>
+    <body>
+        <div class="row justify-content-md-center">
+            <div class="col-md-4">
+                <div class="card" style="margin-bottom: 12px; margin-top: 48px;">
+                    <div class="card-header">
+                        <h5 class="card-title">@ViewData["Title"]</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            <div class="form-row">
+                                <div class="form-group col-md-12"> <label for="inputName">Correo</label> <input type="email" name="email" class="form-control" id="inputEmail4" required=""> </div>
+                                <div class="form-group col-md-12"> <label for="inputName">Contraseña</label> <input type="password" name="password" class="form-control" id="inputPassword4" required=""> </div>
+                            </div>
+                            <div class="mt-2 mb-3"> <button class="btn btn-primary full-width" type="submit">Acceder</button> </div>
+                        </form>
+                    </div>
+                </div>
+                @if(ViewData["MENSAJE"] != null)
+                {
+                    <div class="alert alert-warning" role="alert">
+                        @ViewData["MENSAJE"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+            </div>
+        </div>
+    </body>
+</html>

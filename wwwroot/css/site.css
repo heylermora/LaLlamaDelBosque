@@ -5,7 +5,8 @@
     --light: #D4F1F4;
     --primary: #3C79F5;
     --secondary: #2DCDDF;
-    --success: #0CF574;
+    --warning: #F6C324;
+    --success: #3B9212;
 }
 
 
@@ -56,6 +57,12 @@ nav {
     color: var(--light);
 }
 
+.btn-success {
+    background-color: white;
+    color: var(--light);
+    border-color: none;
+}
+
 .btn {
     border-radius: .45rem;
     width: 96px;
@@ -63,6 +70,12 @@ nav {
 
 span.material-icons.icon {
     font-size: 200%;
+    display: inherit;
+}
+
+span.material-icons.star {
+    color: var(--dark);
+    font-size: 60px;
 }
 
 .icon-danger {
@@ -80,3 +93,8 @@ span.material-icons.icon {
 .icon-success {
     color: var(--success);
 }
+
+.accordion-item {
+    border-radius: 0.25rem;
+}
+

@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 
 namespace KrakenNotes.Web.Controllers
 {
+	[Authorize]
 	public class NoteController: Controller
 	{
 		private NoteModel _notes;
@@ -50,13 +51,16 @@ namespace KrakenNotes.Web.Controllers
 		}
 
 		[HttpPost]
-		public async Task<IActionResult> Edit(Note model)
+		public ActionResult Edit(Note model)
 		{
 			var note = _notes.Notes.FirstOrDefault(n => n.Id == model.Id);
-			note.Title = model.Title;
-			note.Description = model.Description;
-			SetNotes(_notes);
-			return RedirectToAction("Index");
+			if(note != null)
+			{
+				note.Title = model.Title;
+				note.Description = model.Description;
+				SetNotes(_notes);
+			}
+				return RedirectToAction("Index");
 		}
 
 		// GET: CreditController/Delete/5

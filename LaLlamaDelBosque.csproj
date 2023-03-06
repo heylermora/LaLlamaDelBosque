@@ -15,4 +15,6 @@
     <PackageReference Include="RestSharp" Version="108.0.3" />
   </ItemGroup>
 
+  <ProjectExtensions><VisualStudio><UserProperties data_4credits_1json__JsonSchema="https://beaujs.com/schema.json" /></VisualStudio></ProjectExtensions>
+
 </Project>

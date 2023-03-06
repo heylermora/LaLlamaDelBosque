@@ -1,10 +1,13 @@
 ﻿using LaLlamaDelBosque.Models;
 using LaLlamaDelBosque.Utils;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LaLlamaDelBosque.Controllers
 {
-    public class CreditController: Controller
+	[Authorize]
+
+	public class CreditController: Controller
     {
 		private CreditModel _credits;
 
@@ -14,9 +17,16 @@ namespace LaLlamaDelBosque.Controllers
 		}
 
 		// GET: CreditController
-		public ActionResult Index()
+		public ActionResult Index(string searchString)
         {
-            return View(_credits.Credits);
+			var credits = _credits.Credits;
+
+			if(!string.IsNullOrEmpty(searchString))
+			{
+				credits = credits.Where(s => s.Client.Name.ToLower().Contains(searchString.ToLower())).ToList();
+			}
+
+			return View(credits);
         }
 
         // GET: CreditController/Create
@@ -105,8 +115,8 @@ namespace LaLlamaDelBosque.Controllers
             }
             catch
             {
-                return View();
-            }
+				return RedirectToAction(nameof(Index));
+			}
         }
 
 		#region Credit Line
@@ -125,8 +135,8 @@ namespace LaLlamaDelBosque.Controllers
 		{
 			try
 			{
+				TempData["Id"] = id;
 				var credit = _credits.Credits.FirstOrDefault(x => x.Client.Id == id);
-
 				if(credit is not null) {
 					var creditLine = new CreditLine()
 					{
@@ -136,16 +146,80 @@ namespace LaLlamaDelBosque.Controllers
 						Amount = double.Parse(collection["amount"])
 					};
 
-					credit.CreditLines.Add(creditLine);
+					credit?.CreditLines.Add(creditLine);
 
-					credit.CreditSummary = new CreditSummary()
-					{
-						Total = (credit.CreditSummary?.Total ?? 0) + creditLine.Amount,
-						CountLines = credit.CreditLines.Count()
-					};
+					credit.CreditSummary.Total = (credit?.CreditSummary?.Total ?? 0) + creditLine.Amount;
 
 					SetCredits(_credits);
 				}
+				return RedirectToAction(nameof(Index));
+			}
+			catch
+			{
+				return RedirectToAction(nameof(Index));
+			}
+		}
+
+		// GET: CreditController/Refresh/5
+		public ActionResult Refresh(int clientId, int lineId)
+		{
+			TempData["Id"] = clientId;
+			TempData["LineId"] = lineId;
+			TempData["Method"] = "Refresh";
+			return RedirectToAction(nameof(Index));
+		}
+
+		// POST: CreditController/Refresh/5
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public ActionResult Refresh(int clientId, IFormCollection collection)
+		{
+			try
+			{
+				TempData["Id"] = clientId;
+
+				var credit = _credits.Credits.First(x => x.Client.Id == clientId);
+				var line = credit.CreditLines.First(l => l.Id == int.Parse(collection["Id"]));
+
+				credit.CreditSummary.Total -= line.Amount;
+
+				line.Description = collection["description"];
+				line.Amount = double.Parse(collection["amount"]);
+
+				credit.CreditSummary.Total += line.Amount;
+
+				SetCredits(_credits);
+				return RedirectToAction(nameof(Index));
+			}
+			catch(Exception ex)
+			{
+				Console.WriteLine(ex);
+				return RedirectToAction(nameof(Index));
+			}
+		}
+
+		// GET: CreditController/Remove/5
+		public ActionResult Remove(int clientId, int lineId)
+		{
+			TempData["Id"] = clientId;
+			TempData["LineId"] = lineId;
+			TempData["Method"] = "Remove";
+			return RedirectToAction(nameof(Index));
+		}
+
+		// POST: CreditController/Remove/5
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public ActionResult Remove(string clientId, string lineId)
+		{
+			try
+			{
+				TempData["Id"] = int.Parse(clientId);
+				var credit = _credits.Credits.First(c => c.Client.Id == int.Parse(clientId));
+				var line = credit.CreditLines.First(l => l.Id == int.Parse(lineId));
+				credit.CreditSummary.Total -= line.Amount; 
+				credit.CreditLines.Remove(line);
+				SetCredits(_credits);
 				return RedirectToAction(nameof(Index));
 			}
 			catch

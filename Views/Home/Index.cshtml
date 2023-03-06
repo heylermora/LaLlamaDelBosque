@@ -1,42 +1,81 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model LaLlamaDelBosque.Models.SummaryModel
+
+@{
+    ViewData["Title"] = "Resumen de Créditos";
 }
 
-<div id="carouselExampleCaptions" class="carousel slide">
-    <div class="carousel-indicators">
-        <button type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-        <button type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide-to="1" aria-label="Slide 2"></button>
-        <button type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide-to="2" aria-label="Slide 3"></button>
+<h1 class="display-4">@ViewData["Title"]</h1>
+
+<div class="container">
+    <div class="d-flex justify-content-around flex-wrap">
+        <div class="card" style="width: 20rem; margin-bottom: 12px; margin-top: 12px;">
+            <div class="card-header">
+                <h5 class="card-title">CANTIDAD DE CLIENTES</h5>
+            </div>
+            <div class="card-body text-center">
+                <h1>@Model.Clients</h1>
+                <hr>
+                <h6>@Model.ClientsDescription</h6>
+                </div>
+        </div>
+        <div class="card" style="width: 22rem; margin-bottom: 12px; margin-top: 12px;">
+            <div class="card-header">
+                <h5 class="card-title">TOTAL POR COBRAR</h5>
+            </div>
+            <div class="card-body text-center">
+                <h1>₡ @Model.Receivable</h1>
+                <hr>
+                <h6>pendientes</h6>
+            </div>
+        </div>
+        <div class="card" style="width: 22rem; margin-bottom: 12px; margin-top: 12px;">
+            <div class="card-header">
+                <h5 class="card-title">ABONOS DE HOY</h5>
+            </div>
+            <div class="card-body text-center">
+                <h1>₡ @Model.Received</h1>
+                <hr>
+                <h6>pagados</h6>
+            </div>
+        </div>
+        <div class="card" style="width: 25rem; margin-bottom: 12px; margin-top: 12px;">
+            <div class="card-header">
+                <h5 class="card-title">CLIENTES CON MAS DEUDA</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    @foreach (var item in Model.MajorDebts)
+                    {
+                        <li class="list-group-item">@item.Name: ₡ @item.Amount</li>
+                    }
+                </ul>
+            </div>
+        </div>
+        <div class="card" style="width: 25rem; margin-bottom: 12px; margin-top: 12px;">
+            <div class="card-header">
+                <h5 class="card-title">CLIENTES CON MENOS DEUDA</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    @foreach(var item in Model.MinorDebts)
+                    {
+                        <li class="list-group-item">@item.Name: ₡ @item.Amount</li>
+                    }
+                </ul>
+            </div>
+        </div>
+        <div class="card" style="width: 25rem; margin-bottom: 12px; margin-top: 12px;">
+            <div class="card-header">
+                <h5 class="card-title">CLIENTES INACTIVOS</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    @foreach(var item in Model.InactiveClients)
+                    {
+                        <li class="list-group-item">@item.Name: ₡ @item.Amount</li>
+                    }
+                </ul>
+            </div>
+        </div>
     </div>
-    <div class="carousel-inner position-relative" style="height: 575px">
-        <div class="carousel-item active position-absolute bottom-0 start-0">
-            <img src="https://img.freepik.com/foto-gratis/corte-papel-manila-carpeta-algun-documento_1232-1658.jpg?w=1380&t=st=1676404653~exp=1676405253~hmac=46569f43877947e1dcde6f8f8d8b963a3eefaaca2edff775330c0e1d8e74fbf9" class="d-block w-100" alt="...">
-            <div class="carousel-caption d-none d-md-block">
-                <h5>Recuerda que</h5>
-                <p>Puedes ver los creditos de los clientes.</p>
-            </div>
-        </div>
-        <div class="carousel-item position-absolute bottom-0 start-0">
-            <img src="https://img.freepik.com/foto-gratis/calendario-planificador-vista-superior-hojas_23-2148693327.jpg?w=1060&t=st=1676401834~exp=1676402434~hmac=325ad482efecf5c2beddc3fe8e2ab65dd6718ab7632ea0828ac3174c2ae421c3" class="d-block w-100" alt="...">
-            <div class="carousel-caption d-none d-md-block">
-                <h5>También puedes</h5>
-                <p>Ver los horarios de los empleados.</p>
-            </div>
-        </div>
-        <div class="carousel-item position-absolute bottom-0 start-0">
-            <img src="https://img.freepik.com/foto-gratis/concepto-financiero-iconos-cubos-madera-calculadora-mesa-azul-plano-lay_176474-9440.jpg?w=996&t=st=1676403700~exp=1676404300~hmac=645160617ad84e9fe20574c83b2e4b05d08d54e1de422756d1224486531b239b" class="d-block w-100" alt="...">
-            <div class="carousel-caption d-none d-md-block">
-                <h5>Además puedes</h5>
-                <p>Calcular sus pagos.</p>
-            </div>
-        </div>
-    </div>
-    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-        <span class="visually-hidden">Previous</span>
-    </button>
-    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide="next">
-        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-        <span class="visually-hidden">Next</span>
-    </button>
 </div>

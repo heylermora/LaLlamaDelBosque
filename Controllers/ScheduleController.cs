@@ -1,12 +1,11 @@
 ﻿using LaLlamaDelBosque.Models;
 using LaLlamaDelBosque.Utils;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections;
-using System.Collections.Generic;
-using System.Xml.Linq;
 
 namespace LaLlamaDelBosque.Controllers
 {
+	[Authorize]
 	public class ScheduleController: Controller
 	{
 		private ScheduleModel _schedules;
