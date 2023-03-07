@@ -1,7 +1,7 @@
 ﻿@model LaLlamaDelBosque.Models.Credit
 
-<h6>¿Desea eliminar a este cliente?</h6>
+<h6>¿Desea eliminar todas las líneas de este cliente?</h6>
 
-<form asp-action="Delete" asp-route-id=@Model.Client.Id>
+<form asp-action="Clear" asp-route-id=@Model.Client.Id>
     <input type="submit" value="Eliminar" class="btn btn-danger" />
 </form>

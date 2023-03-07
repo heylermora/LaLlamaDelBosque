@@ -69,18 +69,17 @@ namespace LaLlamaDelBosque.Controllers
 
 		private SummaryModel GetLists(SummaryModel summary)
 		{
-			var inactiveClients = _credits.Credits.Where(c => DateTime.Compare(c.CreditLines.Last().CreatedDate, DateTime.Today.AddMonths(-2)) < 0).ToList();
+			var inactiveClients = _credits.Credits.Where(c => DateTime.Compare(c.CreditLines?.LastOrDefault()?.CreatedDate ?? DateTime.Now, DateTime.Today.AddMonths(-2)) < 0).ToList();
 
 			var top = inactiveClients.Count == 0 ? 1 : inactiveClients.Count;
 
-			var majorDebts = _credits.Credits.OrderBy(c => c.CreditSummary.Total).Take(top).ToList();
-			var minorDebts = _credits.Credits.OrderByDescending(c => c.CreditSummary.Total).Take(top).ToList();
+			var majorDebts = _credits.Credits.OrderByDescending(c => c.CreditSummary.Total).Take(top).ToList();
+			var minorDebts = _credits.Credits.OrderBy(c => c.CreditSummary.Total).Take(top).ToList();
 
 
 			inactiveClients.ForEach(ic => summary.InactiveClients.Add(new SummaryClient() { Name = ic.Client.Name, Amount = ic.CreditSummary.Total.ToString("N", CultureInfo.InvariantCulture) }));
 			majorDebts.ForEach(md => summary.MajorDebts.Add(new SummaryClient() { Name = md.Client.Name, Amount = md.CreditSummary.Total.ToString("N", CultureInfo.InvariantCulture) }));
 			minorDebts.ForEach(md => summary.MinorDebts.Add(new SummaryClient() { Name = md.Client.Name, Amount = md.CreditSummary.Total.ToString("N", CultureInfo.InvariantCulture) }));
-
 
 			return summary;
 		}

@@ -11,11 +11,18 @@
 
 <h1 class="display-4">@ViewData["Title"]</h1>
 
-<!-- Add -->
-<button type="button" class="btn"
-        onclick="location.href='@Url.Action("Create", "Credit")'">
-    <span class="material-icons icon icon-primary">add_circle</span>
-</button>
+<div class="btn-group mx-auto" role="group">
+    <!-- Add -->
+    <button type="button" class="btn"
+            onclick="location.href='@Url.Action("Create", "Credit")'">
+        <span class="material-icons icon icon-primary">add_circle</span>
+    </button>
+    <!-- Send -->
+    <button type="button" class="btn"
+            onclick="window.open('@HttpUtility.HtmlDecode(String.Format(ConfigurationModel.SummaryMessage, $"https://api.whatsapp.com/send/?phone=83232377&text=", TempData["Message"]))')">
+        <span class="material-icons icon icon-success">send</span>
+    </button>
+</div>
 
 <div class="container">
     <div class="row justify-content-md-center">
@@ -52,115 +59,94 @@
                                 </button>
                             </h2>
                             <div id="flush-collapse-@item.Client.Id" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
-                            <div class="accordion-body table-responsive">
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th colspan="2">
-                                                <!-- Edit -->
-                                                <button type="button" class="btn"
-                                                    onclick="location.href='@Url.Action("Edit", "Credit", new {Id= item.Client.Id})'">
-                                                    <span class="material-icons icon icon-dark">edit</span>
-                                                </button>
-                                                <!-- Delete -->
-                                                <button type="button" class="btn"
-                                                    onclick="location.href='@Url.Action("Delete", "Credit", new {Id= item.Client.Id})'">
-                                                    <span class="material-icons icon icon-danger">delete</span>
-                                                </button>
-                                            </th>
-                                            <th>
-                                                @if(Model.Any() && TempData["Method"] is not null && Model.FirstOrDefault(x => x.Client.Id == (int?)TempData["Id"]) is not null)
-                                                {
-                                                    @switch(TempData["Method"])
-                                                    {
-                                                        case "Edit":
-                                                            <partial name="_Edit" model="@Model.FirstOrDefault(x => x.Client.Id == (int?)TempData["Id"])?.Client"></partial>
-                                                            break;
-                                                        case "Delete":
-                                                            <partial name="_Delete" model="@Model.FirstOrDefault(x => x.Client.Id == (int?)TempData["Id"])"></partial>
-                                                            break;
-                                                    }
-                                                }
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                </table>
-                                <table class="table">
-                                    <thead>  
-                                        <tr>
-                                            <th>Id</th>
-                                            <th>Fecha</th>
-                                            <th>Hora</th>
-                                            <th>Descripción</th>
-                                            <th>Precio</th>
-                                            <th>Acumulado</th>
-                                            <th></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach(var line in item.CreditLines) 
-                                        {
+                                <div class="accordion-body table-responsive">
+                                    <table class="table">
+                                        <thead>
                                             <tr>
-                                                <td>@line.Id</td>
-                                                <td>@line.CreatedDate.ToShortDateString()</td>
-                                                <td>@line.CreatedDate.ToShortTimeString()</td>
-                                                <td>@line.Description</td>
-                                                <td>₡ @line.Amount</td>
-                                                <td class="table-active">@{cumulative += @line.Amount;}₡ @cumulative</td>
-                                                <td style="text-align:center">
-                                                    <div class="btn-group mx-auto" role="group">
-                                                        <!-- Refresh -->
-                                                        <button type="button" class="btn" onclick="location.href='@Url.Action("Refresh", "Credit", new {ClientId= item.Client.Id, LineId= line.Id})'">
-                                                            <span class="material-icons icon icon-dark">mode_edit</span>
-                                                        </button>
-                                                        <!-- Remove -->
-                                                        <button type="button" class="btn" onclick="location.href='@Url.Action("Remove", "Credit", new {ClientId= item.Client.Id, LineId= line.Id})'">
-                                                            <span class="material-icons icon icon-danger">delete</span>
-                                                        </button>
-                                                    </div>
-                                                </td>
+                                                <th colspan="2">
+                                                    <!-- Edit -->
+                                                    <button type="button" class="btn"
+                                                        onclick="location.href='@Url.Action("Edit", "Credit", new {Id= item.Client.Id})'">
+                                                        <span class="material-icons icon icon-dark">edit</span>
+                                                    </button>
+                                                    <!-- Delete -->
+                                                    <button type="button" class="btn"
+                                                        onclick="location.href='@Url.Action("Delete", "Credit", new {Id= item.Client.Id})'">
+                                                        <span class="material-icons icon icon-danger">delete</span>
+                                                    </button>
+                                                </th>
                                             </tr>
-                                                @if(TempData["Id"] is not null && (int?)TempData["Id"] == line.Id && TempData["Method"]?.ToString() == "_Remove")
-                                                {
-                                                    <tr>
-                                                        <td colspan="6">
-                                                            <partial name="_Remove" model="line" />
-                                                        </td>
-                                                    </tr>
-                                                }
-                                        }
-                                        <tr>
-                                            <td colspan="6">
-                                                @if(TempData["Id"] is not null && (int?)TempData["Id"] == item.Client.Id && TempData["Method"]?.ToString() == "Add")
-                                                {
-                                                    <partial name="_Add" model="@new CreditLine() { Id = (int?)@TempData["Id"] ?? 0, CreatedDate = DateTime.Today }" />
-                                                }
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <td colspan="3">
-                                                <!-- Add -->
-                                                <button type="button" class="btn"
-                                                    onclick="location.href='@Url.Action("Add", "Credit", new {id = item.Client.Id})'">
-                                                    <span class="material-icons icon icon-primary">add_circle</span>
-                                                </button>
-                                                <!-- Send -->
-                                                <button type="button" class="btn"
-                                                    onclick="window.open('@HttpUtility.HtmlDecode(String.Format(ConfigurationModel.BalanceMessage, $"https://api.whatsapp.com/send/?phone={@item.Client.Phone}&text=", item.Client.Name, item.CreditSummary.Total))')">
-                                                    <span class="material-icons icon icon-success">send</span>
-                                                </button>
-                                            </td>
-                                            <td>Total</td>
-                                            <td>₡ @item.CreditSummary.Total</td>
-                                            <td></td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
+                                        </thead>
+                                    </table>
+                                    <table class="table">
+                                        <thead>  
+                                            <tr>
+                                                <th>Id</th>
+                                                <th>Fecha</th>
+                                                <th>Hora</th>
+                                                <th>Descripción</th>
+                                                <th>Precio</th>
+                                                <th>Acumulado</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach(var line in item.CreditLines) 
+                                            {
+                                                <tr>
+                                                    <td>@line.Id</td>
+                                                    <td>@line.CreatedDate.ToShortDateString()</td>
+                                                    <td>@line.CreatedDate.ToShortTimeString()</td>
+                                                    <td>@line.Description</td>
+                                                    <td>₡ @line.Amount</td>
+                                                    <td class="table-active">@{cumulative += @line.Amount;}₡ @cumulative</td>
+                                                    <td style="text-align:center">
+                                                        <div class="btn-group mx-auto" role="group">
+                                                            <!-- Refresh -->
+                                                            <button type="button" class="btn" onclick="location.href='@Url.Action("Refresh", "Credit", new {ClientId= item.Client.Id, LineId= line.Id})'">
+                                                                <span class="material-icons icon icon-dark">mode_edit</span>
+                                                            </button>
+                                                            <!-- Remove -->
+                                                            <button type="button" class="btn" onclick="location.href='@Url.Action("Remove", "Credit", new {ClientId= item.Client.Id, LineId= line.Id})'">
+                                                                <span class="material-icons icon icon-danger">delete</span>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                            </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="4">
+                                                    <!-- Add -->
+                                                    <button type="button" class="btn"
+                                                        onclick="location.href='@Url.Action("Add", "Credit", new {id = item.Client.Id})'">
+                                                        <span class="material-icons icon icon-primary">add_circle</span>
+                                                    </button>
+                                                    <!-- Fee -->
+                                                    <button type="button" class="btn"
+                                                        onclick="location.href='@Url.Action("Fee", "Credit", new {id = item.Client.Id})'">
+                                                        <span class="material-icons icon icon-primary">post_add</span>
+                                                    </button>
+                                                    <!-- Clear -->
+                                                    <button type="button" class="btn"
+                                                        onclick="location.href='@Url.Action("Clear", "Credit", new {id = item.Client.Id})'">
+                                                            <span class="material-icons icon icon-danger">cancel</span>
+                                                    </button>
+                                                    <!-- Send -->
+                                                    <button type="button" class="btn"
+                                                        onclick="window.open('@HttpUtility.HtmlDecode(String.Format(ConfigurationModel.BalanceMessage, $"https://api.whatsapp.com/send/?phone={@item.Client.Phone}&text=", item.Client.Name, item.CreditSummary.Total))')">
+                                                        <span class="material-icons icon icon-success">send</span>
+                                                    </button>
+                                                </td>
+                                                <td>Total</td>
+                                                <td>₡ @item.CreditSummary.Total</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
                             </div>
-                        </div>
-
                         }
                         else
                         {
@@ -207,7 +193,7 @@
                                                                 <partial name="_Edit" model="@Model.FirstOrDefault(x => x.Client.Id == (int?)TempData["Id"])?.Client"></partial>
                                                                 break;
                                                             case "Delete":
-                                                                <partial name="_Delete" model="@Model.FirstOrDefault(x => x.Client.Id == (int?)TempData["Id"])"></partial>
+                                                                <partial name="_Delete" model="item"></partial>
                                                                 break;
                                                         }
                                                     }
@@ -266,30 +252,58 @@
                                                     </tr>
                                                 }
                                             }
-                                            <tr>
-                                                <td colspan="6">
-                                                    @if(TempData["Id"] is not null && (int?)TempData["Id"] == item.Client.Id && TempData["Method"]?.ToString() == "Add")
-                                                    {
-                                                        <partial name="_Add" model="@new CreditLine() { Id = (int?)@TempData["Id"] ?? 0, CreatedDate = DateTime.Now }" />
-                                                    }
-                                                </td>
-                                            </tr>
+
+                                            @switch (TempData["Method"])
+                                            {
+                                                case "Add":
+                                                    <tr>
+                                                        <td colspan="7">
+                                                            <partial name="_Add" model="@new CreditLine() { Id = (int?)@TempData["Id"] ?? 0, CreatedDate = DateTime.Now }"/>
+                                                        </td>
+                                                    </tr>
+                                                    break;
+                                                case "Fee":
+                                                    <tr>
+                                                        <td colspan="7">
+                                                            <partial name="_Fee" model="@new CreditLine() { Id = (int?)@TempData["Id"] ?? 0, CreatedDate = DateTime.Now }" />
+                                                        </td>
+                                                    </tr>
+                                                    break;
+                                                case "Clear":
+                                                    <tr>
+                                                        <td colspan = "7">
+                                                            <partial name = "_Clear" model = "item"/>
+                                                        </td>
+                                                    </tr>
+                                                    break;
+                                                default:
+                                                    break;
+                                            }
                                         </tbody>
                                         <tfoot>
                                             <tr>
-                                                <td colspan="3">
+                                                <td colspan="4">
                                                     <!-- Add -->
                                                     <button type="button" class="btn"
-                                                        onclick="location.href='@Url.Action("Add", "Credit", new {id = item.Client.Id})'">
+                                                    onclick="location.href='@Url.Action("Add", "Credit", new {id = item.Client.Id})'">
                                                         <span class="material-icons icon icon-primary">add_circle</span>
+                                                    </button>
+                                                    <!-- Fee -->
+                                                    <button type="button" class="btn"
+                                                    onclick="location.href='@Url.Action("Fee", "Credit", new {id = item.Client.Id})'">
+                                                        <span class="material-icons icon icon-primary">post_add</span>
+                                                    </button>
+                                                    <!-- Clear -->
+                                                    <button type="button" class="btn"
+                                                    onclick="location.href='@Url.Action("Clear", "Credit", new {id = item.Client.Id})'">
+                                                        <span class="material-icons icon icon-danger">cancel</span>
                                                     </button>
                                                     <!-- Send -->
                                                     <button type="button" class="btn"
-                                                        onclick="window.open('@HttpUtility.HtmlDecode(String.Format(ConfigurationModel.BalanceMessage, $"https://api.whatsapp.com/send/?phone={@item.Client.Phone}&text=", item.Client.Name, item.CreditSummary.Total))')">
-                                                        <span class="material-icons icon icon-dark">send</span>
+                                                    onclick="window.open('@HttpUtility.HtmlDecode(String.Format(ConfigurationModel.BalanceMessage, $"https://api.whatsapp.com/send/?phone={@item.Client.Phone}&text=", item.Client.Name, item.CreditSummary.Total))')">
+                                                        <span class="material-icons icon icon-success">send</span>
                                                     </button>
                                                 </td>
-                                                <td></td>
                                                 <td>Total</td>
                                                 <td>₡ @item.CreditSummary.Total</td>
                                                 <td></td>

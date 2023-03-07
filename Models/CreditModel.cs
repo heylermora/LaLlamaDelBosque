@@ -19,7 +19,7 @@ namespace LaLlamaDelBosque.Models
 	public class CreditLine
 	{
 		public int Id { get; set; }
-		public DateTime CreatedDate { get; set; }
+		public DateTime CreatedDate { get; set; } = DateTime.Now;
 		public string Description { get; set; } = "";
 		public double Amount { get; set; }
 

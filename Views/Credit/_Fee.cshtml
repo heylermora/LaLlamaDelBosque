@@ -1,0 +1,41 @@
+﻿@model LaLlamaDelBosque.Models.CreditLine
+
+
+<form asp-action="Fee" asp-route-id = class="row g-3">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="form-group">
+        <input asp-for="Id" class="form-control visually-hidden" />
+    </div>
+    <div class="form-group col-auto">
+        <label asp-for="CreatedDate" class="form-label">Fecha de creación</label>
+        <input asp-for="CreatedDate" class="form-control" disabled readonly />
+        <span asp-validation-for="CreatedDate" class="text-danger"></span>
+    </div>
+    <div class="form-group col-auto">
+        <label asp-for="Description" class="form-label">Descripción</label>
+        <select asp-for="Description" class="form-select">
+            <option>Abono (SINPE)</option>
+            <option>Abono (Tarjeta)</option>
+            <option>Abono (Transferencia)</option>
+            <option>Abono (Efectivo)</option>
+            <option>Abono (Premio)</option>
+            <option>Abono (Otro)</option>
+        </select>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+    <div class="form-group col-auto">
+        <label asp-for="Amount" class="form-label">Monto</label>
+        <div class="input-group">
+            <div class="input-group-text">₡</div>
+            <input asp-for="Amount" class="form-control" />
+        </div>
+        <span asp-validation-for="Amount" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <input type="submit" value="Crear" class="btn btn-primary" />
+    </div>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
