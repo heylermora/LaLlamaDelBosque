@@ -1,1 +1,1 @@
-{"Schedules":[{"Id":1,"Name":"Magally","CreatedDate":"2023-03-07T08:00:00","FinishDate":"2023-03-07T17:00:00","Hours":9,"Salary":13500,"IsCompleted":false}]}
+{"Schedules":[{"Id":1,"Name":"Magally","CreatedDate":"2023-03-07T08:00:00","FinishDate":"2023-03-07T17:00:00","Hours":9,"Salary":13500,"IsCompleted":false},{"Id":2,"Name":"Paula","CreatedDate":"2023-05-02T08:00:00","FinishDate":"2023-05-02T20:00:00","Hours":12,"Salary":18000,"IsCompleted":false}]}

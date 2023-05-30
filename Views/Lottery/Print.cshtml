@@ -1,0 +1,79 @@
+﻿<link rel="stylesheet" href="~/css/print.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/LaLlamaDelBosque.styles.css" asp-append-version="true" />
+
+@model Paper
+
+@{
+    double totalAmount = Model.Numbers.Sum(t => t.Amount);
+    double totalNumbers = Model.Numbers.Sum(t => t.Busted);
+    double total = totalAmount + totalNumbers;
+}
+<div class="table-responsive container">
+    <div class="row justify-content-md-center">
+        <div class="col-lg-3">
+
+            <h1>TIEMPOS</h1>
+            <div class="datos-cliente">
+                <p><strong>FECHA:</strong> @DateTime.Now.ToShortDateString()
+                <strong>HORA:</strong> @DateTime.Now.ToShortTimeString()</p>
+                <p><strong>FECHA SORTEO:</strong> @Model.Date.ToShortDateString()</p>
+                <p><strong>SORTEO:</strong> @Model.Lottery</p>
+                <p><strong>PAPELITO:</strong> #@Model.Id</p>
+            </div>
+
+            <div class="table-responsive container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;">#</th>
+                            <th>Monto</th>
+                            <th>Rtado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach(var item in Model.Numbers.GroupBy(n => new { n.Amount, n.Busted }).OrderBy(n => n.Key.Amount).ThenBy(y => y.Key.Busted).Select(g => new { amount = g.Key.Amount, busted = g.Key.Busted, values = g.Select(y => y.Value) })){
+                            string values = string.Join(" x ", item.values);
+                            <tr>
+                                <td>@values</td>
+                                <td>₡‎ @item.amount</td>
+                                <td>₡‎ @item.busted</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th class="align-content-center">
+                            <h2>TOTAL</h2>
+                        </th>
+                    </tr>
+                    <tr>
+                        <th>
+                            <h2>₡ @total</h2>
+                        </th>
+                    </tr>
+                </thead>
+            </table>
+
+            <p>**Pagamos al 85. <br />
+            **Sin tiquete no se paga. <br />
+            **Revise su tiquete. <br />
+            **Usted es el responsable de revisar: montos, números, hora, fecha y sorteo.</p>
+
+            <p>Gracias por su compra.
+            <strong>¡Mucha Suerte!</strong></p>
+
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        window.print();
+    </script>
+}

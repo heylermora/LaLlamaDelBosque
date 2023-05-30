@@ -1,0 +1,175 @@
+﻿@model Paper
+
+@{
+    ViewData["Title"] = "Crear Papelito";
+}
+
+<h1 class="display-4">@ViewData["Title"]</h1>
+
+<hr />
+
+<form asp-action="Copy">
+    <div class="form-group col-md-4">
+        <div class="input-group mb-3">
+            <input type="text" class="form-control col-md-2" placeholder="Papelito" name="id">
+            <input type="submit" class="btn btn-success" value="Copiar">
+        </div>
+    </div>
+</form>
+
+<br />
+
+<form asp-action="Save" asp-route-lottery="@Model.Lottery">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="row g-3">
+        @if (Model.Numbers.Any())
+        {
+            <div class="form-group col-md-2">
+                <label asp-for="Id" class="control-label">Papelito</label>
+                <input asp-for="Id" class="form-control" disabled readonly />
+                <span asp-validation-for="Id" class="text-danger"></span>
+            </div>
+            <div class="form-group col-md-4">
+                <label asp-for="Date" class="control-label">Fecha</label>
+                <input asp-for="Date" onchange="changeDate()" type="date" min="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control" id="date-input" />
+                <span asp-validation-for="Date" class="text-danger"></span>
+            </div>
+            <div class="form-group col-md-4">
+                <label asp-for="Lottery" class="control-label">Sorteo</label>
+                <select asp-for="Lottery" class="form-select">
+                    <option selected disabled>Seleccione un nombre</option>
+                    @if (ViewData["Names"] is not null)
+                    {
+                        @foreach (var item in ViewData["Names"] as IList<Lottery> ?? new List<Lottery>())
+                        {
+                            <option value="@item.Name">@item.Name</option>
+                        }
+                    }
+                </select>
+                <span asp-validation-for="Lottery" class="text-danger"></span>
+            </div>
+            <hr />
+            <div class="form-group col-auto">
+                <input type="submit" value="Crear" class="btn btn-primary" />
+                <input type="button" onclick="location.href='@Url.Action("Clear", "Lottery")'" value="Limpiar" class="btn btn-danger" />
+            </div>
+        }
+    </div>
+</form>
+<hr />
+<partial name="_Add" model="@new Numbers()" />
+        <hr />
+        @if (Model.Numbers.Any())
+        {
+            <div class="table-responsive container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Id</th>
+                            <th>Numero</th>
+                            <th>Monto</th>
+                            <th>Reventado</th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach(var item in Model.Numbers)
+                        {
+                            <tr>
+                                <td></td>
+                                <td>@item.Id</td>
+                                <td>@item.Value</td>
+                                <td>@item.Amount</td>
+                                <td>@item.Busted</td>
+                                <td>
+                                    <!-- Remove -->
+                                    <button type="button" class="btn" onclick="location.href='@Url.Action("Remove", "Lottery", new {PaperId= Model.Id, LineId= item.Id})'">
+                                        <span class="material-icons icon icon-danger">delete</span>
+                                    </button>
+                                </td>
+                            </tr>
+                            @if((int?)TempData["Id"] == Model.Id && (int?)TempData["LineId"] == item.Id && TempData["Method"]?.ToString() == "Remove")
+                            {
+                                <tr>
+                                    <td colspan="6">
+                                        <partial name="_Remove" model="new LotteryConnectionModel{PaperId= Model.Id, LineId= item.Id??1}" />
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2"></td>
+                            <th>TOTAL</th>
+                            <td><strong>@{var sum = Model.Numbers.Sum(x=>x.Amount) + Model.Numbers.Sum(x=>x.Busted);}@sum</strong></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        }
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script type="text/javascript">
+
+        function changeDate() {
+            var input, date;
+            input = document.getElementById('date-input');
+            date = input.value;
+            window.location.href = '@Url.Action("Create", "Lottery")?dateString=' + date;
+        }
+
+        function setFormat(id, key) {
+            if (document.getElementById(id).value != "") {
+                if (key !== 8) {
+                    document.getElementById(id).addEventListener('input', function (e) {
+                        e.target.value = e.target.value.replace(/[^\dA-Z]/g, '').replace(/(.{2})/g, '$1+').trim();
+                    });
+                }
+                else {
+                    newText = document.getElementById(id).value.substring(0, document.getElementById(id).value.length - 1);
+                    document.getElementById(id).value = newText;
+                }
+            }
+        }
+
+        function validateBustedInput(event) {
+            var amountInput = document.getElementById('amount-input');
+            var bustedInput = document.getElementById('busted-input');
+            var bustedSpan = document.getElementById('busted-span');
+
+            var bustedSpanHtml = bustedSpan.innerHTML;
+
+            var amount = parseFloat(amountInput.value);
+            var busted = parseFloat(bustedInput.value);
+
+
+            if (busted > amount) {
+                var errorMessage = 'El reventado debe ser menor o igual al monto.';
+                setTimeout(function () {
+                    bustedSpan.innerHTML = '<span id="busted-input-error">' + errorMessage + '</span>';
+                }, 0);
+                return false;
+            }
+            else {
+                bustedSpan.innerHTML = '';
+                return true;
+            }
+        }
+
+        function submitForm(event) {
+            if (validateBustedInput()) {
+                event.target.submit();
+            } else {
+                var bustedSpan = document.getElementById('busted-span');
+                var errorMessage = 'El reventado debe ser mayor que cero y menor o igual al monto.';
+                bustedSpan.innerHTML = '<span id="busted-input-error">' + errorMessage + '</span>';
+            }
+        }
+
+    </script>
+}

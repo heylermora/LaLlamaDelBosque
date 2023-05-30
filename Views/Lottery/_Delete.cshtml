@@ -1,0 +1,11 @@
+﻿@model LotterySearchModel
+
+<h6>¿Desea eliminar este papelito?</h6>
+
+<form asp-action="Delete" asp-route-id=@Model.Id>
+    <input type="hidden" name="lottery" value="@Model.Lottery" />
+    <input type="hidden" name="fromDate" value="@Model.FromDate" />
+    <input type="hidden" name="toDate" value="@Model.ToDate" />
+    <input type="submit" value="Eliminar" class="btn btn-danger" />
+    <input type="button" onclick="location.href='@Url.Action("Index", "Lottery")'" value="Cancelar" class="btn btn-secondary" />
+</form>

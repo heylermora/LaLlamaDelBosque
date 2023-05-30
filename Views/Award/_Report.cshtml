@@ -1,0 +1,64 @@
+﻿<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/LaLlamaDelBosque.styles.css" asp-append-version="true" />
+
+@model LaLlamaDelBosque.Models.Award
+
+@using System.Web;
+@using Microsoft.AspNetCore.Mvc;
+
+@{
+    ViewData["Title"] = "Premios del "+Model.Date.ToShortDateString();
+}
+
+<h1 class="display-4">@ViewData["Title"]</h1>
+
+<div class="container">
+    <div class="row justify-content-md-center">
+        <div class="col-xl-10">
+            <div class="accordion" id="accordionFlushExample">
+                <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Id</th>
+                                <th>Descripción</th>
+                                <th>Número</th>
+                                <th>Reventado</th>
+                                <th>Monto</th>
+                                <th>Premio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach(var line in Model.AwardLines)
+                            {
+                                <tr>
+                                    <td>@line.Order</td>
+                                    <td>@line.Description</td>
+                                    <td>@line.Number</td>
+                                    <td>@line.Busted</td>
+                                    <td>₡ @line.Amount</td>
+                                    <td class="table-active">₡ @line.Award</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th class="align-content-center">
+                                <h1>TOTAL PREMIOS</h1>
+                            </th>
+                        </tr>
+                        <tr>
+                            <th class="align-content-center">
+                                <hr />
+                                <h2>₡ @Model.AwardLines.Sum(m => m.Award)</h2>
+                            </th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

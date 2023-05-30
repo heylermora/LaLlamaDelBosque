@@ -1,10 +1,11 @@
 ﻿@model LaLlamaDelBosque.Models.SummaryModel
 
 @{
-    ViewData["Title"] = "Resumen de Créditos";
+    ViewData["TitleC"] = "Resumen de Créditos";
+    ViewData["TitleL"] = "Resumen de Sorteos";
 }
 
-<h1 class="display-4">@ViewData["Title"]</h1>
+<h1 class="display-4">@ViewData["TitleC"]</h1>
 
 <div class="container">
     <div class="d-flex justify-content-around flex-wrap">
@@ -13,9 +14,9 @@
                 <h5 class="card-title">CANTIDAD DE CLIENTES</h5>
             </div>
             <div class="card-body text-center">
-                <h1>@Model.Clients</h1>
+                <h1>@Model.Credit.Clients</h1>
                 <hr>
-                <h6>@Model.ClientsDescription</h6>
+                <h6>@Model.Credit.ClientsDescription</h6>
                 </div>
         </div>
         <div class="card" style="width: 22rem; margin-bottom: 12px; margin-top: 12px;">
@@ -23,7 +24,7 @@
                 <h5 class="card-title">TOTAL POR COBRAR</h5>
             </div>
             <div class="card-body text-center">
-                <h1>₡ @Model.Receivable</h1>
+                <h1>₡ @Model.Credit.Receivable</h1>
                 <hr>
                 <h6>pendientes</h6>
             </div>
@@ -33,7 +34,7 @@
                 <h5 class="card-title">ABONOS DE HOY</h5>
             </div>
             <div class="card-body text-center">
-                <h1>₡ @Model.Received</h1>
+                <h1>₡ @Model.Credit.Received</h1>
                 <hr>
                 <h6>pagados</h6>
             </div>
@@ -44,7 +45,7 @@
             </div>
             <div class="card-body">
                 <ul class="list-group list-group-flush">
-                    @foreach (var item in Model.MajorDebts)
+                    @foreach (var item in Model.Credit.MajorDebts)
                     {
                         <li class="list-group-item">@item.Name: ₡ @item.Amount</li>
                     }
@@ -57,7 +58,7 @@
             </div>
             <div class="card-body">
                 <ul class="list-group list-group-flush">
-                    @foreach(var item in Model.MinorDebts)
+                    @foreach(var item in Model.Credit.MinorDebts)
                     {
                         <li class="list-group-item">@item.Name: ₡ @item.Amount</li>
                     }
@@ -70,11 +71,60 @@
             </div>
             <div class="card-body">
                 <ul class="list-group list-group-flush">
-                    @foreach(var item in Model.InactiveClients)
+                    @foreach(var item in Model.Credit.InactiveClients)
                     {
                         <li class="list-group-item">@item.Name: ₡ @item.Amount</li>
                     }
                 </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr />
+
+<h1 class="display-4">@ViewData["TitleL"]</h1>
+
+<div class="container">
+    <div class="d-flex justify-content-around flex-wrap">
+        <div class="card" style="width: 18rem; margin-bottom: 12px; margin-top: 12px;">
+            <div class="card-header">
+                <h5 class="card-title">PAPELITOS</h5>
+            </div>
+            <div class="card-body text-center">
+                <h1>@Model.Lottery.Papers</h1>
+                <hr>
+                <h6>facturados</h6>
+            </div>
+        </div>
+        <div class="card" style="width: 18rem; margin-bottom: 12px; margin-top: 12px;">
+            <div class="card-header">
+                <h5 class="card-title">TOTAL MONTO</h5>
+            </div>
+            <div class="card-body text-center">
+                <h2>₡ @Model.Lottery.TotalAmount</h2>
+                <hr>
+                <h6>pagados</h6>
+            </div>
+        </div>
+        <div class="card" style="width: 18rem; margin-bottom: 12px; margin-top: 12px;">
+            <div class="card-header">
+                <h5 class="card-title">TOTAL REVENTADO</h5>
+            </div>
+            <div class="card-body text-center">
+                <h2>₡ @Model.Lottery.TotalBusted</h2>
+                <hr>
+                <h6>pagados</h6>
+            </div>
+        </div>
+        <div class="card" style="width: 18rem; margin-bottom: 12px; margin-top: 12px;">
+            <div class="card-header">
+                <h5 class="card-title">VENTA TOTAL</h5>
+            </div>
+            <div class="card-body text-center">
+                <h2>₡ @Model.Lottery.Total</h2>
+                <hr>
+                <h6>pagados</h6>
             </div>
         </div>
     </div>

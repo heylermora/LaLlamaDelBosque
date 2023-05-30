@@ -1,0 +1,56 @@
+﻿@model AwardLines
+
+
+<form asp-action="Edit" asp-route-awardid="@TempData["Id"]" class="row g-3">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <tr>
+        <td>
+            <div class="form-group col-auto">
+                <input asp-for="Order" class="form-control" readonly/>
+                <span asp-validation-for="Order" class="text-danger"></span>
+            </div>
+        </td>
+        <td>
+            <div class="form-group col-auto">
+                <input asp-for="Description" class="form-control" readonly/>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+        </td>
+        <td>
+            <div class="form-group col-auto">
+                <input asp-for="Number" class="form-control" 
+                `max="99" />
+                <span asp-validation-for="Number" class="text-danger"></span>
+            </div>
+        </td>
+        <td>
+            <div class="form-group col-auto">
+                <input asp-for="Busted" class="form-control"/>
+                <span asp-validation-for="Busted" class="text-danger"></span>
+            </div>
+        </td>
+        <td>
+            <div class="form-group col-auto">
+                <input asp-for="Amount" class="form-control" min="10"/>
+                <span asp-validation-for="Amount" class="text-danger"></span>
+            </div>
+        </td>
+        <td>
+            <div class="form-group col-auto">
+                <input asp-for="Award" class="form-control" />
+                <span asp-validation-for="Award" class="text-danger"></span>
+            </div>
+        </td>
+        <td colspan="2">
+            <div class="form-group col-auto">
+                <input type="submit" value="Guardar" class="btn btn-primary"/>
+                <input type="button" onclick="location.href='@Url.Action("Index", "Credit")'" value="Cancelar" class="btn btn-secondary" />
+            </div>
+        </td>
+    </tr>
+</form>
+
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

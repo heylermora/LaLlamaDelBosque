@@ -1,6 +1,5 @@
 ﻿<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-
 @model IEnumerable<LaLlamaDelBosque.Models.Note>
 
 @{
@@ -31,9 +30,9 @@
     <div class="d-flex justify-content-around flex-wrap">
         @foreach(var item in Model)
         {
-            <div class="card" style="width: 18rem; margin-bottom: 12px; margin-top: 12px;">
+            <div class="card" style="width: 20rem; margin-bottom: 6px; margin-top: 12px;">
                     <div class="card-header">
-                        <h5 class="card-title">@item.Title</h5>
+                    <h5 class="card-title">@item.Title | ₡ @item.Value</h5>
                     </div>
                     <div class="card-body">
                         <div class="btn-group mx-auto" role="group">
@@ -47,16 +46,12 @@
                                 onclick="location.href='@Url.Action("Delete", "Note", new {Id= item.Id})'">
                                 <span class="material-icons icon icon-danger">delete</span>
                             </button>
+                            <!-- Image -->
+                            <button type="button" class="btn"
+                                onclick="location.href='@Url.Action("Delete", "Note", new {Id= item.Id})'">
+                                <span class="material-icons icon icon-danger">image</span>
+                            </button>
                         </div>
-
-                        <hr>
-
-                        <ul class="list-group list-group-flush">
-                            @foreach( var desc in item.Description.Split('\n'))
-                            {
-                                <li class="list-group-item">@desc</li>
-                            }
-                        </ul>
                     </div>
                 </div>
             }

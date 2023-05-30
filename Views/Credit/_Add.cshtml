@@ -1,5 +1,4 @@
-﻿@model LaLlamaDelBosque.Models.CreditLine
-
+﻿@model CreditLine
 
 <form asp-action="Add" asp-route-id = class="row g-3">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
@@ -26,6 +25,7 @@
     </div>
     <div class="form-group">
         <input type="submit" value="Crear" class="btn btn-primary" />
+        <input type="button" onclick="location.href='@Url.Action("Index", "Credit")'" value="Cancelar" class="btn btn-secondary" />
     </div>
 </form>
 

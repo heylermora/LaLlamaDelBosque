@@ -1,0 +1,50 @@
+﻿<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+@model LotterySearchModel
+
+<div class="container">
+    <form class="d-flex justify-content-center" role="search" asp-controller="Lottery" asp-action="Index" method="get">
+        <div class="row">
+            <div class="col-6">
+                <div class="form-group">
+                    <label asp-for="Id" class="control-label">Papelito</label>
+                    <input asp-for="Id" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label asp-for="FromDate" class="control-label">Desde</label>
+                    <input asp-for="FromDate" type="date" class="form-control">
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="form-group">
+                    <label asp-for="Lottery" class="control-label">Sorteo</label>
+                    <select asp-for="Lottery"class="form-select">
+                        <option selected disabled>Seleccione un nombre</option>
+                        <option value="TODOS">TODOS</option>
+                        @if(ViewData["Names"] is not null)
+                        {
+                            @foreach(var item in ViewData["Names"] as IList<Lottery> ?? new List<Lottery>())
+                            {
+                                <option value="@item.Name">@item.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label asp-for="ToDate" class="control-label">Hasta</label>
+                    <input asp-for="ToDate" type="date" class="form-control">
+                </div>
+            </div>
+            <div class="col-12 mt-2 text-end">
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Buscar</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

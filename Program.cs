@@ -1,6 +1,8 @@
 using LaLlamaDelBosque.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Negotiate;
+using Rotativa.AspNetCore;
+using IHostingEnvironment = Microsoft.AspNetCore.Hosting.IHostingEnvironment;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,7 +13,7 @@ builder.Services.AddRazorPages();
 
 builder.Services.AddSession(options =>
 {
-	options.IdleTimeout = TimeSpan.FromMinutes(50);
+	options.IdleTimeout = TimeSpan.FromMinutes(1);
 });
 builder.Services.AddAuthentication(options =>
 {
@@ -43,7 +45,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseSession();
 
-
 app.MapControllerRoute(
 	name: "default",
 	pattern: "{controller=Auth}/{action=Index}/{id?}");
@@ -52,4 +53,6 @@ app.MapControllerRoute(
 	name: "schedule",
 	pattern: "{controller=Schedule}/{action=Schedule}/{id?}");
 
+IWebHostEnvironment env = app.Environment;
+RotativaConfiguration.Setup((IHostingEnvironment)env);
 app.Run();

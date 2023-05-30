@@ -1,6 +1,9 @@
 ﻿<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/LaLlamaDelBosque.styles.css" asp-append-version="true" />
 
-@model IEnumerable<LaLlamaDelBosque.Models.Credit>
+@model IEnumerable<Credit>
 
 @using System.Web;
 @using Microsoft.AspNetCore.Mvc;
@@ -11,27 +14,26 @@
 
 <h1 class="display-4">@ViewData["Title"]</h1>
 
-<div class="btn-group mx-auto" role="group">
-    <!-- Add -->
-    <button type="button" class="btn"
-            onclick="location.href='@Url.Action("Create", "Credit")'">
-        <span class="material-icons icon icon-primary">add_circle</span>
-    </button>
-    <!-- Send -->
-    <button type="button" class="btn"
-            onclick="window.open('@HttpUtility.HtmlDecode(String.Format(ConfigurationModel.SummaryMessage, $"https://api.whatsapp.com/send/?phone=83232377&text=", TempData["Message"]))')">
-        <span class="material-icons icon icon-success">send</span>
-    </button>
-</div>
-
 <div class="container">
+    <div class="btn-group mx-auto col-2" role="group">
+        <!-- Add -->
+        <button type="button" class="btn"
+                onclick="location.href='@Url.Action("Create", "Credit")'">
+            <span class="material-icons icon icon-primary">add_circle</span>
+        </button>
+        <!-- PDF -->
+        <button type="button" class="btn"
+                    onclick="location.href='@Url.Action("IndexPdf", "Credit")'">
+            <span class="material-icons icon icon-success">article</span>
+        </button>
+    </div>
+
     <div class="row justify-content-md-center">
         <div class="col-xl-10">
             <form class="d-flex" role="search" asp-controller="Credit" asp-action="Index" method="get">
                 <div class="input-group form-floating mb-4 mt-1">
-                    <input type="search" class="form-control" name="SearchString" placeholder="Buscar...">
+                    <input onchange="searchCredits()" id="searchInput" type="search" class="form-control" name="SearchString" placeholder="Buscar...">
                     <label for="floatingInput">Buscar</label>
-                    <span class="input-group-text material-icons icon icon-dark">search</span>
                 </div>
             </form>
             <div class="accordion" id="accordionFlushExample">
@@ -42,7 +44,7 @@
                         @if (item.Client.Id != (int?)TempData["Id"])
                         {
                             <h2 class="accordion-header" id="flush-headingOne">
-                                <button class="accordion-button collapsed p-2" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-@item.Client.Id" aria-expanded="false" aria-controls="flush-collapse-@item.Client.Id">
+                                <button class="accordion-button collapsed p-2" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-@item.Client.Id" aria-expanded="false" aria-controls="flush-collapse-@item.Client.Id" on>
                                     <div class="d-flex align-items-start">
                                         <span class="material-icons star">
                                             account_circle
@@ -133,18 +135,20 @@
                                                         onclick="location.href='@Url.Action("Clear", "Credit", new {id = item.Client.Id})'">
                                                             <span class="material-icons icon icon-danger">cancel</span>
                                                     </button>
-                                                    <!-- Send -->
-                                                    <button type="button" class="btn"
-                                                        onclick="window.open('@HttpUtility.HtmlDecode(String.Format(ConfigurationModel.BalanceMessage, $"https://api.whatsapp.com/send/?phone={@item.Client.Phone}&text=", item.Client.Name, item.CreditSummary.Total))')">
-                                                        <span class="material-icons icon icon-success">send</span>
+                                                    <!-- Copy -->
+                                                    <button type="button" class="btn" id="btnCopy" onclick="copyToClipboard('@item.Client.Id', '@item.Client.Name', '@item.CreditSummary.Total')">
+
+                                                        <span class="material-icons icon icon-success">content_copy</span>
                                                     </button>
                                                 </td>
                                                 <td>Total</td>
-                                                <td>₡ @item.CreditSummary.Total</td>
+                                                <td id="TotalSummary">₡ @item.CreditSummary.Total</td>
                                                 <td></td>
                                             </tr>
                                         </tfoot>
                                     </table>
+                                    <div id="CopyMessage-@item.Client.Id">
+                                    </div>
                                 </div>
                             </div>
                         }
@@ -298,10 +302,9 @@
                                                     onclick="location.href='@Url.Action("Clear", "Credit", new {id = item.Client.Id})'">
                                                         <span class="material-icons icon icon-danger">cancel</span>
                                                     </button>
-                                                    <!-- Send -->
-                                                    <button type="button" class="btn"
-                                                    onclick="window.open('@HttpUtility.HtmlDecode(String.Format(ConfigurationModel.BalanceMessage, $"https://api.whatsapp.com/send/?phone={@item.Client.Phone}&text=", item.Client.Name, item.CreditSummary.Total))')">
-                                                        <span class="material-icons icon icon-success">send</span>
+                                                    <!-- Copy -->
+                                                    <button type="button" class="btn" id="btnCopy">
+                                                        <span class="material-icons icon icon-success">content_copy</span>
                                                     </button>
                                                 </td>
                                                 <td>Total</td>
@@ -310,6 +313,10 @@
                                             </tr>
                                         </tfoot>
                                     </table>
+                                    <div id="CopyMessage" class="alert alert-success" role="alert" style="visibility: hidden">
+                                        ¡Copiado!
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
                                 </div>
                             </div>
                         }
@@ -319,3 +326,52 @@
         </div>
     </div>
 </div>
+
+@section scripts{
+    <script type="text/javascript">
+        function copyToClipboard(id, name, total) {
+
+            // Get the text field
+
+            const textArea = document.createElement("textarea");
+
+            textArea.value = "Hola ".concat(name, ", *La llama del Bosque* le saluda! 🔥🌳\n", "@ConfigurationModel.BalanceMessage ₡", total, ".*");
+            textArea.setAttribute("readonly", "");
+
+            // Select the text field
+            textArea.select();
+
+            // Copy the text inside the text field
+            navigator.clipboard.writeText(textArea.value);
+
+            document.getElementById('CopyMessage-'.concat(id)).innerHTML = '<div class="alert alert-success" role = "alert">¡Copiado!<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+            //.style.visibility = "visible";
+        }
+
+
+        document.addEventListener("DOMContentLoaded", function () {
+            scrollToItem(@TempData["Id"]);
+        });
+
+        function scrollToItem(id) {
+            document.getElementById(`flush-collapse-${id}`).scrollIntoView();
+        }
+
+        function searchCredits() {
+            // Declare variables
+            var input, filter;
+            input = document.getElementById('searchInput');
+            filter = input.value.toUpperCase();
+
+            $.ajax({
+                url: '@Url.Action("Index","Credit")',
+                type: 'GET',
+                cache: false,
+                data: filter,
+            });
+
+            window.location.reload();
+
+        }
+    </script>
+}

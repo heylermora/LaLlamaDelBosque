@@ -1,12 +1,15 @@
+/* Fuentes */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lora&display=swap');
 :root {
-    --background: #189AB4;
-    --danger: #EF5B5B;
-    --dark: #05445E;
-    --light: #D4F1F4;
-    --primary: #3C79F5;
+    --background: #00CED1;
+    --danger: #FF4136;
+    --dark: #0B2239;
+    --light: #FFFFFF;
+    --primary: #3B82F6;
     --secondary: #2DCDDF;
     --warning: #F6C324;
-    --success: #3B9212;
+    --success: #2B8A3E;
 }
 
 
@@ -26,7 +29,8 @@ html {
 }
 
 body {
-    background: linear-gradient(0deg, var(--background) 0%, var(--light) 100%);
+    font-family: 'Montserrat', sans-serif;
+    background: var(--background);
     margin-bottom: 60px;
 }
 
@@ -42,9 +46,22 @@ nav {
     color: var(--light);
 }
 
+.nav-link:focus {
+    color: var(--light);
+}
 
 .navbar-text {
     color: var(--light);
+}
+
+.footer {
+    background-color: var(--dark);
+}
+
+h1, h2 {
+    font-family: 'Lora', serif;
+    font-weight: 700;
+    margin: 1px;
 }
 
 .btn-primary {
@@ -58,9 +75,8 @@ nav {
 }
 
 .btn-success {
-    background-color: white;
+    background-color: var(--success);
     color: var(--light);
-    border-color: none;
 }
 
 .btn {
@@ -98,3 +114,11 @@ span.material-icons.star {
     border-radius: 0.25rem;
 }
 
+.table {
+    background-color: white;
+    border-radius: 0.25rem;
+}
+
+.table-striped-columns td:not(:last-child) {
+    border-right: 1px solid #ddd;
+}

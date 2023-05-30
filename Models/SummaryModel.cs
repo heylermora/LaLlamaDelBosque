@@ -2,7 +2,15 @@
 
 namespace LaLlamaDelBosque.Models
 {
+
     public class SummaryModel
+    {
+        public SummaryCreditModel Credit { get; set; } = new SummaryCreditModel();
+        public SummaryLotteryModel Lottery { get; set; } = new SummaryLotteryModel();
+
+    }
+
+    public class SummaryCreditModel
     {
         public int Clients { get; set; }
         public string ClientsDescription { get; set; } = "personas";
@@ -18,4 +26,13 @@ namespace LaLlamaDelBosque.Models
         public string Name { get; set; } = "";
         public string Amount { get; set; } = "";
     }
+
+    public class SummaryLotteryModel {
+        public int Papers { get; set; }
+        public string TotalAmount { get; set; } = string.Empty;
+        public string TotalBusted { get; set; } = string.Empty;
+        public string Total { get; set; } = string.Empty;
+
+    }
+
 }

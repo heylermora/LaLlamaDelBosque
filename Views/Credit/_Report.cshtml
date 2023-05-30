@@ -1,0 +1,79 @@
+﻿<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/LaLlamaDelBosque.styles.css" asp-append-version="true" />
+
+@model IEnumerable<LaLlamaDelBosque.Models.Credit>
+
+@using System.Web;
+@using Microsoft.AspNetCore.Mvc;
+
+@{
+    ViewData["Title"] = "Créditos de Clientes";
+}
+
+<h1 class="display-4">@ViewData["Title"]</h1>
+
+<div class="container">
+    <div class="row justify-content-md-center">
+        <div class="col-xl-10">
+            <div class="accordion" id="accordionFlushExample">
+                @foreach (var item in Model)
+                {
+                    var cumulative = 0D;
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="align-content-center" colspan="6"><h1>@item.Client.Name</h1></th>
+                            </tr>
+                            <tr>
+                                <th>Id</th>
+                                <th>Fecha</th>
+                                <th>Hora</th>
+                                <th>Descripción</th>
+                                <th>Precio</th>
+                                <th>Acumulado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach(var line in item.CreditLines) 
+                            {
+                                <tr>
+                                    <td>@line.Id</td>
+                                    <td>@line.CreatedDate.ToShortDateString()</td>
+                                    <td>@line.CreatedDate.ToShortTimeString()</td>
+                                    <td>@line.Description</td>
+                                    <td>₡ @line.Amount</td>
+                                    <td class="table-active">@{cumulative += @line.Amount;}₡ @cumulative</td>
+                                </tr>
+                            }
+                            </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4">
+                                </td>
+                                <td>Total</td>
+                                <td id="TotalSummary">₡ @item.CreditSummary.Total</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                }
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th class="align-content-center">
+                                <h1>TOTAL</h1>
+                            </th>
+                        </tr>
+                        <tr>
+                            <th class="align-content-center">
+                                <hr />
+                                <h2>₡ @Model.Sum(m => m.CreditSummary.Total)</h2>
+                            </th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

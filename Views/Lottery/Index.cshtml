@@ -1,0 +1,130 @@
+﻿@model IEnumerable<Paper>
+
+@{
+	ViewData["Title"] = "Listado de Ventas";
+    var searchModel = ViewData["LotterySearchModel"] as LotterySearchModel;
+	var total = 0d;
+	var totales = 0d;
+	var value = 0;
+}
+
+<h1 class="display-4">@ViewData["Title"]</h1>
+
+<hr />
+
+<partial name="_Search" model="@searchModel" />
+    
+<hr />
+
+@if (Model != null && Model.Any())
+{
+	<div class="row justify-content-center">
+		@for (var i = 0; i < 5; i++)
+		{
+			<div class="col-2 table-responsive">
+				<table class="table table-striped-columns">
+					<thead>
+						<tr>
+							<td>#</td>
+							<td>Monto</td>
+							<td>Rtado</td>
+						</tr>
+					</thead>
+					<tbody>
+						@for (var j = 0; j < 20; j++)
+						{
+							<tr>
+								<td>@{value = 20 * i + j;}@value</td>
+								@if(Model.Sum(m => m.Numbers.Where(n => n.Value == value).Sum(n => n.Amount)) > 0){
+									<td>₡ @Model.Sum(m => m.Numbers.Where(n => n.Value == value).Sum(n => n.Amount))</td>
+								}else{
+									<td></td>
+								}
+								@if(Model.Sum(m => m.Numbers.Where(n => n.Value == value).Sum(n => n.Busted)) > 0){
+									<td>₡ @Model.Sum(m => m.Numbers.Where(n => n.Value == value).Sum(n => n.Busted))</td>
+								}else{
+									<td></td>
+								}
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
+
+	<div class="row justify-content-center">
+		<div class="col-10">
+			<div class="table-responsive">
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th>Papelito</th>
+							<th>Sorteo</th>
+							<th>Fecha</th>
+							<th>Monto</th>
+							<th>Reventado</th>
+							<th>Total</th>
+							<th>Opciones</th>
+						</tr>
+					</thead>
+					<tbody>	
+						@foreach(var item in Model){
+							<tr>
+								<td>@item.Id</td>		
+								<td>@item.Lottery</td>
+								<td>@item.Date.ToShortDateString()</td>
+								<td>₡ @item.Numbers.Sum(n=>n.Amount)</td>
+								<td>₡ @item.Numbers.Sum(n=>n.Busted)</td>
+								<td>₡ @{
+										total = item.Numbers.Sum(n => n.Amount) + item.Numbers.Sum(n => n.Busted); totales += total;
+									}@total</td>
+								<td>
+									<div class="btn-group mx-auto col-2" role="group">
+										<!-- Details -->
+										<button type="button" class="btn" onclick="location.href='@Url.Action("Print", "Lottery", new{id=item.Id})'">
+											<span class="material-icons icon-success">visibility</span>
+										</button>
+										@if (item.Hour > DateTime.Now.TimeOfDay && item.Date >= DateTime.Today)
+										{
+											<!-- Delete -->
+											<button type="button" class="btn btn-delete" data-id="@item.Id">
+												<span class="material-icons icon-danger">delete</span>
+											</button>
+										}
+									</div>
+								</td>
+							</tr>
+							<tr id="delete-partial-@item.Id" style="display: none;">
+								<td colspan="7">
+									@{searchModel.Id = item.Id;}
+									<partial name="_Delete" model="searchModel" />
+								</td>
+							</tr>
+						}
+					</tbody>
+					<tfoot>
+						<tr>
+							<td colspan="4"></td>
+							<td>TOTAL</td>
+							<td><strong>₡ @totales</strong></td>
+							<td></td>
+						</tr>
+					</tfoot>
+				</table>
+			</div>
+		</div>
+	</div>
+}
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script type="text/javascript">
+		$(function () {
+			$(".btn-delete").click(function () {
+				var id = $(this).data("id");
+				$("#delete-partial-" + id).show();
+			});
+		});
+    </script>
+}

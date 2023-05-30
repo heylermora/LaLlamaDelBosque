@@ -1,0 +1,37 @@
+﻿@model Item
+
+@{
+    ViewData["Title"] = "Crear Configuración";
+}
+
+<h1 class="display-6">@ViewData["Title"]</h1>
+
+<hr />
+
+<form asp-action="Add" class="row g-3">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="form-group">
+        <input asp-for="Id" class="form-control visually-hidden" />
+    </div>
+    <div class="form-group col-auto">
+        <label asp-for="Name" class="form-label">Descripción</label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+    <div class="form-group col-auto">
+        <label asp-for="Value" class="form-label">Cantidad</label>
+        <div class="input-group">
+            <input asp-for="Value" class="form-control" />
+            <div class="input-group-text">veces</div>
+        </div>
+        <span asp-validation-for="Value" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <input type="submit" value="Crear" class="btn btn-primary" />
+        <input type="button" onclick="location.href='@Url.Action("Setting", "Award")'" value="Cancelar" class="btn btn-secondary" />
+    </div>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

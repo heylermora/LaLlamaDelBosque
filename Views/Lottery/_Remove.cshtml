@@ -1,0 +1,8 @@
+﻿@model LotteryConnectionModel
+
+<h6>¿Desea eliminar la línea @Model.LineId de la lista</h6>
+
+<form asp-action="Remove" asp-route-lineid=@Model.LineId asp-route-paperid=@Model.PaperId>
+    <input type="submit" value="Eliminar" class="btn btn-danger" />
+    <input type="button" onclick="location.href='@Url.Action("Create", "Lottery")'" value="Cancelar" class="btn btn-secondary" />
+</form>

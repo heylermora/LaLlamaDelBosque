@@ -2,6 +2,10 @@
 using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Rotativa.AspNetCore;
+using Rotativa.AspNetCore.Options;
+using System;
+using System.Globalization;
 
 namespace LaLlamaDelBosque.Controllers
 {
@@ -18,20 +22,30 @@ namespace LaLlamaDelBosque.Controllers
 
 		// GET: CreditController
 		public ActionResult Index(string searchString)
-        {
+		{
 			var credits = _credits.Credits;
-
 			if(!string.IsNullOrEmpty(searchString))
 			{
 				credits = credits.Where(s => s.Client.Name.ToLower().Contains(searchString.ToLower())).ToList();
 			}
-
-			TempData["Message"] = GetMessage(_credits.Credits);
+			credits = credits.OrderBy(c => c.Client.Name).ToList();
 			return View(credits);
-        }
+		}
 
-        // GET: CreditController/Create
-        public ActionResult Create()
+		public ActionResult IndexPdf()
+		{
+			TempData["Message"] = GetMessage(_credits.Credits);
+
+			return new ViewAsPdf("_Report", _credits.Credits)
+			{
+				PageSize = Size.A4,
+				FileName = $"Resumen del {DateTime.Today.ToShortDateString()}.pdf",
+				PageMargins = new Margins(10, 20, 10, 20)
+			};
+		}
+
+		// GET: CreditController/Create
+		public ActionResult Create()
         {
             return View();
         }
@@ -48,7 +62,7 @@ namespace LaLlamaDelBosque.Controllers
                     Client = new Client()
                     {
                         Id = _credits.Credits.LastOrDefault()?.Client.Id + 1 ?? 1,
-                        Name = collection["name"],
+                        Name = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(collection["name"]),
                         Phone = collection["phone"]
                     }
 				};
@@ -121,13 +135,6 @@ namespace LaLlamaDelBosque.Controllers
         }
 
 		#region Credit Line
-		// GET: CreditController/Add
-		public ActionResult Add(int id)
-		{
-			TempData["Id"] = id;
-			TempData["Method"] = "Add";
-			return RedirectToAction(nameof(Index));
-		}
 
 		// POST: CreditController/Add
 		[HttpPost]
@@ -302,13 +309,13 @@ namespace LaLlamaDelBosque.Controllers
 
 		private CreditModel GetCredits()
 		{
-			var credits = JsonFile.Read<CreditModel>("Credits", new CreditModel());
+			var credits = JsonFile.Read("Credits", new CreditModel());
 			return credits;
 		}
 
 		private void SetCredits(CreditModel credits)
 		{
-			JsonFile.Write<CreditModel>("Credits", credits);
+			JsonFile.Write("Credits", credits);
 		}
 
 		private string GetMessage(IList<Credit> credits)

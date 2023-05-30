@@ -4,4 +4,5 @@
 
 <form asp-action="Delete" asp-route-id=@Model.Client.Id>
     <input type="submit" value="Eliminar" class="btn btn-danger" />
+    <input type="button" onclick="location.href='@Url.Action("Index", "Credit")'" value="Cancelar" class="btn btn-secondary" />
 </form>

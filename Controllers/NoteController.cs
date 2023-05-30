@@ -24,7 +24,6 @@ namespace KrakenNotes.Web.Controllers
 
 		public IActionResult Index()
 		{
-			_notes.Notes = _notes.Notes.OrderBy(n => n.Description.Split('\n').Length).ToList();
 			return View(_notes.Notes);
 		}
 
@@ -57,7 +56,7 @@ namespace KrakenNotes.Web.Controllers
 			if(note != null)
 			{
 				note.Title = model.Title;
-				note.Description = model.Description;
+				note.Value = model.Value;
 				SetNotes(_notes);
 			}
 				return RedirectToAction("Index");
@@ -87,7 +86,7 @@ namespace KrakenNotes.Web.Controllers
 
 			var sResult = result.Select(n => new Note
 			{
-				Description = n.Description,
+				Value = n.Value,
 				Id = n.Id,
 				Title = n.Title
 			});
