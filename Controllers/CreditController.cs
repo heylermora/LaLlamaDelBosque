@@ -136,6 +136,14 @@ namespace LaLlamaDelBosque.Controllers
 
 		#region Credit Line
 
+		// GET: CreditController/Add
+		public ActionResult Add(int id)
+		{
+			TempData["Id"] = id;
+			TempData["Method"] = "Add";
+			return RedirectToAction(nameof(Index));
+		}
+
 		// POST: CreditController/Add
 		[HttpPost]
 		[ValidateAntiForgeryToken]
