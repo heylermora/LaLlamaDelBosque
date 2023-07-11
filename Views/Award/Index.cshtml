@@ -3,6 +3,7 @@
 <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 <link rel="stylesheet" href="~/LaLlamaDelBosque.styles.css" asp-append-version="true" />
 
+
 @model IEnumerable<Award>
 
 @using System.Web;
@@ -13,17 +14,13 @@
 }
 
 <h1 class="display-4">@ViewData["Title"]</h1>
+<p>Los datos de esta página son obtenidos de <a href="https://www.loteriasloterias.com/">www.loteriasloterias.com</a></p>
 
 <div class="btn-group mx-auto" role="group">
-    <!-- Add -->
+    <!-- Update -->
     <button type="button" class="btn"
             onclick="location.href='@Url.Action("Create", "Award")'">
-        <span class="material-icons icon icon-primary">add_circle</span>
-    </button>
-    <!-- Setting -->
-    <button type="button" class="btn"
-            onclick="location.href='@Url.Action("Setting", "Award")'">
-        <span class="material-icons icon icon-success">settings</span>
+        <span class="material-icons icon icon-primary">update</span>
     </button>
 </div>
 
@@ -33,7 +30,7 @@
             <div class="accordion" id="accordionFlushExample">
                 @foreach (var item in Model)
                 {
-                    <div class="accordion-item p-1 mb-2">
+                    <div class="accordion-item p-1 mb-2" id="elementId">
                         @if (item.Id != (int?)TempData["Id"])
                         {
                             <h2 class="accordion-header" id="flush-headingOne">
@@ -56,10 +53,9 @@
                                         <thead>
                                             <tr>
                                                 <th colspan="2">
-                                                    <!-- PDF -->
-                                                    <button type="button" class="btn"
-                                                        onclick="location.href='@Url.Action("DetailsPdf", "Award")'">
-                                                        <span class="material-icons icon icon-success">article</span>
+                                                    <!-- Copy -->
+                                                    <button type="button" class="btn" onclick="copyToClipboard('@item.Id')">
+                                                        <span class="material-icons icon icon-success">content_copy</span>
                                                     </button>
                                                     <!-- Delete -->
                                                     <button type="button" class="btn"
@@ -70,14 +66,17 @@
                                             </tr>
                                         </thead>
                                     </table>
+                                    <div id="CopyMessage-@item.Id"></div>
                                     <table class="table">
                                         <thead>  
                                             <tr>
                                                 <th>Id</th>
                                                 <th>Descripción</th>
                                                 <th>Número</th>
-                                                <th>Reventado</th>
                                                 <th>Monto</th>
+                                                <th>Reventado</th>
+                                                <th># Monto</th>
+                                                <th># Reventado</th>
                                                 <th>Premio</th>
                                                 <th></th>
                                             </tr>
@@ -89,8 +88,10 @@
                                                     <td>@line.Order</td>
                                                     <td>@line.Description</td>
                                                     <td>@line.Number</td>
-                                                    <td>@line.Busted</td>
                                                     <td>₡ @line.Amount</td>
+                                                    <td>₡ @line.Busted</td>
+                                                    <td>@line.TimesAmount</td>
+                                                    <td>@line.TimesBusted</td>
                                                     <td class="table-active">₡ @line.Award</td>
                                                     <td style="text-align:center">
                                                         <div class="btn-group mx-auto" role="group">
@@ -103,6 +104,14 @@
                                                 </tr>
                                             }
                                         </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="6"></td>
+                                                <td>Total</td>
+                                                <td>₡ @item.AwardLines.Sum(x => x.Award)</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
                                     </table>
                                 </div>
                             </div>
@@ -129,10 +138,9 @@
                                         <thead>
                                             <tr>
                                                 <th colspan="2">
-                                                    <!-- PDF -->
-                                                    <button type="button" class="btn"
-                                                    onclick="location.href='@Url.Action("DetailsPdf", "Award", new {Id= item.Id})'">
-                                                        <span class="material-icons icon icon-success">article</span>
+                                                    <!-- Copy -->
+                                                    <button type="button" class="btn" onclick="copyToClipboard('@item.Id')">
+                                                        <span class="material-icons icon icon-success">content_copy</span>
                                                     </button>
                                                     <!-- Delete -->
                                                     <button type="button" class="btn"
@@ -154,14 +162,17 @@
                                             </tr>
                                         </thead>
                                     </table>
+                                    <div id="CopyMessage-@item.Id"></div>
                                     <table class="table">
                                         <thead>
                                             <tr>
                                                 <th>Id</th>
                                                 <th>Descripción</th>
                                                 <th>Número</th>
-                                                <th>Reventado</th>
                                                 <th>Monto</th>
+                                                <th>Reventado</th>
+                                                <th># Monto</th>
+                                                <th># Reventado</th>
                                                 <th>Premio</th>
                                                 <th></th>
                                             </tr>
@@ -179,8 +190,10 @@
                                                         <td>@line.Order</td>
                                                         <td>@line.Description</td>
                                                         <td>@line.Number</td>
-                                                        <td>@line.Busted</td>
                                                         <td>₡ @line.Amount</td>
+                                                        <td>₡ @line.Busted</td>
+                                                        <td>@line.TimesAmount</td>
+                                                        <td>@line.TimesBusted</td>
                                                         <td class="table-active">₡ @line.Award</td>
                                                         <td style="text-align:center">
                                                             <div class="btn-group mx-auto" role="group">
@@ -194,6 +207,14 @@
                                                 }
                                             }
                                         </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="6"></td>
+                                                <td>Total</td>
+                                                <td>₡ @item.AwardLines.Sum(x => x.Award)</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
                                     </table>
                                 </div>
                             </div>
@@ -207,10 +228,35 @@
 
 @section scripts{
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script type="text/javascript">
         function scrollToItem(id) {
             const element = document.getElementById('flush-collapse-'.concat(id));
             element.scrollIntoView();
+        }
+        function copyToClipboard(id) {
+            var table = document.getElementById("elementId");
+            html2canvas(table).then(function (canvas) {
+                canvas.toBlob(function (blob) {
+                    var imageBlob = new Blob([blob], { type: "image/png" });
+
+                    // Copiar imagen al portapapeles
+                    if (navigator.clipboard && navigator.clipboard.write) {
+                        navigator.clipboard.write([
+                            new ClipboardItem({
+                                "image/png": imageBlob
+                            })
+                        ]).then(function () {
+                            console.log('La imagen se copió al portapapeles correctamente.');
+                            document.getElementById('CopyMessage-'.concat(id)).innerHTML = '<div class="alert alert-success" role = "alert">¡Copiado!<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+                        }).catch(function (error) {
+                            console.error('Error al copiar la imagen al portapapeles:', error);
+                        });
+                    } else {
+                        console.warn('La API Clipboard no está soportada en este navegador.');
+                    }
+                });
+            });
         }
     </script>
 }

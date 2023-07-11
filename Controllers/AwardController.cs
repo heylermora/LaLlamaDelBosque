@@ -1,9 +1,11 @@
 ﻿using LaLlamaDelBosque.Models;
 using LaLlamaDelBosque.Utils;
+using LaLlamaDelBosque.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Rotativa.AspNetCore;
 using Rotativa.AspNetCore.Options;
+
 
 namespace LaLlamaDelBosque.Controllers
 {
@@ -12,13 +14,15 @@ namespace LaLlamaDelBosque.Controllers
 	public class AwardController: Controller
 	{
 		private AwardModel _awards;
-
 		private AwardSetting _setting;
+
+		private ScrapingService _scrapingService;
 
 		public AwardController()
 		{
 			_awards = GetAwards();
 			_setting = GetSetting();
+			_scrapingService = new ScrapingService();
 		}
 
 		// GET: CreditController
@@ -41,73 +45,20 @@ namespace LaLlamaDelBosque.Controllers
 		// GET: AwardController/Create
 		public ActionResult Create()
 		{
-			return View();
-		}
-
-		// POST: AwardController/Create
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public ActionResult Create(IFormCollection collection)
-		{
-			try
+			var award = _awards?.Awards?.FirstOrDefault(x => x.Date == DateTime.Today);
+			if(award == null)
 			{
-				var award = new Award()
-				{
-					Id = _awards.Awards.LastOrDefault()?.Id + 1 ?? 1,
-					Date = DateTime.Parse(collection["date"]),
-					AwardLines = new List<AwardLines>()
-					{
-						new AwardLines()
-						{
-							Order = 1,
-							Description = "La Primera"
-						},
-						new AwardLines()
-						{
-							Order = 2,
-							Description = "Nica 11 A.M."
-						},
-						new AwardLines()
-						{
-							Order = 3,
-							Description = "Tica Día"
-						},
-						new AwardLines()
-						{
-							Order = 4,
-							Description = "Nica 3 P.M."
-						},
-						new AwardLines()
-						{
-							Order = 5,
-							Description = "Tica 4 P.M."
-						},
-						new AwardLines()
-						{
-							Order = 6,
-							Description = "Primera"
-						},
-						new AwardLines()
-						{
-							Order = 7,
-							Description = "Tica Noche"
-						},
-						new AwardLines()
-						{
-							Order = 8,
-							Description = "Nica 9 P.M."
-						}
-					}
-				};
-
-				_awards.Awards.Add(award);
-				SetAwards(_awards);
-				return RedirectToAction(nameof(Index));
+				award = _scrapingService.Add();
+				award.Id = _awards?.Awards?.LastOrDefault()?.Id + 1 ?? 0;
+				_awards?.Awards.Add(award);
 			}
-			catch
+			else
 			{
-				return View();
+				var awardLines = _scrapingService.Add().AwardLines;
+				award.AwardLines = awardLines;
 			}
+			SetAwards(_awards);
+			return RedirectToAction(nameof(Index));
 		}
 
 		// GET: AwardController/Edit/5
@@ -132,11 +83,12 @@ namespace LaLlamaDelBosque.Controllers
 				var line = award.AwardLines.First(l => l.Order == int.Parse(collection["Order"]));
 
 				line.Description = collection["description"];
-				line.Number = int.Parse(collection["number"]);
+				line.Number = collection["number"];
 				line.Busted = int.Parse(collection["busted"]);
 				line.Amount = double.Parse(collection["amount"]);
-				line.Award = double.Parse(collection["award"]);
-
+				line.TimesBusted = int.Parse(collection["timesbusted"]);
+				line.TimesAmount = double.Parse(collection["timesamount"]);
+				line.Award = line.Amount * line.TimesAmount + line.Busted * line.TimesBusted;
 				SetAwards(_awards);
 				return RedirectToAction(nameof(Index));
 			}
@@ -211,9 +163,10 @@ namespace LaLlamaDelBosque.Controllers
 			return award;
 		}
 
-		private void SetAwards(AwardModel awards)
+		private void SetAwards(AwardModel? awards)
 		{
-			JsonFile.Write("Awards", awards);
+			if (awards != null)
+				JsonFile.Write("Awards", awards);
 		}
 
 		private AwardSetting GetSetting()

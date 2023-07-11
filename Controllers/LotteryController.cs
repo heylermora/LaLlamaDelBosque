@@ -85,6 +85,7 @@ namespace LaLlamaDelBosque.Controllers
 					_papers.Add(paper);
 					SetPapers(_papers);
 				}
+				TempData.Put<Paper>("Paper", null);
 				return RedirectToAction(nameof(Print), new {id = paper?.Id});
 			}
 			catch
@@ -97,7 +98,6 @@ namespace LaLlamaDelBosque.Controllers
 		{
 			var paper = _papers.FirstOrDefault(p => p.Id == id);
 			ViewData["Date"] = DateTime.Now.ToShortDateString();
-			TempData.Put<Paper>("Paper", null);
 			return View(paper);
 		}
 
@@ -156,7 +156,7 @@ namespace LaLlamaDelBosque.Controllers
 
 				foreach(var number in numberList)
 				{
-					var value = int.Parse(number);
+					var value = number;
 					var numbers = paper.Numbers.Find(x => x.Value == value);
 					if(numbers != null)
 					{
@@ -170,7 +170,7 @@ namespace LaLlamaDelBosque.Controllers
 							Id = ++count,
 							Amount = double.Parse(collection["amount"]),
 							Busted = double.Parse(collection["busted"]),
-							Value = int.Parse(number)
+							Value = number
 						});
 					}
 				}

@@ -7,35 +7,39 @@
 body {
     font-family: Arial, sans-serif;
     font-size: 12px;
-    margin: 2px;
+    padding: 10px;
 }
 
 .container {
-    max-width: 100%;
-    width: 80mm;
-    margin: 0;
-    padding: 5px;
+    max-width: 80mm;
+    margin: 0 auto;
+    padding: 10px;
 }
 
-h1, h2 {
+p {
+    margin: 5px;
+}
+
+h1 {
     text-align: center;
     margin-top: 0;
+    margin-bottom: 20px;
+}
+
+h2 {
+    margin: 0;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 5px;
-    margin-bottom: 5px;
+    margin: 10px 0;
 }
 
 td, th {
-    padding: 10px;
+    padding: 5px;
     text-align: center;
-}
-
-td {
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid #000;
 }
 
 thead th {
@@ -43,6 +47,8 @@ thead th {
     text-align: center;
 }
 
-.datos-cliente p {
-    margin: 0;
+.total-section {
+    padding: 10px;
+    text-align: center;
+    border: 1px solid #000;
 }

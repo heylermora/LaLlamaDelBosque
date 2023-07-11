@@ -1,4 +1,4 @@
-﻿@model AwardLines
+﻿@model AwardLine
 
 
 <form asp-action="Edit" asp-route-awardid="@TempData["Id"]" class="row g-3">
@@ -18,26 +18,37 @@
         </td>
         <td>
             <div class="form-group col-auto">
-                <input asp-for="Number" class="form-control" 
-                `max="99" />
+                <input asp-for="Number" class="form-control" readonly/>
                 <span asp-validation-for="Number" class="text-danger"></span>
             </div>
         </td>
         <td>
             <div class="form-group col-auto">
-                <input asp-for="Busted" class="form-control"/>
-                <span asp-validation-for="Busted" class="text-danger"></span>
-            </div>
-        </td>
-        <td>
-            <div class="form-group col-auto">
-                <input asp-for="Amount" class="form-control" min="10"/>
+                <input asp-for="Amount" class="form-control" readonly/>
                 <span asp-validation-for="Amount" class="text-danger"></span>
             </div>
         </td>
         <td>
             <div class="form-group col-auto">
-                <input asp-for="Award" class="form-control" />
+                <input asp-for="Busted" class="form-control" readonly/>
+                <span asp-validation-for="Busted" class="text-danger"></span>
+            </div>
+        </td>
+        <td>
+            <div class="form-group col-auto">
+                <input asp-for="TimesAmount" class="form-control" />
+                <span asp-validation-for="TimesAmount" class="text-danger"></span>
+            </div>
+        </td>
+        <td>
+            <div class="form-group col-auto">
+                <input asp-for="TimesBusted" class="form-control" />
+                <span asp-validation-for="TimesBusted" class="text-danger"></span>
+            </div>
+        </td>
+        <td>
+            <div class="form-group col-auto">
+                <input asp-for="Award" class="form-control" readonly/>
                 <span asp-validation-for="Award" class="text-danger"></span>
             </div>
         </td>

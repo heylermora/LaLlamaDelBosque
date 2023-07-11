@@ -1,52 +1,64 @@
 {
   "Lotteries": [
     {
+      "Order": 1,
       "Name": "LA PRIMERA DIA",
       "Hour": "10:00:00"
     },
     {
+      "Order": 8,
       "Name": "LA PRIMERA NOCHE",
       "Hour": "18:00:00"
     },
     {
+      "Order": 4,
       "Name": "TICA MEDIODIA",
       "Hour": "13:00:00"
     },
     {
+      "Order": 7,
       "Name": "TICA TARDE",
       "Hour": "16:30:00"
     },
     {
+      "Order": 10,
       "Name": "TICA NOCHE",
       "Hour": "19:30:00"
     },
     {
+      "Order": 2,
       "Name": "NICA 11 AM",
       "Hour": "11:00:00"
     },
     {
+      "Order": 5,
       "Name": "NICA 3 PM",
       "Hour": "15:00:00"
     },
     {
+      "Order": 9,
       "Name": "NICA 6 PM",
       "Hour": "18:00:00"
     },
     {
+      "Order": 11,
       "Name": "NICA 9 PM",
       "Hour": "21:00:00"
     },
     {
-      "Name": "PAPA CALIENTE 11:30 AM",
-      "Hour": "11:30:00"
+      "Order": 3,
+      "Name": "HONDUREÑA 11 AM",
+      "Hour": "11:00:00"
     },
     {
-      "Name": "PAPA CALIENTE  4:00 PM",
-      "Hour": "16:00:00"
+      "Order": 6,
+      "Name": "HONDUREÑA 3 PM",
+      "Hour": "15:00:00"
     },
     {
-      "Name": "PAPA CALIENTE  23:00 PM",
-      "Hour": "23:59:00"
+      "Order": 12,
+      "Name": "HONDUREÑA 9 PM",
+      "Hour": "21:00:00"
     }
   ]
 }

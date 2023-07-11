@@ -35,13 +35,13 @@
 						{
 							<tr>
 								<td>@{value = 20 * i + j;}@value</td>
-								@if(Model.Sum(m => m.Numbers.Where(n => n.Value == value).Sum(n => n.Amount)) > 0){
-									<td>₡ @Model.Sum(m => m.Numbers.Where(n => n.Value == value).Sum(n => n.Amount))</td>
+								@if(Model.Sum(m => m.Numbers.Where(n => n.Value == value.ToString()).Sum(n => n.Amount)) > 0){
+									<td>₡ @Model.Sum(m => m.Numbers.Where(n => n.Value == value.ToString()).Sum(n => n.Amount))</td>
 								}else{
 									<td></td>
 								}
-								@if(Model.Sum(m => m.Numbers.Where(n => n.Value == value).Sum(n => n.Busted)) > 0){
-									<td>₡ @Model.Sum(m => m.Numbers.Where(n => n.Value == value).Sum(n => n.Busted))</td>
+								@if(Model.Sum(m => m.Numbers.Where(n => n.Value == value.ToString()).Sum(n => n.Busted)) > 0){
+									<td>₡ @Model.Sum(m => m.Numbers.Where(n => n.Value == value.ToString()).Sum(n => n.Busted))</td>
 								}else{
 									<td></td>
 								}
