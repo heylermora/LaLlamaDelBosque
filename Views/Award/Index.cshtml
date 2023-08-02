@@ -57,6 +57,11 @@
                                                     <button type="button" class="btn" onclick="copyToClipboard('@item.Id')">
                                                         <span class="material-icons icon icon-success">content_copy</span>
                                                     </button>
+                                                    <!-- Update -->
+                                                    <button type="button" class="btn"
+                                                            onclick="location.href='@Url.Action("Create", "Award")'">
+                                                        <span class="material-icons icon icon-primary">update</span>
+                                                    </button>
                                                     <!-- Delete -->
                                                     <button type="button" class="btn"
                                                         onclick="location.href='@Url.Action("Delete", "Award", new {Id= item.Id})'">

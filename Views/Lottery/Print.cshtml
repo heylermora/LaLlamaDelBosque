@@ -1,5 +1,5 @@
 ﻿@model Paper
-
+@using System.Globalization;
 @{
     Layout = "";
     double totalAmount = Model.Numbers.Sum(t => t.Amount);
@@ -24,7 +24,7 @@
 
                         <h1>TIEMPOS</h1>
                         <h2>La Llama del Bosque</h2>
-                        <div class="client-section">
+                        <div>
                             <p>
                                 <strong>FECHA:</strong> @DateTime.Now.ToShortDateString()
                                 <strong>HORA:</strong> @DateTime.Now.ToShortTimeString()
@@ -55,10 +55,9 @@
                                     }
                                 </tbody>
                             </table>
-                        </div>
-
-                        <div class="total-section">
-                            <h2>TOTAL: ₡ @total</h2>
+                            <div class="total-section">
+                                <h3>TOTAL ₡ @total.ToString("N", CultureInfo.InvariantCulture)</h3>
+                            </div>
                         </div>
 
                         <p>
