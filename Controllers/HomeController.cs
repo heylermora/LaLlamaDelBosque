@@ -2,9 +2,7 @@
 using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NuGet.Protocol.Core.Types;
 using System.Diagnostics;
-using System.Drawing;
 using System.Globalization;
 
 namespace LaLlamaDelBosque.Controllers

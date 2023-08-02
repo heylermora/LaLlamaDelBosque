@@ -15,7 +15,9 @@ function addEnterToTabEvent() {
     var inputElements = document.querySelectorAll('input, select, textarea');
 
     for (var i = 0; i < inputElements.length; i++) {
-        inputElements[i].addEventListener('keydown', enterToTab);
+        if (inputElements[i].type !== "submit") {
+            inputElements[i].addEventListener('keydown', enterToTab);
+        }
     }
 }
 
