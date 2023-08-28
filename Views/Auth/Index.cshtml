@@ -26,6 +26,9 @@
                 <div class="form-group"><input class="form-control" type="email" name="email" placeholder="Email"></div>
                 <div class="form-group"><input class="form-control" type="password" name="password" placeholder="Contraseña"></div>
             <div class="form-group"><button class="btn btn-primary btn-block" type="submit">Acceder</button></div>
+            @if(ViewData["MENSAJE"] != null){
+                <div class="alert alert-success" role="alert">@ViewData["MENSAJE"]</div>
+            }
             </form>
         </div>
     </body>

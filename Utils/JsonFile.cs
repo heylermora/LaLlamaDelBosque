@@ -8,7 +8,7 @@ namespace LaLlamaDelBosque.Utils
         {
 			try
 			{
-				var path = Path.GetFullPath($"Data\\{filename}.json");
+				var path = Path.GetFullPath($"Data/{filename}.json");
 				var jsonString = System.IO.File.ReadAllText(path);
 				t = JsonSerializer.Deserialize<T>(jsonString) ?? t;
 			}
@@ -24,7 +24,7 @@ namespace LaLlamaDelBosque.Utils
 			try
 			{
 				var jsonString = JsonSerializer.Serialize(t) ?? "";
-				var path = Path.GetFullPath($"Data\\{filename}.json");
+				var path = Path.GetFullPath($"Data/{filename}.json");
 				System.IO.File.WriteAllText(path, jsonString);
 				return t;
 			}
