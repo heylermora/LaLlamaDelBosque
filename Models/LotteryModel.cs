@@ -63,6 +63,7 @@ namespace LaLlamaDelBosque.Models
 		public DateTime Date { get; set; }
 		public TimeSpan Hour { get; set; }
 		public List<Number> Numbers { get; set; } = new List<Number>();
+		public int? ClientId { get; set; }
 	}
 }
 

@@ -54,5 +54,5 @@ app.MapControllerRoute(
 	pattern: "{controller=Schedule}/{action=Schedule}/{id?}");
 
 IWebHostEnvironment env = app.Environment;
-RotativaConfiguration.Setup((IHostingEnvironment)env);
+RotativaConfiguration.Setup(env as IHostingEnvironment);
 app.Run();

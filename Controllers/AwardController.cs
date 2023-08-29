@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Rotativa.AspNetCore;
 using Rotativa.AspNetCore.Options;
-
+using NuGet.Packaging;
 
 namespace LaLlamaDelBosque.Controllers
 {
@@ -48,14 +48,15 @@ namespace LaLlamaDelBosque.Controllers
 			var award = _awards?.Awards?.FirstOrDefault(x => x.Date == DateTime.Today);
 			if(award == null)
 			{
-				award = _scrapingService.Add();
+				award = _scrapingService.Add(null);
 				award.Id = _awards?.Awards?.LastOrDefault()?.Id + 1 ?? 0;
 				_awards?.Awards.Add(award);
 			}
 			else
 			{
-				var awardLines = _scrapingService.Add().AwardLines;
-				award.AwardLines = awardLines;
+				var descriptions = award.AwardLines.Select(a => a.Description).ToList();
+				var awardLines = _scrapingService.Add(descriptions).AwardLines;
+				award.AwardLines.AddRange(awardLines);
 			}
 			SetAwards(_awards);
 			return RedirectToAction(nameof(Index));
