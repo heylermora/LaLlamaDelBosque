@@ -69,25 +69,25 @@ public class AuthController: Controller
 		return auth;
 	}
 
-	//private AuthModel GetAuth()
-	//{
-	//	var auth = JsonFile.Read<AuthModel>("Auth", new AuthModel());
-	//	return auth;
-	//}
-
 	private AuthModel GetAuth()
 	{
-		var auth = new AuthModel
-		{
-			Id = Convert.ToInt32(Environment.GetEnvironmentVariable("AUTH_ID") ?? "0"),
-			Password = Environment.GetEnvironmentVariable("AUTH_PASSWORD") ?? string.Empty,
-			Email = Environment.GetEnvironmentVariable("AUTH_EMAIL") ?? string.Empty,
-			Salt = Environment.GetEnvironmentVariable("AUTH_SALT") ?? string.Empty,
-			Name = Environment.GetEnvironmentVariable("AUTH_NAME") ?? string.Empty,
-			LastName = Environment.GetEnvironmentVariable("AUTH_LASTNAME") ?? string.Empty
-		};
-
+		var auth = JsonFile.Read<AuthModel>("Auth", new AuthModel());
 		return auth;
 	}
+
+	//private AuthModel GetAuth()
+	//{
+	//	var auth = new AuthModel
+	//	{
+	//		Id = Convert.ToInt32(Environment.GetEnvironmentVariable("AUTH_ID") ?? "0"),
+	//		Password = Environment.GetEnvironmentVariable("AUTH_PASSWORD") ?? string.Empty,
+	//		Email = Environment.GetEnvironmentVariable("AUTH_EMAIL") ?? string.Empty,
+	//		Salt = Environment.GetEnvironmentVariable("AUTH_SALT") ?? string.Empty,
+	//		Name = Environment.GetEnvironmentVariable("AUTH_NAME") ?? string.Empty,
+	//		LastName = Environment.GetEnvironmentVariable("AUTH_LASTNAME") ?? string.Empty
+	//	};
+
+	//	return auth;
+	//}
 
 }
