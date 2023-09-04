@@ -80,7 +80,9 @@ namespace LaLlamaDelBosque.Controllers
 		{
 			try
 			{
-				paper.Numbers = TempData.Get<Paper>("Paper").Numbers;
+				var temPaper = TempData.Get<Paper>("Paper");
+				paper.Id = temPaper.Id;
+				paper.Numbers = temPaper.Numbers;
 				if(paper != null)
 				{
 					paper.Hour = _lotteries.First(l => l.Name == paper.Lottery).Hour;
