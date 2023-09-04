@@ -18,7 +18,7 @@ namespace LaLlamaDelBosque.Services
 			_papers = GetPapers();
 		}
 
-		public Award Add()
+		public Award Add(List<string>? descriptions)
 		{
 			var award = new Award()
 			{
@@ -37,30 +37,33 @@ namespace LaLlamaDelBosque.Services
 					
 				if(tableNode != null)
 				{
-					foreach(var tdNode in tableNode.Descendants("td"))
+					var description = _lotteries.First(x => x.Order == scrapinglottery.Order).Name;
+					if(!descriptions?.Contains(description) ?? true)
 					{
-						var description = _lotteries.First(x => x.Order == scrapinglottery.Order).Name;
-						var value = tdNode.InnerText;
-						switch(index)
+						foreach(var tdNode in tableNode.Descendants("td"))
 						{
-							case 0:
+							var value = tdNode.InnerText;
+							switch(index)
+							{
+								case 0:
 
-								line.Order = scrapinglottery.Order;
-								line.Description = description;
-								break;
-							case 2:
-								var papers = _papers.Where(x => x.Lottery == description && x.Date == DateTime.Today && x.Numbers.Any(x => x.Value == value));
-								var amount = papers.Sum(x => x.Numbers.Sum(n => n.Value == value ? n.Amount : 0));
-								var busted = papers.Sum(x => x.Numbers.Sum(n => n.Value == value ? n.Busted : 0));
-								line.Number = value;
-								line.Amount = amount;
-								line.Busted = busted;
-								line.Award = line.TimesAmount * amount + line.TimesBusted * busted;
-								break;
+									line.Order = scrapinglottery.Order;
+									line.Description = description;
+									break;
+								case 2:
+									var papers = _papers.Where(x => x.Lottery == description && x.Date == DateTime.Today && x.Numbers.Any(x => x.Value == value));
+									var amount = papers.Sum(x => x.Numbers.Sum(n => n.Value == value ? n.Amount : 0));
+									var busted = papers.Sum(x => x.Numbers.Sum(n => n.Value == value ? n.Busted : 0));
+									line.Number = value;
+									line.Amount = amount;
+									line.Busted = busted;
+									line.Award = line.TimesAmount * amount + line.TimesBusted * busted;
+									break;
+							}
+							index++;
 						}
-						index++;
+						award.AwardLines.Add(line);
 					}
-					award.AwardLines.Add(line);
 				}
 
 			}

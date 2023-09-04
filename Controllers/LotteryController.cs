@@ -13,11 +13,13 @@ namespace LaLlamaDelBosque.Controllers
 	{
 		private List<Lottery> _lotteries;
 		private List<Paper> _papers;
+		private List<Credit> _credits;
 
 		public LotteryController()
 		{
 			_lotteries = GetLotteries();
 			_papers = GetPapers();
+			_credits = GetCredits();
 		}
 
 		// GET: LotteryController
@@ -61,6 +63,7 @@ namespace LaLlamaDelBosque.Controllers
 			DateTime date  = string.IsNullOrEmpty(dateString) ? DateTime.Today : DateTime.Parse(dateString);
 			_lotteries = date == DateTime.Today ? _lotteries.Where(l => l.Hour > DateTime.Now.TimeOfDay).OrderBy(l => l.Hour).ToList() : _lotteries.OrderBy(l => l.Hour).ToList();
 			ViewData["Names"] = _lotteries;
+			ViewData["Clients"] = _credits.Select(c => c.Client).ToList();
 
 			var paper = TempData.Get<Paper>("Paper") ?? new Paper();
 			paper.Id = _papers.LastOrDefault()?.Id + 1 ?? 1;
@@ -73,17 +76,21 @@ namespace LaLlamaDelBosque.Controllers
 		// POST: LotteryController/Save
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public ActionResult Save(string lottery)
+		public ActionResult Save(Paper paper)
 		{
 			try
 			{
-				var paper = TempData.Get<Paper>("Paper");
+				paper.Numbers = TempData.Get<Paper>("Paper").Numbers;
 				if(paper != null)
 				{
-					paper.Lottery = lottery;
 					paper.Hour = _lotteries.First(l => l.Name == paper.Lottery).Hour;
 					_papers.Add(paper);
 					SetPapers(_papers);
+					if(paper.ClientId != null)
+					{
+						var amount = paper.Numbers.Sum(p => p.Amount) + paper.Numbers.Sum(p => p.Busted);
+						Add((int)paper.ClientId, paper.Lottery, amount);
+					}
 				}
 				TempData.Put<Paper>("Paper", null);
 				return RedirectToAction(nameof(Print), new {id = paper?.Id});
@@ -252,6 +259,43 @@ namespace LaLlamaDelBosque.Controllers
 				Papers = papers
 			};
 			JsonFile.Write("Papers", paperModel);
+		}
+
+		private List<Credit> GetCredits()
+		{
+			var credits = JsonFile.Read("Credits", new CreditModel());
+			return credits.Credits.ToList();
+		}
+
+		private void SetCredits(List<Credit> credits)
+		{
+			var creditModel = new CreditModel()
+			{
+				Credits = credits
+			};
+			JsonFile.Write("Credits", creditModel);
+		}
+
+		private void Add(int id, string lottery, double amount)
+		{
+			var credit = _credits.FirstOrDefault(x => x.Client.Id == id);
+			if(credit is not null)
+			{
+				var creditLine = new CreditLine()
+				{
+					Id = credit?.CreditLines.LastOrDefault()?.Id + 1 ?? 1,
+					CreatedDate = DateTime.Now,
+					Description = "SORTEO: " + lottery,
+					Amount = amount
+				};
+
+				credit?.CreditLines.Add(creditLine);
+
+				credit.CreditSummary.Total = (credit?.CreditSummary?.Total ?? 0) + creditLine.Amount;
+
+				SetCredits(_credits);
+			};
+			return;
 		}
 	}
 }

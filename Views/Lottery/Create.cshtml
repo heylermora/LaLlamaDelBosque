@@ -19,7 +19,7 @@
 
 <br />
 
-<form asp-action="Save" asp-route-lottery="@Model.Lottery">
+<form asp-action="Save">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <div class="row g-3">
         @if (Model.Numbers.Any())
@@ -47,6 +47,20 @@
                     }
                 </select>
                 <span asp-validation-for="Lottery" class="text-danger"></span>
+            </div>
+            <div class="form-group col-md-4">
+                <label asp-for="ClientId" class="control-label">Cliente</label>
+                <select asp-for="ClientId" class="form-select">
+                    <option selected disabled>Seleccione un nombre</option>
+                    @if(ViewData["Clients"] is not null)
+                    {
+                        @foreach(var item in ViewData["Clients"] as IList<Client> ?? new List<Client>())
+                        {
+                            <option value="@item.Id">@item.Name</option>
+                        }
+                    }
+                </select>
+                <span asp-for="Client" class="text-danger"></span>
             </div>
             <hr />
             <div class="form-group col-auto">

@@ -34,14 +34,15 @@
 						@for (var j = 0; j < 20; j++)
 						{
 							<tr>
-								<td>@{value = 20 * i + j;}@value</td>
-								@if(Model.Sum(m => m.Numbers.Where(n => n.Value == value.ToString()).Sum(n => n.Amount)) > 0){
-									<td>₡ @Model.Sum(m => m.Numbers.Where(n => n.Value == value.ToString()).Sum(n => n.Amount))</td>
+								<td>@{value = 20 * i + j;}@value.ToString("D2")</td>
+								@if(Model.Sum(m => m.Numbers.Where(n => n.Value == value.ToString("D2")).Sum(n => n.Amount)) > 0)
+								{
+									<td>₡ @Model.Sum(m => m.Numbers.Where(n => n.Value == value.ToString("D2")).Sum(n => n.Amount))</td>
 								}else{
 									<td></td>
 								}
-								@if(Model.Sum(m => m.Numbers.Where(n => n.Value == value.ToString()).Sum(n => n.Busted)) > 0){
-									<td>₡ @Model.Sum(m => m.Numbers.Where(n => n.Value == value.ToString()).Sum(n => n.Busted))</td>
+								@if(Model.Sum(m => m.Numbers.Where(n => n.Value == value.ToString("D2")).Sum(n => n.Busted)) > 0){
+									<td>₡ @Model.Sum(m => m.Numbers.Where(n => n.Value == value.ToString("D2")).Sum(n => n.Busted))</td>
 								}else{
 									<td></td>
 								}
