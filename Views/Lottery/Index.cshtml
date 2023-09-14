@@ -1,8 +1,10 @@
 ﻿@model IEnumerable<Paper>
 
+@using LaLlamaDelBosque.Utils;
 @{
 	ViewData["Title"] = "Listado de Ventas";
-    var searchModel = ViewData["LotterySearchModel"] as LotterySearchModel;
+	var timeZoneHelper = new TimeZoneHelper();
+	var searchModel = ViewData["LotterySearchModel"] as LotterySearchModel;
 	var total = 0d;
 	var totales = 0d;
 	var value = 0;
@@ -86,7 +88,7 @@
 										<button type="button" class="btn" onclick="location.href='@Url.Action("Print", "Lottery", new{id=item.Id})'">
 											<span class="material-icons icon-success">visibility</span>
 										</button>
-										@if (item.Hour > DateTime.Now.TimeOfDay && item.Date >= DateTime.Today)
+										@if(item.Hour > timeZoneHelper.CurrentDateTimeInCostaRica.TimeOfDay && item.Date >= timeZoneHelper.CurrentDateTimeInCostaRica)
 										{
 											<!-- Delete -->
 											<button type="button" class="btn btn-delete" data-id="@item.Id">
