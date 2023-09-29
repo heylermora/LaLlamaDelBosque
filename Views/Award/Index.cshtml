@@ -57,10 +57,10 @@
                                                     <button type="button" class="btn" onclick="copyToClipboard('@item.Id')">
                                                         <span class="material-icons icon icon-success">content_copy</span>
                                                     </button>
-                                                    <!-- Update -->
+                                                    <!-- Add -->
                                                     <button type="button" class="btn"
-                                                            onclick="location.href='@Url.Action("Create", "Award")'">
-                                                        <span class="material-icons icon icon-primary">update</span>
+                                                        onclick="location.href='@Url.Action("Add", "Award")'">
+                                                        <span class="material-icons icon icon-primary">add_circle</span>
                                                     </button>
                                                     <!-- Delete -->
                                                     <button type="button" class="btn"
@@ -147,6 +147,11 @@
                                                     <button type="button" class="btn" onclick="copyToClipboard('@item.Id')">
                                                         <span class="material-icons icon icon-success">content_copy</span>
                                                     </button>
+                                                    <!-- Add -->
+                                                    <button type="button" class="btn"
+                                                    onclick="location.href='@Url.Action("Add", "Award")'">
+                                                        <span class="material-icons icon icon-primary">add_circle</span>
+                                                    </button>
                                                     <!-- Delete -->
                                                     <button type="button" class="btn"
                                                     onclick="location.href='@Url.Action("Delete", "Award", new {Id= item.Id})'">
@@ -209,6 +214,19 @@
                                                             </div>
                                                         </td>
                                                     </tr>
+                                                }
+                                            }
+                                            @if(Model.Any() && TempData["Method"] is not null && Model.FirstOrDefault(x => x.Id == (int?)TempData["Id"]) is not null)
+                                            {
+                                                @switch(TempData["Method"])
+                                                {
+                                                    case "Add":
+                                                        <tr>
+                                                            <td colspan="9">
+                                                                <partial name="_Add" model="@new AwardLine() { Order = (int?)@TempData["Id"] ?? 0 }"></partial>
+                                                            </td>
+                                                        </tr>
+                                                        break;
                                                 }
                                             }
                                         </tbody>

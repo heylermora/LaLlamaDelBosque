@@ -126,6 +126,48 @@ namespace LaLlamaDelBosque.Controllers
 			}
 		}
 
+		// GET: AwardController/Add
+		public ActionResult Add(int id)
+		{
+			TempData["Id"] = id;
+			TempData["Method"] = "Add";
+			return RedirectToAction(nameof(Index));
+		}
+
+		// POST: AwardController/Add
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public ActionResult Add(int id, IFormCollection collection)
+		{
+			try
+			{
+				TempData["Id"] = id;
+				var award = _awards.Awards.FirstOrDefault(x => x.Id == id);
+				if(award is not null && double.Parse(collection["amount"]) > 0)
+				{
+					var awardLine = new AwardLine()
+					{
+						Order = award?.AwardLines.LastOrDefault()?.Order + 1 ?? 1,
+						Description = collection["description"],
+						Number = collection["number"],
+						Amount = double.Parse(collection["amount"]),
+						Busted = double.Parse(collection["busted"]),
+						TimesBusted = double.Parse(collection["timesbusted"]),
+						TimesAmount = double.Parse(collection["timesamount"]),
+						Award = double.Parse(collection["amount"]) * double.Parse(collection["timesamount"]) + double.Parse(collection["timesbusted"]) * double.Parse(collection["timesbusted"]),		
+					};
+					award?.AwardLines.Add(awardLine);
+
+					SetAwards(_awards);
+				}
+				return RedirectToAction(nameof(Index));
+			}
+			catch
+			{
+				return RedirectToAction(nameof(Index));
+			}
+		}
+
 		#region AwardSetting
 
 		// GET: AwardController/Setting
@@ -133,27 +175,6 @@ namespace LaLlamaDelBosque.Controllers
 		{
 			var settings = new AwardSetting();
 			return View(settings);
-		}
-
-		// GET: AwardController/Add
-		public ActionResult Add()
-		{
-			return View();
-		}
-
-		// POST: AwardController/Add
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public ActionResult Add(IFormCollection collection)
-		{
-			try
-			{
-				return RedirectToAction(nameof(Setting));
-			}
-			catch
-			{
-				return RedirectToAction(nameof(Setting));
-			}
 		}
 
 		#endregion
