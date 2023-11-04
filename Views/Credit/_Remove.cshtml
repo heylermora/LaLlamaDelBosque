@@ -1,6 +1,6 @@
 ﻿@model LaLlamaDelBosque.Models.CreditConnectionModel
 
-<h6>¿Desea eliminar la línea @Model.LineId de la lista</h6>
+<h6>¿Desea eliminar la línea @Model.LineId de la lista?</h6>
 
 <form asp-action="Remove" asp-route-lineid=@Model.LineId asp-route-clientid=@Model.ClientId>
     <input type="submit" value="Eliminar" class="btn btn-danger" />

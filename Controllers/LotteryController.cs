@@ -14,11 +14,9 @@ namespace LaLlamaDelBosque.Controllers
 		private List<Lottery> _lotteries;
 		private List<Paper> _papers;
 		private List<Credit> _credits;
-		private TimeZoneHelper _timeZoneHelper;
 
 		public LotteryController()
 		{
-			_timeZoneHelper = new TimeZoneHelper();
 			_lotteries = GetLotteries();
 			_papers = GetPapers();
 			_credits = GetCredits();
@@ -33,8 +31,8 @@ namespace LaLlamaDelBosque.Controllers
 				{
 					Id = id,
 					Lottery = lottery,
-					FromDate = fromDate ?? _timeZoneHelper.CurrentDateTimeInCostaRica,
-					ToDate = toDate ?? _timeZoneHelper.CurrentDateTimeInCostaRica
+					FromDate = fromDate ?? DateTime.Now,
+					ToDate = toDate ?? DateTime.Now
 				};
 
 				_lotteries = _lotteries.OrderBy(l => l.Hour).ToList();
@@ -63,7 +61,7 @@ namespace LaLlamaDelBosque.Controllers
 		public ActionResult Create(string dateString)
 		{
 			DateTime date  = string.IsNullOrEmpty(dateString) ? DateTime.Today : DateTime.Parse(dateString);
-			_lotteries = date == DateTime.Today ? _lotteries.Where(l => l.Hour > _timeZoneHelper.CurrentDateTimeInCostaRica.TimeOfDay).OrderBy(l => l.Hour).ToList() : _lotteries.OrderBy(l => l.Hour).ToList();
+			_lotteries = date == DateTime.Today ? _lotteries.Where(l => l.Hour > DateTime.Now.TimeOfDay).OrderBy(l => l.Hour).ToList() : _lotteries.OrderBy(l => l.Hour).ToList();
 			ViewData["Names"] = _lotteries;
 			ViewData["Clients"] = _credits.Select(c => c.Client).ToList();
 
@@ -109,7 +107,7 @@ namespace LaLlamaDelBosque.Controllers
 		{
 			var paper = _papers.FirstOrDefault(p => p.Id == id);
 
-			ViewData["Date"] = _timeZoneHelper.CurrentDateTimeInCostaRica.ToShortDateString();
+			ViewData["Date"] = DateTime.Now.ToShortDateString();
 			return View(paper);
 		}
 
@@ -289,7 +287,7 @@ namespace LaLlamaDelBosque.Controllers
 				var creditLine = new CreditLine()
 				{
 					Id = credit?.CreditLines.LastOrDefault()?.Id + 1 ?? 1,
-					CreatedDate = _timeZoneHelper.CurrentDateTimeInCostaRica,
+					CreatedDate = DateTime.Now,
 					Description = "SORTEO: " + lottery,
 					Amount = amount
 				};

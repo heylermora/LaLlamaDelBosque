@@ -14,12 +14,10 @@ namespace LaLlamaDelBosque.Controllers
 	public class CreditController: Controller
     {
 		private CreditModel _credits;
-		private TimeZoneHelper _timeZoneHelper;
 
 
 		public CreditController()
 		{
-			_timeZoneHelper = new TimeZoneHelper();
 			_credits = GetCredits();
 		}
 
@@ -160,7 +158,7 @@ namespace LaLlamaDelBosque.Controllers
 					var creditLine = new CreditLine()
 					{
 						Id = credit?.CreditLines.LastOrDefault()?.Id + 1 ?? 1,
-						CreatedDate = _timeZoneHelper.CurrentDateTimeInCostaRica,
+						CreatedDate = DateTime.Now,
 						Description = collection["description"],
 						Amount = double.Parse(collection["amount"])
 					};
@@ -201,7 +199,7 @@ namespace LaLlamaDelBosque.Controllers
 					var creditLine = new CreditLine()
 					{
 						Id = credit?.CreditLines.LastOrDefault()?.Id + 1 ?? 1,
-						CreatedDate = _timeZoneHelper.CurrentDateTimeInCostaRica,
+						CreatedDate = DateTime.Now,
 						Description = collection["description"],
 						Amount = -(double.Parse(collection["amount"]))
 					};

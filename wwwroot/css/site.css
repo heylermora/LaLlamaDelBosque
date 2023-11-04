@@ -122,3 +122,7 @@ span.material-icons.star {
 .table-striped-columns td:not(:last-child) {
     border-right: 1px solid #ddd;
 }
+
+[id*="Partial"] {
+    display: none;
+}

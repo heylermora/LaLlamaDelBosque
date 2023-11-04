@@ -30,9 +30,9 @@
 
     <div class="row justify-content-md-center">
         <div class="col-xl-10">
-            <form class="d-flex" role="search" asp-controller="Credit" asp-action="Index" method="get">
+            <form id="searchForm" class="d-flex" asp-controller="Credit" asp-action="Index" method="get">
                 <div class="input-group form-floating mb-4 mt-1">
-                    <input onchange="searchCredits()" id="searchInput" type="search" class="form-control" name="SearchString" placeholder="Buscar...">
+                    <input id="searchInput" type="search" class="form-control" name="SearchString" placeholder="Buscar...">
                     <label for="floatingInput">Buscar</label>
                 </div>
             </form>
@@ -41,59 +41,66 @@
                 {
                     var cumulative = 0D;
                     <div class="accordion-item p-1 mb-2">
-                        @if (item.Client.Id != (int?)TempData["Id"])
-                        {
-                            <h2 class="accordion-header" id="flush-headingOne">
-                                <button class="accordion-button collapsed p-2" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-@item.Client.Id" aria-expanded="false" aria-controls="flush-collapse-@item.Client.Id" on>
-                                    <div class="d-flex align-items-start">
-                                        <span class="material-icons star">
-                                            account_circle
-                                        </span>
+                        <h2 class="accordion-header" id="flush-headingOne">
+                            <button class="accordion-button collapsed p-2" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-@item.Client.Id" aria-expanded="false" aria-controls="flush-collapse-@item.Client.Id">
+                                <div class="d-flex align-items-start">
+                                    <span class="material-icons star">
+                                        account_circle
+                                    </span>
+                                </div>
+                                <div class="d-flex align-items-start flex-column">
+                                    <div class="p-1">
+                                        <b style="font-size: 24px">@item.Client.Name</b>
                                     </div>
-                                    <div class="d-flex align-items-start flex-column">
-                                        <div class="p-1">
-                                            <b style="font-size: 24px">@item.Client.Name</b>
+                                    <div class="p-1">
+                                        Total: ₡ @item.CreditSummary.Total
+                                    </div>
+                                </div>
+                            </button>
+                        </h2>
+                        <div id="flush-collapse-@item.Client.Id" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+                            <div class="accordion-body">
+                                <div class="row">
+                                    <div class="btn-group col-md-2" role="group">
+                                        <!-- Edit -->
+                                        <button type="button" class="btn" onclick="showPartial('editPartial-@item.Client.Id')">
+                                            <span class="material-icons icon icon-dark">edit</span>
+                                        </button>
+                                        <!-- Delete -->
+                                        <button type="button" class="btn" onclick="showPartial('deletePartial-@item.Client.Id')">
+                                            <span class="material-icons icon icon-danger">delete</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div id="editPartial-@item.Client.Id" class="partial">
+                                            <partial name="_Edit" model="@Model.FirstOrDefault(x => x.Client.Id == item.Client.Id)?.Client"></partial>
                                         </div>
-                                        <div class="p-1">
-                                            Total: ₡ @item.CreditSummary.Total
+                                        <div id="deletePartial-@item.Client.Id" class="partial">
+                                            <partial name="_Delete" model="item"></partial>
                                         </div>
                                     </div>
-                                </button>
-                            </h2>
-                            <div id="flush-collapse-@item.Client.Id" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
-                                <div class="accordion-body table-responsive">
+                                </div>
+                                <div class="table-responsive">
                                     <table class="table">
-                                        <thead>
-                                            <tr>
-                                                <th colspan="2">
-                                                    <!-- Edit -->
-                                                    <button type="button" class="btn"
-                                                        onclick="location.href='@Url.Action("Edit", "Credit", new {Id= item.Client.Id})'">
-                                                        <span class="material-icons icon icon-dark">edit</span>
-                                                    </button>
-                                                    <!-- Delete -->
-                                                    <button type="button" class="btn"
-                                                        onclick="location.href='@Url.Action("Delete", "Credit", new {Id= item.Client.Id})'">
-                                                        <span class="material-icons icon icon-danger">delete</span>
-                                                    </button>
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                    </table>
-                                    <table class="table">
-                                        <thead>  
-                                            <tr>
-                                                <th>Id</th>
-                                                <th>Fecha</th>
-                                                <th>Hora</th>
-                                                <th>Descripción</th>
-                                                <th>Precio</th>
-                                                <th>Acumulado</th>
-                                                <th></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach(var line in item.CreditLines) 
+                                    <thead>  
+                                        <tr>
+                                            <th>Id</th>
+                                            <th>Fecha</th>
+                                            <th>Hora</th>
+                                            <th>Descripción</th>
+                                            <th>Precio</th>
+                                            <th>Acumulado</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach(var line in item.CreditLines)
+                                        {
+                                            @if((int?)TempData["Id"] == item.Client.Id && (int?)TempData["LineId"] == line.Id && TempData["Method"]?.ToString() == "Refresh")
+                                            {
+                                                <partial name="_Refresh" model="line" />
+                                            }
+                                            else
                                             {
                                                 <tr>
                                                     <td>@line.Id</td>
@@ -109,217 +116,66 @@
                                                                 <span class="material-icons icon icon-dark">mode_edit</span>
                                                             </button>
                                                             <!-- Remove -->
-                                                            <button type="button" class="btn" onclick="location.href='@Url.Action("Remove", "Credit", new {ClientId= item.Client.Id, LineId= line.Id})'">
+                                                            <button type="button" class="btn" onclick="showPartial('removePartial-@item.Client.Id-@line.Id')">
                                                                 <span class="material-icons icon icon-danger">delete</span>
                                                             </button>
                                                         </div>
                                                     </td>
                                                 </tr>
                                             }
-                                            </tbody>
-                                        <tfoot>
-                                            <tr>
-                                                <td colspan="4">
-                                                    <!-- Add -->
-                                                    <button type="button" class="btn"
-                                                        onclick="location.href='@Url.Action("Add", "Credit", new {id = item.Client.Id})'">
-                                                        <span class="material-icons icon icon-primary">add_circle</span>
-                                                    </button>
-                                                    <!-- Fee -->
-                                                    <button type="button" class="btn"
-                                                        onclick="location.href='@Url.Action("Fee", "Credit", new {id = item.Client.Id})'">
-                                                        <span class="material-icons icon icon-primary">post_add</span>
-                                                    </button>
-                                                    <!-- Clear -->
-                                                    <button type="button" class="btn"
-                                                        onclick="location.href='@Url.Action("Clear", "Credit", new {id = item.Client.Id})'">
-                                                            <span class="material-icons icon icon-danger">cancel</span>
-                                                    </button>
-                                                    <!-- Copy -->
-                                                    <button type="button" class="btn" id="btnCopy" onclick="copyToClipboard('@item.Client.Id', '@item.Client.Name', '@item.CreditSummary.Total')">
-
-                                                        <span class="material-icons icon icon-success">content_copy</span>
-                                                    </button>
+                                            <tr id="removePartial-@item.Client.Id-@line.Id">
+                                                <td colspan="7">
+                                                    <partial name="_Remove" model="new CreditConnectionModel{ClientId= item.Client.Id, LineId= line.Id}" />
                                                 </td>
-                                                <td>Total</td>
-                                                <td id="TotalSummary">₡ @item.CreditSummary.Total</td>
-                                                <td></td>
                                             </tr>
-                                        </tfoot>
-                                    </table>
-                                    <div id="CopyMessage-@item.Client.Id">
-                                    </div>
+                                        }
+                                        <tr id="addPartial-@item.Client.Id">
+                                            <td colspan="7">
+                                                <partial name="_Add" model="@new CreditLine() { Id = item.Client.Id, CreatedDate = DateTime.Now }" />
+                                            </td>
+                                        </tr>
+                                        <tr id="feePartial-@item.Client.Id">
+                                            <td colspan="7">
+                                                <partial name="_Fee" model="@new CreditLine() { Id = item.Client.Id, CreatedDate = DateTime.Now }" />
+                                            </td>
+                                        </tr>
+                                        <tr id="clearPartial-@item.Client.Id">
+                                            <td colspan="7">
+                                                <partial name="_Clear" model="item" />
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="4">
+                                                <!-- Add -->
+                                                <button type="button" class="btn" onclick="showPartial('addPartial-@item.Client.Id')">
+                                                    <span class="material-icons icon icon-primary">add_circle</span>
+                                                </button>
+                                                <!-- Fee -->
+                                                <button type="button" class="btn" onclick="showPartial('feePartial-@item.Client.Id')">
+                                                    <span class="material-icons icon icon-primary">post_add</span>
+                                                </button>
+                                                <!-- Clear -->
+                                                <button type="button" class="btn" onclick="showPartial('clearPartial-@item.Client.Id')">
+                                                    <span class="material-icons icon icon-danger">cancel</span>
+                                                </button>
+                                                <!-- Copy -->
+                                                <button type="button" class="btn" id="btnCopy" onclick="copyToClipboard('@item.Client.Id', '@item.Client.Name', '@item.CreditSummary.Total')">
+                                                    <span class="material-icons icon icon-success">content_copy</span>
+                                                </button>
+                                            </td>
+                                            <td>Total</td>
+                                            <td>₡ @item.CreditSummary.Total</td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                                </div>
+                                <div id="CopyMessage-@item.Client.Id">
                                 </div>
                             </div>
-                        }
-                        else
-                        {
-                            <h2 class="accordion-header" id="flush-headingOne">
-                                <button class="accordion-button collapsed p-2" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-@item.Client.Id" aria-expanded="false" aria-controls="flush-collapse-@item.Client.Id">
-                                    <div class="d-flex align-items-start">
-                                        <span class="material-icons star">
-                                            account_circle
-                                        </span>
-                                    </div>
-                                    <div class="d-flex align-items-start flex-column">
-                                        <div class="p-1">
-                                            <b style="font-size: 24px">@item.Client.Name</b>
-                                        </div>
-                                        <div class="p-1">
-                                            Total: ₡ @item.CreditSummary.Total
-                                        </div>
-                                    </div>
-                                </button>
-                            </h2>
-                            <div id="flush-collapse-@item.Client.Id" class="accordion-collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
-                                <div class="accordion-body">
-                                    <table class="table">
-                                        <thead>
-                                            <tr>
-                                                <th colspan="2">
-                                                    <!-- Edit -->
-                                                    <button type="button" class="btn"
-                                                        onclick="location.href='@Url.Action("Edit", "Credit", new {Id= item.Client.Id})'">
-                                                        <span class="material-icons icon icon-dark">edit</span>
-                                                    </button>
-                                                    <!-- Delete -->
-                                                    <button type="button" class="btn"
-                                                        onclick="location.href='@Url.Action("Delete", "Credit", new {Id= item.Client.Id})'">
-                                                        <span class="material-icons icon icon-danger">delete</span>
-                                                    </button>
-                                                </th>
-                                                <th>
-                                                    @if(Model.Any() && TempData["Method"] is not null && Model.FirstOrDefault(x => x.Client.Id == (int?)TempData["Id"]) is not null)
-                                                    {
-                                                        @switch(TempData["Method"])
-                                                        {
-                                                            case "Edit":
-                                                                <partial name="_Edit" model="@Model.FirstOrDefault(x => x.Client.Id == (int?)TempData["Id"])?.Client"></partial>
-                                                                break;
-                                                            case "Delete":
-                                                                <partial name="_Delete" model="item"></partial>
-                                                                break;
-                                                        }
-                                                    }
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                    </table>
-                                    <table class="table">
-                                        <thead>  
-                                            <tr>
-                                                <th>Id</th>
-                                                <th>Fecha</th>
-                                                <th>Hora</th>
-                                                <th>Descripción</th>
-                                                <th>Precio</th>
-                                                <th>Acumulado</th>
-                                                <th></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach(var line in item.CreditLines)
-                                            {
-                                                @if((int?)TempData["Id"] == item.Client.Id && (int?)TempData["LineId"] == line.Id && TempData["Method"]?.ToString() == "Refresh")
-                                                {
-                                                    <partial name="_Refresh" model="line" />
-                                                }
-                                                else
-                                                {
-                                                    <tr>
-                                                        <td>@line.Id</td>
-                                                        <td>@line.CreatedDate.ToShortDateString()</td>
-                                                        <td>@line.CreatedDate.ToShortTimeString()</td>
-                                                        <td>@line.Description</td>
-                                                        <td>₡ @line.Amount</td>
-                                                        <td class="table-active">@{cumulative += @line.Amount;}₡ @cumulative</td>
-                                                        <td style="text-align:center">
-                                                            <div class="btn-group mx-auto" role="group">
-                                                                <!-- Refresh -->
-                                                                <button type="button" class="btn" onclick="location.href='@Url.Action("Refresh", "Credit", new {ClientId= item.Client.Id, LineId= line.Id})'">
-                                                                    <span class="material-icons icon icon-dark">mode_edit</span>
-                                                                </button>
-                                                                <!-- Remove -->
-                                                                <button type="button" class="btn" onclick="location.href='@Url.Action("Remove", "Credit", new {ClientId= item.Client.Id, LineId= line.Id})'">
-                                                                    <span class="material-icons icon icon-danger">delete</span>
-                                                                </button>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                }
-                                                @if((int?)TempData["Id"] == item.Client.Id && (int?)TempData["LineId"] == line.Id && TempData["Method"]?.ToString() == "Remove")
-                                                {
-                                                    <tr>
-                                                        <td colspan="6">
-                                                            <partial name="_Remove" model="new CreditConnectionModel{ClientId= item.Client.Id, LineId= line.Id}" />
-                                                        </td>
-                                                    </tr>
-                                                }
-                                            }
-
-                                            @switch (TempData["Method"])
-                                            {
-                                                case "Add":
-                                                    <tr>
-                                                        <td colspan="7">
-                                                            <partial name="_Add" model="@new CreditLine() { Id = (int?)@TempData["Id"] ?? 0, CreatedDate = DateTime.Now }"/>
-                                                        </td>
-                                                    </tr>
-                                                    break;
-                                                case "Fee":
-                                                    <tr>
-                                                        <td colspan="7">
-                                                            <partial name="_Fee" model="@new CreditLine() { Id = (int?)@TempData["Id"] ?? 0, CreatedDate = DateTime.Now }" />
-                                                        </td>
-                                                    </tr>
-                                                    break;
-                                                case "Clear":
-                                                    <tr>
-                                                        <td colspan = "7">
-                                                            <partial name = "_Clear" model = "item"/>
-                                                        </td>
-                                                    </tr>
-                                                    break;
-                                                default:
-                                                    break;
-                                            }
-                                        </tbody>
-                                        <tfoot>
-                                            <tr>
-                                                <td colspan="4">
-                                                    <!-- Add -->
-                                                    <button type="button" class="btn"
-                                                    onclick="location.href='@Url.Action("Add", "Credit", new {id = item.Client.Id})'">
-                                                        <span class="material-icons icon icon-primary">add_circle</span>
-                                                    </button>
-                                                    <!-- Fee -->
-                                                    <button type="button" class="btn"
-                                                    onclick="location.href='@Url.Action("Fee", "Credit", new {id = item.Client.Id})'">
-                                                        <span class="material-icons icon icon-primary">post_add</span>
-                                                    </button>
-                                                    <!-- Clear -->
-                                                    <button type="button" class="btn"
-                                                    onclick="location.href='@Url.Action("Clear", "Credit", new {id = item.Client.Id})'">
-                                                        <span class="material-icons icon icon-danger">cancel</span>
-                                                    </button>
-                                                    <!-- Copy -->
-                                                    <button type="button" class="btn" id="btnCopy">
-                                                        <span class="material-icons icon icon-success">content_copy</span>
-                                                    </button>
-                                                </td>
-                                                <td>Total</td>
-                                                <td>₡ @item.CreditSummary.Total</td>
-                                                <td></td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                    <div id="CopyMessage" class="alert alert-success" role="alert" style="visibility: hidden">
-                                        ¡Copiado!
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                    </div>
-                                </div>
-                            </div>
-                        }
+                        </div>
                     </div>
                 }
             </div>
@@ -329,49 +185,56 @@
 
 @section scripts{
     <script type="text/javascript">
-        function copyToClipboard(id, name, total) {
-
-            // Get the text field
-
-            const textArea = document.createElement("textarea");
-
-            textArea.value = "Hola ".concat(name, ", *La llama del Bosque* le saluda! 🔥🌳\n", "@ConfigurationModel.BalanceMessage ₡", total, ".*");
-            textArea.setAttribute("readonly", "");
-
-            // Select the text field
-            textArea.select();
-
-            // Copy the text inside the text field
-            navigator.clipboard.writeText(textArea.value);
-
-            document.getElementById('CopyMessage-'.concat(id)).innerHTML = '<div class="alert alert-success" role = "alert">¡Copiado!<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
-            //.style.visibility = "visible";
-        }
-
-
-        document.addEventListener("DOMContentLoaded", function () {
-            scrollToItem(@TempData["Id"]);
-        });
-
-        function scrollToItem(id) {
-            document.getElementById(`flush-collapse-${id}`).scrollIntoView();
-        }
-
         function searchCredits() {
-            // Declare variables
             var input, filter;
             input = document.getElementById('searchInput');
             filter = input.value.toUpperCase();
-
             $.ajax({
                 url: '@Url.Action("Index","Credit")',
                 type: 'GET',
                 cache: false,
                 data: filter,
             });
-
             window.location.reload();
-
         }
+
+        function copyToClipboard(id, name, total) {
+            const message = `Hola ${name}, *La llama del Bosque* le saluda! 🔥🌳\n @ConfigurationModel.BalanceMessage ₡${total}.*`;
+            navigator.clipboard.writeText(message)
+                .then(() => {
+                    const copyMessage = document.getElementById(`CopyMessage-${id}`);
+                    copyMessage.innerHTML = `
+                        <div class="alert alert-success" role="alert">
+                            ¡Copiado!
+                            <button type="button" class="btn-close float-end" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+                })
+                .catch((error) => {
+                    console.error('Error al copiar al portapapeles:', error);
+                });
+        }
+
+        function showPartial(id) {
+            var partialDivs = document.querySelectorAll('[id*="Partial"]');
+            partialDivs.forEach(function (partialDiv) {
+                if (partialDiv.id !== id) {
+                    partialDiv.style.display = "none";
+                }
+            });
+
+            var element = document.getElementById(id);
+
+            if (element.style.display === "none") {
+                if (element.tagName === "DIV") {
+                    element.style.display = "block";
+                } else if (element.tagName === "TR") {
+                    element.style.display = "table-row";
+                }            
+            } else {
+                element.style.display = "none";
+            }
+        }
+
     </script>
 }

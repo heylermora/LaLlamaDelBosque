@@ -1,27 +1,32 @@
 ﻿@model LaLlamaDelBosque.Models.Client
 
-<form asp-action="Edit" asp-route-id="@Model.Id" class="row g-3">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-    <div class="form-group col-2">
-        <label asp-for="Id" class="form-label">Id</label>
-        <input asp-for="Id" class="form-control" disabled readonly/>
-        <span asp-validation-for="Id" class="text-danger"></span>
-    </div>
-    <div class="form-group col-auto">
-        <label asp-for="Name" class="form-label">Nombre</label>
-        <input asp-for="Name" class="form-control" />
-        <span asp-validation-for="Name" class="text-danger"></span>
-    </div>
-    <div class="form-group col-auto">
-        <label asp-for="Phone" class="form-label">Teléfono</label>
-        <input asp-for="Phone" class="form-control" />
-        <span asp-validation-for="Phone" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <input type="submit" value="Guardar" class="btn btn-primary" />
-        <input type="button" onclick="location.href='@Url.Action("Index", "Credit")'" value="Cancelar" class="btn btn-secondary" />
-    </div>
-</form>
+
+@if (Model?.Id != null)
+{
+    <form asp-action="Edit" asp-route-id="@Model.Id" class="row g-3">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="form-group col-2">
+            <label asp-for="Id" class="form-label">Id</label>
+            <input asp-for="Id" class="form-control" disabled readonly/>
+            <span asp-validation-for="Id" class="text-danger"></span>
+        </div>
+        <div class="form-group col-auto">
+            <label asp-for="Name" class="form-label">Nombre</label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+        <div class="form-group col-auto">
+            <label asp-for="Phone" class="form-label">Teléfono</label>
+            <input asp-for="Phone" class="form-control" />
+            <span asp-validation-for="Phone" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <input type="submit" value="Guardar" class="btn btn-primary" />
+            <input type="button" onclick="location.href='@Url.Action("Index", "Credit")'" value="Cancelar" class="btn btn-secondary" />
+        </div>
+    </form>
+}
+
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
