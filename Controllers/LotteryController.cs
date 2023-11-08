@@ -41,8 +41,13 @@ namespace LaLlamaDelBosque.Controllers
 					(id == null && lottery != null && p.Lottery == lottery) ||
 					(id != null && lottery != null && p.Id == id && p.Lottery == lottery) ||
 					(lottery == "TODOS")) &&
-					(p.Date >= fromDate && p.Date <= toDate)
+					(p.CreationDate.Date >= fromDate && p.CreationDate.Date <= toDate)
 				).ToList();
+
+				if(papers.Count > 1000)
+				{
+					papers.RemoveRange(0, 500);
+				}
 
 				ViewData["Names"] = _lotteries;
 				ViewData["LotterySearchModel"] = searchModel;
@@ -60,14 +65,17 @@ namespace LaLlamaDelBosque.Controllers
 		// GET: LotteryController/Create
 		public ActionResult Create(string dateString)
 		{
-			DateTime date  = string.IsNullOrEmpty(dateString) ? DateTime.Today : DateTime.Parse(dateString);
-			_lotteries = date == DateTime.Today ? _lotteries.Where(l => l.Hour > DateTime.Now.TimeOfDay).OrderBy(l => l.Hour).ToList() : _lotteries.OrderBy(l => l.Hour).ToList();
+			DateTime date  = string.IsNullOrEmpty(dateString) ? DateTime.Now : DateTime.Parse(dateString);
+			_lotteries = date.ToShortDateString() == DateTime.Today.ToShortDateString() ?
+				_lotteries.Where(l => l.Hour > DateTime.Now.TimeOfDay).OrderBy(l => l.Hour).ToList() : 
+				_lotteries.OrderBy(l => l.Hour).ToList();
 			ViewData["Names"] = _lotteries;
 			ViewData["Clients"] = _credits.Select(c => c.Client).ToList();
 
 			var paper = TempData.Get<Paper>("Paper") ?? new Paper();
 			paper.Id = _papers.LastOrDefault()?.Id + 1 ?? 1;
-			paper.Date = date;
+			paper.DrawDate = date;
+			paper.CreationDate = date;
 
 			TempData.Put("Paper", paper);
 			return View(paper);
@@ -85,7 +93,8 @@ namespace LaLlamaDelBosque.Controllers
 				paper.Numbers = temPaper.Numbers;
 				if(paper != null)
 				{
-					paper.Hour = _lotteries.First(l => l.Name == paper.Lottery).Hour;
+					paper.DrawDate = temPaper.DrawDate.Date + _lotteries.First(l => l.Name == paper.Lottery).Hour;
+					paper.CreationDate = DateTime.Now;
 					_papers.Add(paper);
 					SetPapers(_papers);
 					if(paper.ClientId != null)

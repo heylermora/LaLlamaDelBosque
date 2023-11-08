@@ -93,7 +93,7 @@ namespace LaLlamaDelBosque.Controllers
 
 		private SummaryModel GetLotteries(SummaryModel summary)
 		{
-			var todayPapers = _papers.Papers.Where(p => p.Date.ToShortDateString() == DateTime.Today.ToShortDateString()).ToList();
+			var todayPapers = _papers.Papers.Where(p => p.CreationDate.ToShortDateString() == DateTime.Today.ToShortDateString()).ToList();
 			
 			var totalPapers = todayPapers.Count;
 			var totalAmount = todayPapers.Sum(p => p.Numbers.Sum(n => n.Amount));

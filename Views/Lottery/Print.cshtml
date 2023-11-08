@@ -26,11 +26,14 @@
                         <h2>La Llama del Bosque</h2>
                         <div>
                             <p>
-                                <strong>FECHA:</strong> @DateTime.Now.ToShortDateString()
-                                <strong>HORA:</strong> @DateTime.Now.ToShortTimeString()
+                                <strong>FECHA: </strong> @Model.CreationDate.ToShortDateString()
+                                <strong>HORA: </strong> @Model.CreationDate.ToShortTimeString()
                             </p>
-                            <p><strong>FECHA SORTEO:</strong> @Model.Date.ToShortDateString()</p>
                             <p><strong>SORTEO:</strong> @Model.Lottery</p>
+                            <p>
+                                <strong>FECHA:</strong> @Model.DrawDate.ToShortDateString()
+                                <strong>HORA: </strong> @Model.DrawDate.ToShortTimeString()
+                            </p>
                             <p><strong>PAPELITO:</strong> #@Model.Id</p>
                         </div>
 

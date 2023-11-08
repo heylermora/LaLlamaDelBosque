@@ -7,9 +7,9 @@ namespace LaLlamaDelBosque.Services
 {
 	public class ScrapingService
 	{
-		private List<ScrapingLottery> _scrapinglotteries;
-		private List<Lottery> _lotteries;
-		private List<Paper> _papers;
+		private readonly List<ScrapingLottery> _scrapinglotteries;
+		private readonly List<Lottery> _lotteries;
+		private readonly List<Paper> _papers;
 
 		public ScrapingService()
 		{
@@ -51,7 +51,7 @@ namespace LaLlamaDelBosque.Services
 									line.Description = description;
 									break;
 								case 2:
-									var papers = _papers.Where(x => x.Lottery == description && x.Date == DateTime.Today && x.Numbers.Any(x => x.Value == value));
+									var papers = _papers.Where(x => x.Lottery == description && x.CreationDate == DateTime.Today && x.Numbers.Any(x => x.Value == value));
 									var amount = papers.Sum(x => x.Numbers.Sum(n => n.Value == value ? n.Amount : 0));
 									var busted = papers.Sum(x => x.Numbers.Sum(n => n.Value == value ? n.Busted : 0));
 									line.Number = value;

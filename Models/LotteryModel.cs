@@ -60,8 +60,9 @@ namespace LaLlamaDelBosque.Models
 		[Required(ErrorMessage = "El campo es requerido.")]
 		public string Lottery { get; set; } = "";
 		[Required(ErrorMessage = "El campo es requerido.")]
-		public DateTime Date { get; set; }
-		public TimeSpan Hour { get; set; }
+		public DateTime CreationDate { get; set; }
+		[Required(ErrorMessage = "El campo es requerido.")]
+		public DateTime DrawDate { get; set; }
 		public List<Number> Numbers { get; set; } = new List<Number>();
 		public int? ClientId { get; set; }
 	}

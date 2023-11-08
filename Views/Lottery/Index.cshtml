@@ -63,7 +63,8 @@
 						<tr>
 							<th>Papelito</th>
 							<th>Sorteo</th>
-							<th>Fecha</th>
+							<th>Fecha de creación</th>
+							<th>Fecha de sorteo</th>
 							<th>Monto</th>
 							<th>Reventado</th>
 							<th>Total</th>
@@ -75,7 +76,8 @@
 							<tr>
 								<td>@item.Id</td>		
 								<td>@item.Lottery</td>
-								<td>@item.Date.ToShortDateString()</td>
+								<td>@item.CreationDate.ToString("g")</td>
+								<td>@item.DrawDate.ToString("g")</td>
 								<td>₡ @item.Numbers.Sum(n=>n.Amount)</td>
 								<td>₡ @item.Numbers.Sum(n=>n.Busted)</td>
 								<td>₡ @{
@@ -87,7 +89,7 @@
 										<button type="button" class="btn" onclick="location.href='@Url.Action("Print", "Lottery", new{id=item.Id})'">
 											<span class="material-icons icon-success">visibility</span>
 										</button>
-										@if(item.Hour > DateTime.Now.TimeOfDay && item.Date >= DateTime.Now)
+										@if(item.DrawDate > DateTime.Now)
 										{
 											<!-- Delete -->
 											<button type="button" class="btn btn-delete" data-id="@item.Id">
