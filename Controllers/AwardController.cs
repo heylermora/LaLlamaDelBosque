@@ -1,11 +1,11 @@
 ﻿using LaLlamaDelBosque.Models;
-using LaLlamaDelBosque.Utils;
 using LaLlamaDelBosque.Services;
+using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using NuGet.Packaging;
 using Rotativa.AspNetCore;
 using Rotativa.AspNetCore.Options;
-using NuGet.Packaging;
 
 namespace LaLlamaDelBosque.Controllers
 {
@@ -14,14 +14,12 @@ namespace LaLlamaDelBosque.Controllers
 	public class AwardController: Controller
 	{
 		private AwardModel _awards;
-		private AwardSetting _setting;
 
 		private ScrapingService _scrapingService;
 
 		public AwardController()
 		{
 			_awards = GetAwards();
-			_setting = GetSetting();
 			_scrapingService = new ScrapingService();
 		}
 
@@ -168,17 +166,6 @@ namespace LaLlamaDelBosque.Controllers
 			}
 		}
 
-		#region AwardSetting
-
-		// GET: AwardController/Setting
-		public ActionResult Setting()
-		{
-			var settings = new AwardSetting();
-			return View(settings);
-		}
-
-		#endregion
-
 		private AwardModel GetAwards()
 		{
 			var award = JsonFile.Read("Awards", new AwardModel());
@@ -189,17 +176,6 @@ namespace LaLlamaDelBosque.Controllers
 		{
 			if (awards != null)
 				JsonFile.Write("Awards", awards);
-		}
-
-		private AwardSetting GetSetting()
-		{
-			var setting = JsonFile.Read("Setting", new AwardSetting());
-			return setting;
-		}
-
-		private void SetSetting(AwardSetting setting)
-		{
-			JsonFile.Write("Setting", setting);
 		}
 	}
 }
