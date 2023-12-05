@@ -3,6 +3,7 @@ using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Xml.Linq;
@@ -12,8 +13,8 @@ namespace LaLlamaDelBosque.Controllers
 	public class LotteryController: Controller
 	{
 		private List<Lottery> _lotteries;
-		private List<Paper> _papers;
-		private List<Credit> _credits;
+		private readonly List<Paper> _papers;
+		private readonly List<Credit> _credits;
 
 		public LotteryController()
 		{
@@ -67,8 +68,12 @@ namespace LaLlamaDelBosque.Controllers
 		{
 			DateTime date  = string.IsNullOrEmpty(dateString) ? DateTime.Now : DateTime.Parse(dateString);
 			_lotteries = date.ToShortDateString() == DateTime.Today.ToShortDateString() ?
-				_lotteries.Where(l => l.Hour > DateTime.Now.TimeOfDay).OrderBy(l => l.Hour).ToList() : 
-				_lotteries.OrderBy(l => l.Hour).ToList();
+				_lotteries.Where(l => l.Hour > DateTime.Now.TimeOfDay && (l.Days?.Contains(date.DayOfWeek.ToString()) ?? true))
+					.OrderBy(l => l.Hour)
+					.ToList() : 
+				_lotteries.Where(l => (l.Days?.Contains(date.DayOfWeek.ToString()) ?? true))
+					.OrderBy(l => l.Hour)
+					.ToList();
 			ViewData["Names"] = _lotteries;
 			ViewData["Clients"] = _credits.Select(c => c.Client).ToList();
 
@@ -264,7 +269,7 @@ namespace LaLlamaDelBosque.Controllers
 			return papers.Papers;
 		}
 
-		private void SetPapers(List<Paper> papers)
+		private static void SetPapers(List<Paper> papers)
 		{
 			var paperModel = new PaperModel()
 			{
@@ -273,13 +278,13 @@ namespace LaLlamaDelBosque.Controllers
 			JsonFile.Write("Papers", paperModel);
 		}
 
-		private List<Credit> GetCredits()
+		private static List<Credit> GetCredits()
 		{
 			var credits = JsonFile.Read("Credits", new CreditModel());
 			return credits.Credits.ToList();
 		}
 
-		private void SetCredits(List<Credit> credits)
+		private static void SetCredits(List<Credit> credits)
 		{
 			var creditModel = new CreditModel()
 			{

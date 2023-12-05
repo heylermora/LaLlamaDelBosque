@@ -38,7 +38,8 @@
     {
       "Order": 9,
       "Name": "NICA 6 PM",
-      "Hour": "18:00:00"
+      "Hour": "18:00:00",
+      "Days": [ "Tuesday", "Saturday" ]
     },
     {
       "Order": 11,

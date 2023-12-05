@@ -1,45 +1,45 @@
-﻿@model AwardLine
+﻿@model LaLlamaDelBosque.Models.AwardConnectionModel
 
-<form asp-action="Add" asp-route-id= class="row g-3">
+<form asp-action="Add" asp-route-awardid=@Model.AwardId class ="row g-3">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <div class="form-group">
-        <input asp-for="Order" class="form-control visually-hidden" />
+        <input asp-for="AwardLine.Order" class="form-control visually-hidden" />
     </div>
-    <div class="form-group col-auto">
-        <label asp-for="Description" class="form-label">Descripción</label>
-        <input asp-for="Description" class="form-control"  value="NICA 9 PM"/>
-        <span asp-validation-for="Description" class="text-danger"></span>
+    <div class="form-group col-2">
+        <label asp-for="AwardLine.Description" class="form-label">Descripción</label>
+        <input asp-for="AwardLine.Description" class="form-control" value="NICA 9 PM" />
+        <span asp-validation-for="AwardLine.Description" class="text-danger"></span>
     </div>
     <div class="form-group col-1">
-        <label asp-for="Number" class="form-label">Número</label>
-        <input asp-for="Number" class="form-control" />
-        <span asp-validation-for="Number" class="text-danger"></span>
+        <label asp-for="AwardLine.Number" class="form-label">Número</label>
+        <input asp-for="AwardLine.Number" class="form-control" />
+        <span asp-validation-for="AwardLine.Number" class="text-danger"></span>
     </div>
     <div class="form-group col-2">
-        <label asp-for="Amount" class="form-label">Monto</label>
+        <label asp-for="AwardLine.Amount" class="form-label">Monto</label>
         <div class="input-group">
             <div class="input-group-text">₡</div>
-            <input asp-for="Amount" class="form-control" />
+            <input asp-for="AwardLine.Amount" class="form-control" />
         </div>
-        <span asp-validation-for="Amount" class="text-danger"></span>
+        <span asp-validation-for="AwardLine.Amount" class="text-danger"></span>
     </div>
     <div class="form-group col-2">
-        <label asp-for="Busted" class="form-label">Reventado</label>
+        <label asp-for="AwardLine.Busted" class="form-label">Reventado</label>
         <div class="input-group">
             <div class="input-group-text">₡</div>
-            <input asp-for="Busted" class="form-control" />
+            <input asp-for="AwardLine.Busted" class="form-control" />
         </div>
-        <span asp-validation-for="Busted" class="text-danger"></span>
+        <span asp-validation-for="AwardLine.Busted" class="text-danger"></span>
     </div>
     <div class="form-group col-2">
-        <label asp-for="TimesAmount" class="form-label"># Monto</label>
-        <input asp-for="TimesAmount" class="form-control" />
-        <span asp-validation-for="TimesAmount" class="text-danger"></span>
+        <label asp-for="AwardLine.TimesAmount" class="form-label"># Monto</label>
+        <input asp-for="AwardLine.TimesAmount" class="form-control" />
+        <span asp-validation-for="AwardLine.TimesAmount" class="text-danger"></span>
     </div>
     <div class="form-group col-2">
-        <label asp-for="TimesBusted" class="form-label"># Reventado</label>
-        <input asp-for="TimesBusted" class="form-control" />
-        <span asp-validation-for="TimesBusted" class="text-danger"></span>
+        <label asp-for="AwardLine.TimesBusted" class="form-label"># Reventado</label>
+        <input asp-for="AwardLine.TimesBusted" class="form-control" />
+        <span asp-validation-for="AwardLine.TimesBusted" class="text-danger"></span>
     </div>
     <div class="form-group">
         <input type="submit" value="Crear" class="btn btn-primary" />

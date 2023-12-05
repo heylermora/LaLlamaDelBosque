@@ -1,64 +1,44 @@
-﻿@model AwardLine
+﻿@model LaLlamaDelBosque.Models.AwardConnectionModel
 
 
-<form asp-action="Edit" asp-route-awardid="@TempData["Id"]" class="row g-3">
+<form asp-action="Edit" asp-route-awardid=@Model.AwardId class="row g-3">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-    <tr>
-        <td>
-            <div class="form-group col-auto">
-                <input asp-for="Order" class="form-control" readonly/>
-                <span asp-validation-for="Order" class="text-danger"></span>
-            </div>
-        </td>
-        <td>
-            <div class="form-group col-auto">
-                <input asp-for="Description" class="form-control" readonly/>
-                <span asp-validation-for="Description" class="text-danger"></span>
-            </div>
-        </td>
-        <td>
-            <div class="form-group col-auto">
-                <input asp-for="Number" class="form-control" readonly/>
-                <span asp-validation-for="Number" class="text-danger"></span>
-            </div>
-        </td>
-        <td>
-            <div class="form-group col-auto">
-                <input asp-for="Amount" class="form-control" readonly/>
-                <span asp-validation-for="Amount" class="text-danger"></span>
-            </div>
-        </td>
-        <td>
-            <div class="form-group col-auto">
-                <input asp-for="Busted" class="form-control" readonly/>
-                <span asp-validation-for="Busted" class="text-danger"></span>
-            </div>
-        </td>
-        <td>
-            <div class="form-group col-auto">
-                <input asp-for="TimesAmount" class="form-control" />
-                <span asp-validation-for="TimesAmount" class="text-danger"></span>
-            </div>
-        </td>
-        <td>
-            <div class="form-group col-auto">
-                <input asp-for="TimesBusted" class="form-control" />
-                <span asp-validation-for="TimesBusted" class="text-danger"></span>
-            </div>
-        </td>
-        <td>
-            <div class="form-group col-auto">
-                <input asp-for="Award" class="form-control" readonly/>
-                <span asp-validation-for="Award" class="text-danger"></span>
-            </div>
-        </td>
-        <td colspan="2">
-            <div class="form-group col-auto">
-                <input type="submit" value="Guardar" class="btn btn-primary"/>
-                <input type="button" onclick="location.href='@Url.Action("Index", "Credit")'" value="Cancelar" class="btn btn-secondary" />
-            </div>
-        </td>
-    </tr>
+    <div class="form-group col-1">
+        <input asp-for="AwardLine.Order" class="form-control" readonly />
+        <span asp-validation-for="AwardLine.Order" class="text-danger"></span>
+    </div>
+    <div class="form-group col-2">
+        <input asp-for="AwardLine.Description" class="form-control" readonly />
+        <span asp-validation-for="AwardLine.Description" class="text-danger"></span>
+    </div>
+    <div class="form-group col-1">
+        <input asp-for="AwardLine.Number" class="form-control" readonly />
+        <span asp-validation-for="AwardLine.Number" class="text-danger"></span>
+    </div>
+    <div class="form-group col-2">
+        <input asp-for="AwardLine.Amount" class="form-control" readonly />
+        <span asp-validation-for="AwardLine.Amount" class="text-danger"></span>
+    </div>
+    <div class="form-group col-2">
+        <input asp-for="AwardLine.Busted" class="form-control" readonly />
+        <span asp-validation-for="AwardLine.Busted" class="text-danger"></span>
+    </div>
+    <div class="form-group col-1">
+        <input asp-for="AwardLine.TimesAmount" class="form-control" />
+        <span asp-validation-for="AwardLine.TimesAmount" class="text-danger"></span>
+    </div>
+    <div class="form-group col-1">
+        <input asp-for="AwardLine.TimesBusted" class="form-control" />
+        <span asp-validation-for="AwardLine.TimesBusted" class="text-danger"></span>
+    </div>
+    <div class="form-group col-2">
+        <input asp-for="AwardLine.Award" class="form-control" readonly />
+        <span asp-validation-for="AwardLine.Award" class="text-danger"></span>
+    </div>
+    <div class="form-group col-auto">
+        <input type="submit" value="Guardar" class="btn btn-primary"/>
+        <input type="button" onclick="location.href='@Url.Action("Index", "Award")'" value="Cancelar" class="btn btn-secondary" />
+    </div>
 </form>
 
 

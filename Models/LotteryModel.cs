@@ -20,6 +20,7 @@ namespace LaLlamaDelBosque.Models
 		public int Order { get; set; }
 		public string Name { get; set; } = "";
 		public TimeSpan Hour { get; set; }
+		public List<string>? Days { get; set; }
 	}
 
 	public class ScrapingLottery

@@ -9,89 +9,124 @@
 
 <!DOCTYPE html>
     <html lang="en">
-        <head>
-            <meta charset="utf-8" />
-            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-            <title>@ViewData["Title"] - La Llama Del Bosque</title>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>@ViewData["Title"] - La Llama Del Bosque</title>
            
-            <link rel="stylesheet" href="~/LaLlamaDelBosque.styles.css" asp-append-version="true" />
-            <link rel="stylesheet" href="~/css/print.css" asp-append-version="true" />
-        </head>
-        <body>
-            <div class="table-responsive container">
-                <div class="row justify-content-md-center">
-                    <div class="col-lg-3">
+        <link rel="stylesheet" href="~/LaLlamaDelBosque.styles.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/css/print.css" asp-append-version="true" />
+    </head>
+    <body>
+        <div id="numbersTable" class="container">
+            <div class="row justify-content-md-center">
+                <div class="col-lg-3">
 
-                        <h1>TIEMPOS</h1>
-                        <h2>La Llama del Bosque</h2>
-                        <div>
-                            <p>
-                                <strong>FECHA: </strong> @Model.CreationDate.ToShortDateString()
-                                <strong>HORA: </strong> @Model.CreationDate.ToShortTimeString()
-                            </p>
-                            <p><strong>SORTEO:</strong> @Model.Lottery</p>
-                            <p>
-                                <strong>FECHA:</strong> @Model.DrawDate.ToShortDateString()
-                                <strong>HORA: </strong> @Model.DrawDate.ToShortTimeString()
-                            </p>
-                            <p><strong>PAPELITO:</strong> #@Model.Id</p>
-                        </div>
-
-                        <div class="container">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th style="width: 40%;">#</th>
-                                        <th>Monto</th>
-                                        <th>Rtado</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach(var item in Model.Numbers.GroupBy(n => new { n.Amount, n.Busted }).OrderBy(n => n.Key.Amount).ThenBy(y => y.Key.Busted).Select(g => new { amount = g.Key.Amount, busted = g.Key.Busted, values = g.Select(y => y.Value) }))
-                                    {
-                                        string values = string.Join(" x ", item.values);
-                                        <tr>
-                                            <td>@values</td>
-                                            <td>₡‎ @item.amount</td>
-                                            <td>₡‎ @item.busted</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                            <div class="total-section">
-                                <h3>TOTAL ₡ @total.ToString("N", CultureInfo.InvariantCulture)</h3>
-                            </div>
-                        </div>
-
+                    <h1>TIEMPOS</h1>
+                    <h2>La Llama del Bosque</h2>
+                    <div>
                         <p>
-                            <strong>
-                            ◉ Pagamos al 85. <br />
-                            ◉ Sin tiquete no se paga. <br />
-                            ◉ Revise su tiquete. <br />
-                            </strong>
-                            (montos, números, hora, fecha y sorteo)
+                            <strong>FECHA: </strong> @Model.CreationDate.ToShortDateString()
+                            <strong>HORA: </strong> @Model.CreationDate.ToShortTimeString()
                         </p>
-
+                        <p><strong>SORTEO:</strong> @Model.Lottery</p>
                         <p>
-                            Gracias por su compra.
-                            <strong>¡Mucha Suerte!</strong>
+                            <strong>FECHA:</strong> @Model.DrawDate.ToShortDateString()
+                            <strong>HORA: </strong> @Model.DrawDate.ToShortTimeString()
                         </p>
-
+                        <p><strong>PAPELITO:</strong> #@Model.Id</p>
                     </div>
+
+                    <div class="container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 40%;">#</th>
+                                    <th>Monto</th>
+                                    <th>Rtado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach(var item in Model.Numbers.GroupBy(n => new { n.Amount, n.Busted }).OrderBy(n => n.Key.Amount).ThenBy(y => y.Key.Busted).Select(g => new { amount = g.Key.Amount, busted = g.Key.Busted, values = g.Select(y => y.Value) }))
+                                {
+                                    string values = string.Join(" x ", item.values);
+                                    <tr>
+                                        <td>@values</td>
+                                        <td>₡‎ @item.amount</td>
+                                        <td>₡‎ @item.busted</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        <div class="total-section">
+                            <h3>TOTAL ₡ @total.ToString("N", CultureInfo.InvariantCulture)</h3>
+                        </div>
+                    </div>
+
+                    <p>
+                        <strong>
+                        ◉ Pagamos al 85. <br />
+                        ◉ Sin tiquete no se paga. <br />
+                        ◉ Revise su tiquete. <br />
+                        </strong>
+                        (montos, números, hora, fecha y sorteo)
+                    </p>
+
+                    <p>
+                        Gracias por su compra.
+                        <strong>¡Mucha Suerte!</strong>
+                    </p>
+
                 </div>
             </div>
-            <script>
-                var desiredWidth = 467;
+        </div>
+        <div class="btn-container">
+            <button type="button" class="btn btn-primary" onclick="printDocument()">Imprimir</button>
+            <button type="button" class="btn btn-secondary" onclick="copyAsImage()">Copiar</button>
+            <div id="copyMessage"></div>
+            <button onclick="location.href='@Url.Action("Create", "Lottery")'" class="btn">Volver</button>
+        </div>
 
-                if (window.opener && window.location.href !== window.opener.location.href) {
-                    window.print();
-                }
-                else {
-                    var url = window.location.href;
-                    window.open(url, this.target, 'width=467');
-                    window.location.href = '@Url.Action("Create", "Lottery")';
-                }
-            </script>
-        </body>
-    </html>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script>
+
+        function printDocument() {
+            window.print();
+        }
+
+        function copyAsImage() {
+            var table = document.getElementById("numbersTable");
+            html2canvas(table).then(function (canvas) {
+                canvas.toBlob(function (blob) {
+                    var imageBlob = new Blob([blob], { type: "image/png" });
+
+                    // Copy image to clipboard
+                    if (navigator.clipboard && navigator.clipboard.write) {
+                        navigator.clipboard.write([
+                            new ClipboardItem({
+                                "image/png": imageBlob
+                            })
+                        ]).then(function () {
+                            console.log('Image copied to clipboard successfully.');
+                            showCopySuccessMessage();
+                        }).catch(function (error) {
+                            console.error('Error copying image to clipboard:', error);
+                        });
+                    } else {
+                        console.warn('Clipboard API is not supported in this browser.');
+                    }
+                });
+            });
+        }
+
+        function showCopySuccessMessage() {
+            var copyMessage = document.getElementById('copyMessage');
+            copyMessage.innerHTML = '<p>¡Copiado!</p>';
+            setTimeout(function () {
+                copyMessage.innerHTML = '';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
 

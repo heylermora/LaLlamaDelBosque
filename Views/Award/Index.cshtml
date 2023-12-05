@@ -31,217 +31,112 @@
                 @foreach (var item in Model)
                 {
                     <div class="accordion-item p-1 mb-2" id="elementId">
-                        @if (item.Id != (int?)TempData["Id"])
-                        {
-                            <h2 class="accordion-header" id="flush-headingOne">
-                                <button class="accordion-button collapsed p-2" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-@item.Id" aria-expanded="false" aria-controls="flush-collapse-@item.Id" on>
-                                    <div class="d-flex align-items-start">
-                                        <span class="material-icons star">
-                                            workspace_premium
-                                        </span>
-                                    </div>
-                                    <div class="d-flex align-items-start flex-column">
-                                        <div class="p-1">
-                                            <b style="font-size: 24px">@item.Date.ToLongDateString()</b>
-                                        </div>
-                                    </div>
-                                </button>
-                            </h2>
-                            <div id="flush-collapse-@item.Id" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
-                                <div class="accordion-body table-responsive">
-                                    <table class="table">
-                                        <thead>
-                                            <tr>
-                                                <th colspan="2">
-                                                    <!-- Copy -->
-                                                    <button type="button" class="btn" onclick="copyToClipboard('@item.Id')">
-                                                        <span class="material-icons icon icon-success">content_copy</span>
-                                                    </button>
-                                                    <!-- Add -->
-                                                    <button type="button" class="btn"
-                                                        onclick="location.href='@Url.Action("Add", "Award")'">
-                                                        <span class="material-icons icon icon-primary">add_circle</span>
-                                                    </button>
-                                                    <!-- Delete -->
-                                                    <button type="button" class="btn"
-                                                        onclick="location.href='@Url.Action("Delete", "Award", new {Id= item.Id})'">
-                                                        <span class="material-icons icon icon-danger">delete</span>
-                                                    </button>
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                    </table>
-                                    <div id="CopyMessage-@item.Id"></div>
-                                    <table class="table">
-                                        <thead>  
-                                            <tr>
-                                                <th>Id</th>
-                                                <th>Descripción</th>
-                                                <th>Número</th>
-                                                <th>Monto</th>
-                                                <th>Reventado</th>
-                                                <th># Monto</th>
-                                                <th># Reventado</th>
-                                                <th>Premio</th>
-                                                <th></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach (var line in item.AwardLines)
-                                            {
-                                                <tr>
-                                                    <td>@line.Order</td>
-                                                    <td>@line.Description</td>
-                                                    <td>@line.Number</td>
-                                                    <td>₡ @line.Amount</td>
-                                                    <td>₡ @line.Busted</td>
-                                                    <td>@line.TimesAmount</td>
-                                                    <td>@line.TimesBusted</td>
-                                                    <td class="table-active">₡ @line.Award</td>
-                                                    <td style="text-align:center">
-                                                        <div class="btn-group mx-auto" role="group">
-                                                            <!-- Edit -->
-                                                            <button type="button" class="btn" onclick="location.href='@Url.Action("Edit", "Award", new {AwardId= item.Id, LineId= line.Order})'">
-                                                                <span class="material-icons icon icon-dark">mode_edit</span>
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                        <tfoot>
-                                            <tr>
-                                                <td colspan="6"></td>
-                                                <td>Total</td>
-                                                <td>₡ @item.AwardLines.Sum(x => x.Award)</td>
-                                                <td></td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
+                        <h2 class="accordion-header" id="flush-headingOne">
+                            <button class="accordion-button collapsed p-2" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-@item.Id" aria-expanded="false" aria-controls="flush-collapse-@item.Id" on>
+                                <div class="d-flex align-items-start">
+                                    <span class="material-icons star">
+                                        workspace_premium
+                                    </span>
                                 </div>
-                            </div>
-                        }
-                        else
-                        {
-                            <h2 class="accordion-header" id="flush-headingOne">
-                                <button class="accordion-button collapsed p-2" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-@item.Id" aria-expanded="false" aria-controls="flush-collapse-@item.Id" on>
-                                    <div class="d-flex align-items-start">
-                                        <span class="material-icons star">
-                                            workspace_premium
-                                        </span>
+                                <div class="d-flex align-items-start flex-column">
+                                    <div class="p-1">
+                                        <b style="font-size: 24px">@item.Date.ToLongDateString()</b>
                                     </div>
-                                    <div class="d-flex align-items-start flex-column">
-                                        <div class="p-1">
-                                            <b style="font-size: 24px">@item.Date.ToLongDateString()</b>
-                                        </div>
-                                    </div>
-                                </button>
-                            </h2>
-                            <div id="flush-collapse-@item.Id" class="accordion-collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
-                                <div class="accordion-body table-responsive">
-                                    <table class="table">
-                                        <thead>
-                                            <tr>
-                                                <th colspan="2">
-                                                    <!-- Copy -->
-                                                    <button type="button" class="btn" onclick="copyToClipboard('@item.Id')">
-                                                        <span class="material-icons icon icon-success">content_copy</span>
-                                                    </button>
-                                                    <!-- Add -->
-                                                    <button type="button" class="btn"
-                                                    onclick="location.href='@Url.Action("Add", "Award")'">
-                                                        <span class="material-icons icon icon-primary">add_circle</span>
-                                                    </button>
-                                                    <!-- Delete -->
-                                                    <button type="button" class="btn"
-                                                    onclick="location.href='@Url.Action("Delete", "Award", new {Id= item.Id})'">
-                                                        <span class="material-icons icon icon-danger">delete</span>
-                                                    </button>
-                                                </th>
-                                                <th>
-                                                    @if(Model.Any() && TempData["Method"] is not null && Model.FirstOrDefault(x => x.Id == (int?)TempData["Id"]) is not null)
-                                                    {
-                                                        @switch(TempData["Method"])
-                                                        {
-                                                            case "Delete":
-                                                                <partial name="_Delete" model="item"></partial>
-                                                                break;
-                                                        }
-                                                    }
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                    </table>
-                                    <div id="CopyMessage-@item.Id"></div>
-                                    <table class="table">
-                                        <thead>
-                                            <tr>
-                                                <th>Id</th>
-                                                <th>Descripción</th>
-                                                <th>Número</th>
-                                                <th>Monto</th>
-                                                <th>Reventado</th>
-                                                <th># Monto</th>
-                                                <th># Reventado</th>
-                                                <th>Premio</th>
-                                                <th></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach(var line in item.AwardLines)
-                                            {
-                                                @if ((int?)TempData["Id"] == item.Id && (int?)TempData["LineId"] == line.Order && TempData["Method"]?.ToString() == "Edit")
-                                                {
-                                                    <partial name="_Edit" model="line" />
-                                                }
-                                                else
-                                                {
-                                                    <tr>
-                                                        <td>@line.Order</td>
-                                                        <td>@line.Description</td>
-                                                        <td>@line.Number</td>
-                                                        <td>₡ @line.Amount</td>
-                                                        <td>₡ @line.Busted</td>
-                                                        <td>@line.TimesAmount</td>
-                                                        <td>@line.TimesBusted</td>
-                                                        <td class="table-active">₡ @line.Award</td>
-                                                        <td style="text-align:center">
-                                                            <div class="btn-group mx-auto" role="group">
-                                                                <!-- Edit -->
-                                                                <button type="button" class="btn" onclick="location.href='@Url.Action("Edit", "Award", new {AwardId= item.Id, LineId= line.Order})'">
-                                                                    <span class="material-icons icon icon-dark">mode_edit</span>
-                                                                </button>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                }
-                                            }
-                                            @if(Model.Any() && TempData["Method"] is not null && Model.FirstOrDefault(x => x.Id == (int?)TempData["Id"]) is not null)
-                                            {
-                                                @switch(TempData["Method"])
-                                                {
-                                                    case "Add":
-                                                        <tr>
-                                                            <td colspan="9">
-                                                                <partial name="_Add" model="@new AwardLine() { Order = (int?)@TempData["Id"] ?? 0 }"></partial>
-                                                            </td>
-                                                        </tr>
-                                                        break;
-                                                }
-                                            }
-                                        </tbody>
-                                        <tfoot>
-                                            <tr>
-                                                <td colspan="6"></td>
-                                                <td>Total</td>
-                                                <td>₡ @item.AwardLines.Sum(x => x.Award)</td>
-                                                <td></td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
                                 </div>
+                            </button>
+                        </h2>
+                        <div id="flush-collapse-@item.Id" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+                            <div class="accordion-body table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th colspan="2">
+                                                <!-- Copy -->
+                                                <button type="button" class="btn" onclick="copyToClipboard('@item.Id')">
+                                                    <span class="material-icons icon icon-success">content_copy</span>
+                                                </button>
+                                                <!-- Add -->
+                                                <button type="button" class="btn"
+                                                    onclick="showPartial('addPartial-@item.Id')">
+                                                    <span class="material-icons icon icon-primary">add_circle</span>
+                                                </button>
+                                                <!-- Delete -->
+                                                <button type="button" class="btn"
+                                                    onclick="showPartial('deletePartial-@item.Id')">
+                                                    <span class="material-icons icon icon-danger">delete</span>
+                                                </button>
+                                            </th>
+                                        </tr>
+                                        <tr id="deletePartial-@item.Id">
+                                            <th>
+                                                <partial name="_Delete" model="item"></partial>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                                <div id="CopyMessage-@item.Id"></div>
+                                <table class="table">
+                                    <thead>  
+                                        <tr>
+                                            <th>Id</th>
+                                            <th>Descripción</th>
+                                            <th>Número</th>
+                                            <th>Monto</th>
+                                            <th>Reventado</th>
+                                            <th># Monto</th>
+                                            <th># Reventado</th>
+                                            <th>Premio</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var line in item.AwardLines)
+                                        {
+                                            <tr id="editPartial-@item.Id-@line.Order">
+                                                <td colspan="9">
+                                                    <partial name="_Edit" model="@new AwardConnectionModel() { AwardId = item.Id, AwardLine = line }" />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>@line.Order</td>
+                                                <td>@line.Description</td>
+                                                <td>@line.Number</td>
+                                                <td>₡ @line.Amount</td>
+                                                <td>₡ @line.Busted</td>
+                                                <td>@line.TimesAmount</td>
+                                                <td>@line.TimesBusted</td>
+                                                <td class="table-active">₡ @line.Award</td>
+                                                <td style="text-align:center">
+                                                    <div class="btn-group mx-auto" role="group">
+                                                        <!-- Edit -->
+                                                        <button type="button" class="btn" onclick="showPartial('editPartial-@item.Id-@line.Order')">
+                                                            <span class="material-icons icon icon-dark">mode_edit</span>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                        <tr id="addPartial-@item.Id">
+                                            <td colspan="9">
+                                                <partial name="_Add" model="@new AwardConnectionModel() { 
+                                                    AwardId = item.Id,
+                                                    AwardLine = new AwardLine(){ 
+                                                        Order = item.AwardLines.Max(al => al.Order)}}">
+                                                </partial>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="6"></td>
+                                            <td>Total</td>
+                                            <td>₡ @item.AwardLines.Sum(x => x.Award)</td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
                             </div>
-                        }
+                        </div>
                     </div>
                 }
             </div>
@@ -257,6 +152,7 @@
             const element = document.getElementById('flush-collapse-'.concat(id));
             element.scrollIntoView();
         }
+
         function copyToClipboard(id) {
             var table = document.getElementById("elementId");
             html2canvas(table).then(function (canvas) {
@@ -280,6 +176,27 @@
                     }
                 });
             });
+        }
+
+        function showPartial(id) {
+            var partialDivs = document.querySelectorAll('[id*="Partial"]');
+            partialDivs.forEach(function (partialDiv) {
+                if (partialDiv.id !== id) {
+                    partialDiv.style.display = "none";
+                }
+            });
+
+            var element = document.getElementById(id);
+
+            if (element.style.display === "none") {
+                if (element.tagName === "DIV") {
+                    element.style.display = "block";
+                } else if (element.tagName === "TR") {
+                    element.style.display = "table-row";
+                }
+            } else {
+                element.style.display = "none";
+            }
         }
     </script>
 }

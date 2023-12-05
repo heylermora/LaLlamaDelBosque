@@ -35,8 +35,6 @@ namespace LaLlamaDelBosque.Controllers
 
 		public ActionResult IndexPdf()
 		{
-			TempData["Message"] = GetMessage(_credits.Credits);
-
 			return new ViewAsPdf("_Report", _credits.Credits)
 			{
 				PageSize = Size.A4,
@@ -78,14 +76,6 @@ namespace LaLlamaDelBosque.Controllers
             }
         }
 
-        // GET: CreditController/Edit/5
-        public ActionResult Edit(int id)
-        {
-			TempData["Id"] = id;
-			TempData["Method"] = "Edit";
-			return RedirectToAction(nameof(Index));
-		}
-
         // POST: CreditController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -109,14 +99,6 @@ namespace LaLlamaDelBosque.Controllers
 			}
         }
 
-        // GET: CreditController/Delete/5
-        public ActionResult Delete(int id)
-        {
-			TempData["Id"] = id;
-			TempData["Method"] = "Delete";
-			return RedirectToAction(nameof(Index));
-		}
-
         // POST: CreditController/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -137,14 +119,6 @@ namespace LaLlamaDelBosque.Controllers
 
 		#region Credit Line
 
-		// GET: CreditController/Add
-		public ActionResult Add(int id)
-		{
-			TempData["Id"] = id;
-			TempData["Method"] = "Add";
-			return RedirectToAction(nameof(Index));
-		}
-
 		// POST: CreditController/Add
 		[HttpPost]
 		[ValidateAntiForgeryToken]
@@ -152,7 +126,6 @@ namespace LaLlamaDelBosque.Controllers
 		{
 			try
 			{
-				TempData["Id"] = id;
 				var credit = _credits.Credits.FirstOrDefault(x => x.Client.Id == id);
 				if(credit is not null && double.Parse(collection["amount"]) > 0) {
 					var creditLine = new CreditLine()
@@ -177,14 +150,6 @@ namespace LaLlamaDelBosque.Controllers
 			}
 		}
 
-		// GET: CreditController/Fee
-		public ActionResult Fee(int id)
-		{
-			TempData["Id"] = id;
-			TempData["Method"] = "Fee";
-			return RedirectToAction(nameof(Index));
-		}
-
 		// POST: CreditController/Fee
 		[HttpPost]
 		[ValidateAntiForgeryToken]
@@ -192,7 +157,6 @@ namespace LaLlamaDelBosque.Controllers
 		{
 			try
 			{
-				TempData["Id"] = id;
 				var credit = _credits.Credits.FirstOrDefault(x => x.Client.Id == id);
 				if(credit is not null)
 				{
@@ -218,15 +182,6 @@ namespace LaLlamaDelBosque.Controllers
 			}
 		}
 
-		// GET: CreditController/Refresh/5
-		public ActionResult Refresh(int clientId, int lineId)
-		{
-			TempData["Id"] = clientId;
-			TempData["LineId"] = lineId;
-			TempData["Method"] = "Refresh";
-			return RedirectToAction(nameof(Index));
-		}
-
 		// POST: CreditController/Refresh/5
 		[HttpPost]
 		[ValidateAntiForgeryToken]
@@ -234,15 +189,13 @@ namespace LaLlamaDelBosque.Controllers
 		{
 			try
 			{
-				TempData["Id"] = clientId;
-
 				var credit = _credits.Credits.First(x => x.Client.Id == clientId);
-				var line = credit.CreditLines.First(l => l.Id == int.Parse(collection["Id"]));
+				var line = credit.CreditLines.First(l => l.Id == int.Parse(collection["CreditLine.Id"]));
 
 				credit.CreditSummary.Total -= line.Amount;
 
-				line.Description = collection["description"];
-				line.Amount = double.Parse(collection["amount"]);
+				line.Description = collection["CreditLine.description"];
+				line.Amount = double.Parse(collection["CreditLine.amount"]);
 
 				credit.CreditSummary.Total += line.Amount;
 
@@ -256,15 +209,6 @@ namespace LaLlamaDelBosque.Controllers
 			}
 		}
 
-		// GET: CreditController/Remove/5
-		public ActionResult Remove(int clientId, int lineId)
-		{
-			TempData["Id"] = clientId;
-			TempData["LineId"] = lineId;
-			TempData["Method"] = "Remove";
-			return RedirectToAction(nameof(Index));
-		}
-
 		// POST: CreditController/Remove/5
 		[HttpPost]
 		[ValidateAntiForgeryToken]
@@ -272,7 +216,6 @@ namespace LaLlamaDelBosque.Controllers
 		{
 			try
 			{
-				TempData["Id"] = int.Parse(clientId);
 				var credit = _credits.Credits.First(c => c.Client.Id == int.Parse(clientId));
 				var line = credit.CreditLines.First(l => l.Id == int.Parse(lineId));
 				credit.CreditSummary.Total -= line.Amount; 
@@ -286,14 +229,6 @@ namespace LaLlamaDelBosque.Controllers
 			}
 		}
 
-		// GET: CreditController/Clear/5
-		public ActionResult Clear(int Id)
-		{
-			TempData["Id"] = Id;
-			TempData["Method"] = "Clear";
-			return RedirectToAction(nameof(Index));
-		}
-
 		// POST: CreditController/Clear/5
 		[HttpPost]
 		[ValidateAntiForgeryToken]
@@ -301,7 +236,6 @@ namespace LaLlamaDelBosque.Controllers
 		{
 			try
 			{
-				TempData["Id"] = int.Parse(Id);
 				var credit = _credits.Credits.First(c => c.Client.Id == int.Parse(Id ?? "0"));
 				credit.CreditSummary.Total = 0;
 				credit.CreditLines.Clear();

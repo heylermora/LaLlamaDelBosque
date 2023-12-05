@@ -32,7 +32,7 @@
         <div class="col-xl-10">
             <form id="searchForm" class="d-flex" asp-controller="Credit" asp-action="Index" method="get">
                 <div class="input-group form-floating mb-4 mt-1">
-                    <input id="searchInput" type="search" class="form-control" name="SearchString" placeholder="Buscar...">
+                    <input id="searchInput" type="search" class="form-control" name="SearchString" placeholder="Buscar..." oninput="searchCredits()">
                     <label for="floatingInput">Buscar</label>
                 </div>
             </form>
@@ -96,36 +96,34 @@
                                     <tbody>
                                         @foreach(var line in item.CreditLines)
                                         {
-                                            @if((int?)TempData["Id"] == item.Client.Id && (int?)TempData["LineId"] == line.Id && TempData["Method"]?.ToString() == "Refresh")
-                                            {
-                                                <partial name="_Refresh" model="line" />
-                                            }
-                                            else
-                                            {
-                                                <tr>
-                                                    <td>@line.Id</td>
-                                                    <td>@line.CreatedDate.ToShortDateString()</td>
-                                                    <td>@line.CreatedDate.ToShortTimeString()</td>
-                                                    <td>@line.Description</td>
-                                                    <td>₡ @line.Amount</td>
-                                                    <td class="table-active">@{cumulative += @line.Amount;}₡ @cumulative</td>
-                                                    <td style="text-align:center">
-                                                        <div class="btn-group mx-auto" role="group">
-                                                            <!-- Refresh -->
-                                                            <button type="button" class="btn" onclick="location.href='@Url.Action("Refresh", "Credit", new {ClientId= item.Client.Id, LineId= line.Id})'">
-                                                                <span class="material-icons icon icon-dark">mode_edit</span>
-                                                            </button>
-                                                            <!-- Remove -->
-                                                            <button type="button" class="btn" onclick="showPartial('removePartial-@item.Client.Id-@line.Id')">
-                                                                <span class="material-icons icon icon-danger">delete</span>
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            }
+                                            <tr>
+                                                <td>@line.Id</td>
+                                                <td>@line.CreatedDate.ToShortDateString()</td>
+                                                <td>@line.CreatedDate.ToShortTimeString()</td>
+                                                <td>@line.Description</td>
+                                                <td>₡ @line.Amount</td>
+                                                <td class="table-active">@{cumulative += @line.Amount;}₡ @cumulative</td>
+                                                <td style="text-align:center">
+                                                    <div class="btn-group mx-auto" role="group">
+                                                        <!-- Refresh -->
+                                                            <button type="button" class="btn" onclick="showPartial('refreshPartial-@item.Client.Id-@line.Id')">
+                                                            <span class="material-icons icon icon-dark">mode_edit</span>
+                                                        </button>
+                                                        <!-- Remove -->
+                                                        <button type="button" class="btn" onclick="showPartial('removePartial-@item.Client.Id-@line.Id')">
+                                                            <span class="material-icons icon icon-danger">delete</span>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
                                             <tr id="removePartial-@item.Client.Id-@line.Id">
                                                 <td colspan="7">
                                                     <partial name="_Remove" model="new CreditConnectionModel{ClientId= item.Client.Id, LineId= line.Id}" />
+                                                </td>
+                                            </tr>
+                                            <tr id="refreshPartial-@item.Client.Id-@line.Id">
+                                                <td colspan="7">
+                                                    <partial name="_Refresh" model="new CreditConnectionModel{ClientId= item.Client.Id, CreditLine= line}" />
                                                 </td>
                                             </tr>
                                         }
@@ -185,17 +183,13 @@
 
 @section scripts{
     <script type="text/javascript">
+        var delayTimer;
+
         function searchCredits() {
-            var input, filter;
-            input = document.getElementById('searchInput');
-            filter = input.value.toUpperCase();
-            $.ajax({
-                url: '@Url.Action("Index","Credit")',
-                type: 'GET',
-                cache: false,
-                data: filter,
-            });
-            window.location.reload();
+            clearTimeout(delayTimer);
+            delayTimer = setTimeout(function () {
+                document.getElementById('searchForm').submit();
+            }, 500);
         }
 
         function copyToClipboard(id, name, total) {

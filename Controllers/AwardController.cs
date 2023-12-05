@@ -60,15 +60,6 @@ namespace LaLlamaDelBosque.Controllers
 			return RedirectToAction(nameof(Index));
 		}
 
-		// GET: AwardController/Edit/5
-		public ActionResult Edit(int awardId, int lineId)
-		{
-			TempData["Id"] = awardId;
-			TempData["LineId"] = lineId;
-			TempData["Method"] = "Edit";
-			return RedirectToAction(nameof(Index));
-		}
-
 		// POST: AwardController/Edit/5
 		[HttpPost]
 		[ValidateAntiForgeryToken]
@@ -76,17 +67,15 @@ namespace LaLlamaDelBosque.Controllers
 		{
 			try
 			{
-				TempData["Id"] = awardId;
-
 				var award = _awards.Awards.First(x => x.Id == awardId);
-				var line = award.AwardLines.First(l => l.Order == int.Parse(collection["Order"]));
+				var line = award.AwardLines.First(l => l.Order == int.Parse(collection["AwardLine.Order"]));
 
-				line.Description = collection["description"];
-				line.Number = collection["number"];
-				line.Busted = int.Parse(collection["busted"]);
-				line.Amount = double.Parse(collection["amount"]);
-				line.TimesBusted = int.Parse(collection["timesbusted"]);
-				line.TimesAmount = double.Parse(collection["timesamount"]);
+				line.Description = collection["AwardLine.description"];
+				line.Number = collection["AwardLine.number"];
+				line.Busted = int.Parse(collection["AwardLine.busted"]);
+				line.Amount = double.Parse(collection["AwardLine.amount"]);
+				line.TimesBusted = int.Parse(collection["AwardLine.timesbusted"]);
+				line.TimesAmount = double.Parse(collection["AwardLine.timesamount"]);
 				line.Award = line.Amount * line.TimesAmount + line.Busted * line.TimesBusted;
 				SetAwards(_awards);
 				return RedirectToAction(nameof(Index));
@@ -96,14 +85,6 @@ namespace LaLlamaDelBosque.Controllers
 				Console.WriteLine(ex);
 				return RedirectToAction(nameof(Index));
 			}
-		}
-
-		// GET: AwardController/Delete/5
-		public ActionResult Delete(int id)
-		{
-			TempData["Id"] = id;
-			TempData["Method"] = "Delete";
-			return RedirectToAction(nameof(Index));
 		}
 
 		// POST: AwardController/Delete/5
@@ -124,35 +105,26 @@ namespace LaLlamaDelBosque.Controllers
 			}
 		}
 
-		// GET: AwardController/Add
-		public ActionResult Add(int id)
-		{
-			TempData["Id"] = id;
-			TempData["Method"] = "Add";
-			return RedirectToAction(nameof(Index));
-		}
-
 		// POST: AwardController/Add
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public ActionResult Add(int id, IFormCollection collection)
+		public ActionResult Add(int awardId, IFormCollection collection)
 		{
 			try
 			{
-				TempData["Id"] = id;
-				var award = _awards.Awards.FirstOrDefault(x => x.Id == id);
-				if(award is not null && double.Parse(collection["amount"]) > 0)
+				var award = _awards.Awards.FirstOrDefault(x => x.Id == awardId);
+				if(award is not null && double.Parse(collection["AwardLine.amount"]) > 0)
 				{
 					var awardLine = new AwardLine()
 					{
 						Order = award?.AwardLines.LastOrDefault()?.Order + 1 ?? 1,
-						Description = collection["description"],
-						Number = collection["number"],
-						Amount = double.Parse(collection["amount"]),
-						Busted = double.Parse(collection["busted"]),
-						TimesBusted = double.Parse(collection["timesbusted"]),
-						TimesAmount = double.Parse(collection["timesamount"]),
-						Award = double.Parse(collection["amount"]) * double.Parse(collection["timesamount"]) + double.Parse(collection["timesbusted"]) * double.Parse(collection["timesbusted"]),		
+						Description = collection["AwardLine.description"],
+						Number = collection["AwardLine.number"],
+						Amount = double.Parse(collection["AwardLine.amount"]),
+						Busted = double.Parse(collection["AwardLine.busted"]),
+						TimesBusted = double.Parse(collection["AwardLine.timesbusted"]),
+						TimesAmount = double.Parse(collection["AwardLine.timesamount"]),
+						Award = double.Parse(collection["AwardLine.amount"]) * double.Parse(collection["AwardLine.timesamount"]) + double.Parse(collection["AwardLine.timesbusted"]) * double.Parse(collection["AwardLine.timesbusted"]),		
 					};
 					award?.AwardLines.Add(awardLine);
 

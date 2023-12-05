@@ -1,40 +1,27 @@
-﻿@model LaLlamaDelBosque.Models.CreditLine
+﻿@model LaLlamaDelBosque.Models.CreditConnectionModel
 
-<tr>
-    <form asp-action="Refresh" asp-route-clientid="@TempData["Id"]" class="row g-3">
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-        <td>
-            <div class="form-group col-auto">
-                <input asp-for="Id" class="form-control" readonly/>
-                <span asp-validation-for="Id" class="text-danger"></span>
-            </div>
-        </td>
-        <td  colspan="2">
-            <div class="form-group col-auto">
-                <input asp-for="CreatedDate" class="form-control" readonly/>
-                <span asp-validation-for="CreatedDate" class="text-danger"></span>
-            </div>
-        </td>
-        <td>
-            <div class="form-group col-auto">
-                <input asp-for="Description" class="form-control"/>
-                <span asp-validation-for="Description" class="text-danger"></span>
-            </div>
-        </td>
-        <td>
-            <div class="form-group col-auto">
-                <input asp-for="Amount" class="form-control"/>
-                <span asp-validation-for="Amount" class="text-danger"></span>
-            </div>
-        </td>
-        <td colspan="2">
-            <div class="form-group col-auto">
-                <input type="submit" value="Guardar" class="btn btn-primary"/>
-                <input type="button" onclick="location.href='@Url.Action("Index", "Credit")'" value="Cancelar" class="btn btn-secondary" />
-            </div>
-        </td>
-    </form>
-</tr>
+<form asp-action="Refresh" asp-route-clientid=@Model.ClientId class="row g-3">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="form-group col-1">
+        <input asp-for="CreditLine.Id" class="form-control" readonly />
+        <span asp-validation-for="CreditLine.Id" class="text-danger"></span>
+    </div>
+    <div class="form-group col-auto">
+        <input asp-for="CreditLine.CreatedDate" class="form-control" readonly />
+    </div>
+    <div class="form-group col-auto">
+        <input asp-for="CreditLine.Description" class="form-control" />
+        <span asp-validation-for="CreditLine.Description" class="text-danger"></span>
+    </div>
+    <div class="form-group col-auto">
+        <input asp-for="CreditLine.Amount" class="form-control" />
+        <span asp-validation-for="CreditLine.Amount" class="text-danger"></span>
+    </div>
+    <div class="form-group col-auto">
+        <input type="submit" value="Guardar" class="btn btn-primary"/>
+        <input type="button" onclick="location.href='@Url.Action("Index", "Credit")'" value="Cancelar" class="btn btn-secondary" />
+    </div>
+</form>
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}

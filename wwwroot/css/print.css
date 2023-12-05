@@ -2,42 +2,43 @@
     size: 80mm 210mm;
 }
 
-/* Estilos generales */
+/* General Styling */
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Helvetica', Arial, sans-serif;
     font-size: 14px;
-    padding: 10px;
+    line-height: 1.6;
+    background-color: #f5f5f5;
+    color: #333;
+    margin: 0;
 }
 
 .container {
     max-width: 80mm;
     margin: 0 auto;
-    padding: 10px;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
 }
 
-p {
-    margin: 5px;
-}
-
-h1, h3 {
-    text-align: center;
+h1, h2, h3 {
     margin: 0;
-}
-
-h2 {
     text-align: center;
-    margin: 0 auto 20px;
+    color: #333;
 }
 
+
+/* Table Styling */
 table {
     width: 100%;
     border-collapse: collapse;
+    margin-bottom: 20px;
 }
 
-td, th {
-    padding: 5px;
+th, td {
+    padding: 10px;
     text-align: center;
-    border-bottom: 1px solid #000;
+    border-bottom: 1px solid #ddd;
 }
 
 thead th {
@@ -45,8 +46,78 @@ thead th {
     text-align: center;
 }
 
+/* Total Section Styling */
 .total-section {
-    padding: 10px;
+    padding: 20px;
     text-align: center;
-    border: 1px solid #000;
+    border: 2px solid #333;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.total-section h3 {
+    margin: 0;
+    color: #333;
+}
+
+/* Additional Styling */
+p {
+    margin: 5px 0;
+    color: #555;
+}
+
+/* Footer Styling */
+footer {
+    text-align: center;
+    margin-top: 30px;
+    color: #777;
+}
+
+/* Buttons Styling */
+.btn-container {
+    max-width: 80mm;
+    margin: 0 auto;
+    padding: 20px;
+    text-align: center;
+}
+
+.btn {
+    display: inline-block;
+    font-weight: 400;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    user-select: none;
+    border: 1px solid transparent;
+    padding: 0.375rem 0.75rem;
+    margin: 5px auto;
+    font-size: 1rem;
+    line-height: 1.5;
+    border-radius: .45rem;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-secondary {
+    color: #fff;
+    background-color: #2B8A3E;
+    border-color: #2B8A3E;
+}
+
+/* Media Query for Responsive Design */
+@media (max-width: 600px) {
+    .container {
+        max-width: 100%;
+        padding: 15px;
+    }
+}
+
+@media print {
+    .btn-container {
+        display: none;
+    }
 }
