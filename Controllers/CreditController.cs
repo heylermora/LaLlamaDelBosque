@@ -4,47 +4,47 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Rotativa.AspNetCore;
 using Rotativa.AspNetCore.Options;
-using System;
 using System.Globalization;
 
 namespace LaLlamaDelBosque.Controllers
 {
-	[Authorize]
+    [Authorize]
 
-	public class CreditController: Controller
+    public class CreditController: Controller
     {
-		private CreditModel _credits;
+        private CreditModel _credits;
 
-
-		public CreditController()
-		{
+        public CreditController()
+        {
 			_credits = GetCredits();
-		}
+        }
 
-		// GET: CreditController
-		public ActionResult Index(string searchString)
-		{
-			var credits = _credits.Credits;
-			if(!string.IsNullOrEmpty(searchString))
-			{
-				credits = credits.Where(s => s.Client.Name.ToLower().Contains(searchString.ToLower())).ToList();
-			}
-			credits = credits.OrderBy(c => c.Client.Name).ToList();
-			return View(credits);
-		}
+        // GET: CreditController
+        public ActionResult Index(string searchString, int clientId)
+        {
+            var credits = _credits.Credits;
+            if(!string.IsNullOrEmpty(searchString))
+            {
+                credits = credits.Where(s => s.Client.Name.ToLower().Contains(searchString.ToLower())).ToList();
+            }
+            credits = credits.OrderBy(c => c.Client.Name).ToList();
+            ViewBag.ClientId = clientId;
 
-		public ActionResult IndexPdf()
-		{
-			return new ViewAsPdf("_Report", _credits.Credits)
-			{
-				PageSize = Size.A4,
-				FileName = $"Resumen del {DateTime.Today.ToShortDateString()}.pdf",
-				PageMargins = new Margins(10, 20, 10, 20)
-			};
-		}
+            return View(credits);
+        }
 
-		// GET: CreditController/Create
-		public ActionResult Create()
+        public ActionResult IndexPdf()
+        {
+            return new ViewAsPdf("_Report", _credits.Credits)
+            {
+                PageSize = Size.A4,
+                FileName = $"Resumen del {DateTime.Today.ToShortDateString()}.pdf",
+                PageMargins = new Margins(10, 20, 10, 20)
+            };
+        }
+
+        // GET: CreditController/Create
+        public ActionResult Create()
         {
             return View();
         }
@@ -56,25 +56,25 @@ namespace LaLlamaDelBosque.Controllers
         {
             try
             {
-				var credit = new Credit()
-				{
+                var credit = new Credit()
+                {
                     Client = new Client()
                     {
                         Id = _credits.Credits.LastOrDefault()?.Client.Id + 1 ?? 1,
                         Name = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(collection["name"]),
                         Phone = collection["phone"]
                     }
-				};
+                };
 
 				_credits.Credits.Add(credit);
-				SetCredits(_credits);
-				return RedirectToAction(nameof(Index));
+                SetCredits(_credits);
+                return RedirectToAction(nameof(Index));
             }
-            catch
+            catch(Exception ex)
             {
-                return View();
-            }
-        }
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+			}
+		}
 
         // POST: CreditController/Edit/5
         [HttpPost]
@@ -83,21 +83,21 @@ namespace LaLlamaDelBosque.Controllers
         {
             try
             {
-				var credit = _credits.Credits.First(x => x.Client.Id == int.Parse(id));
+                var credit = _credits.Credits.First(x => x.Client.Id == int.Parse(id));
                 credit.Client = new Client()
                 {
                     Id = int.Parse(id),
                     Name = collection["name"],
                     Phone = collection["phone"]
-				};
+                };
                 SetCredits(_credits);
-				return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Index));
             }
-            catch
-            {
-				return RedirectToAction(nameof(Index));
+			catch(Exception ex)
+			{
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
 			}
-        }
+		}
 
         // POST: CreditController/Delete/5
         [HttpPost]
@@ -106,170 +106,173 @@ namespace LaLlamaDelBosque.Controllers
         {
             try
             {
-				var credit = _credits.Credits.First(x => x.Client.Id == int.Parse(id));
-				_credits.Credits.Remove(credit);
-				SetCredits(_credits);
-				return RedirectToAction(nameof(Index));
+                var credit = _credits.Credits.First(x => x.Client.Id == int.Parse(id));
+                _credits.Credits.Remove(credit);
+                SetCredits(_credits);
+                return RedirectToAction(nameof(Index));
             }
-            catch
-            {
-				return RedirectToAction(nameof(Index));
-			}
-        }
-
-		#region Credit Line
-
-		// POST: CreditController/Add
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public ActionResult Add(int id, IFormCollection collection)
-		{
-			try
-			{
-				var credit = _credits.Credits.FirstOrDefault(x => x.Client.Id == id);
-				if(credit is not null && double.Parse(collection["amount"]) > 0) {
-					var creditLine = new CreditLine()
-					{
-						Id = credit?.CreditLines.LastOrDefault()?.Id + 1 ?? 1,
-						CreatedDate = DateTime.Now,
-						Description = collection["description"],
-						Amount = double.Parse(collection["amount"])
-					};
-
-					credit?.CreditLines.Add(creditLine);
-
-					credit.CreditSummary.Total = (credit?.CreditSummary?.Total ?? 0) + creditLine.Amount;
-
-					SetCredits(_credits);
-				}
-				return RedirectToAction(nameof(Index));
-			}
-			catch
-			{
-				return RedirectToAction(nameof(Index));
-			}
-		}
-
-		// POST: CreditController/Fee
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public ActionResult Fee(int id, IFormCollection collection)
-		{
-			try
-			{
-				var credit = _credits.Credits.FirstOrDefault(x => x.Client.Id == id);
-				if(credit is not null)
-				{
-					var creditLine = new CreditLine()
-					{
-						Id = credit?.CreditLines.LastOrDefault()?.Id + 1 ?? 1,
-						CreatedDate = DateTime.Now,
-						Description = collection["description"],
-						Amount = -(double.Parse(collection["amount"]))
-					};
-
-					credit?.CreditLines.Add(creditLine);
-
-					credit.CreditSummary.Total = (credit?.CreditSummary?.Total ?? 0) + creditLine.Amount;
-
-					SetCredits(_credits);
-				}
-				return RedirectToAction(nameof(Index));
-			}
-			catch
-			{
-				return RedirectToAction(nameof(Index));
-			}
-		}
-
-		// POST: CreditController/Refresh/5
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public ActionResult Refresh(int clientId, IFormCollection collection)
-		{
-			try
-			{
-				var credit = _credits.Credits.First(x => x.Client.Id == clientId);
-				var line = credit.CreditLines.First(l => l.Id == int.Parse(collection["CreditLine.Id"]));
-
-				credit.CreditSummary.Total -= line.Amount;
-
-				line.Description = collection["CreditLine.description"];
-				line.Amount = double.Parse(collection["CreditLine.amount"]);
-
-				credit.CreditSummary.Total += line.Amount;
-
-				SetCredits(_credits);
-				return RedirectToAction(nameof(Index));
-			}
 			catch(Exception ex)
 			{
-				Console.WriteLine(ex);
-				return RedirectToAction(nameof(Index));
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
 			}
 		}
 
-		// POST: CreditController/Remove/5
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public ActionResult Remove(string clientId, string lineId)
-		{
-			try
+        #region Credit Line
+
+        // POST: CreditController/Add
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Add(int id, IFormCollection collection)
+        {
+            try
+            {
+                var credit = _credits.Credits.FirstOrDefault(x => x.Client.Id == id);
+                if(double.Parse(collection["amount"]) > 0)
+                {
+                    var creditLine = new CreditLine()
+                    {
+                        Id = credit?.CreditLines.LastOrDefault()?.Id + 1 ?? 1,
+                        CreatedDate = DateTime.Now,
+                        Description = collection["description"],
+                        Amount = double.Parse(collection["amount"])
+                    };
+
+                    if(credit != null && credit.CreditSummary != null)
+                    {
+                        credit.CreditLines.Add(creditLine);
+                        credit.CreditSummary.Total = credit.CreditSummary.Total + creditLine.Amount;
+                    }
+
+                    SetCredits(_credits);
+                }
+                return RedirectToAction(nameof(Index), new { clientId = id });
+            }
+			catch(Exception ex)
 			{
-				var credit = _credits.Credits.First(c => c.Client.Id == int.Parse(clientId));
-				var line = credit.CreditLines.First(l => l.Id == int.Parse(lineId));
-				credit.CreditSummary.Total -= line.Amount; 
-				credit.CreditLines.Remove(line);
-				SetCredits(_credits);
-				return RedirectToAction(nameof(Index));
-			}
-			catch
-			{
-				return RedirectToAction(nameof(Index));
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
 			}
 		}
 
-		// POST: CreditController/Clear/5
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public ActionResult Clear(string? Id)
-		{
-			try
-			{
-				var credit = _credits.Credits.First(c => c.Client.Id == int.Parse(Id ?? "0"));
-				credit.CreditSummary.Total = 0;
-				credit.CreditLines.Clear();
-				SetCredits(_credits);
-				return RedirectToAction(nameof(Index));
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine(ex);
-				return RedirectToAction(nameof(Index));
-			}
-		}
-		#endregion
+        // POST: CreditController/Fee
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Fee(int id, IFormCollection collection)
+        {
+            try
+            {
+                var credit = _credits.Credits.FirstOrDefault(x => x.Client.Id == id);
+                if(credit is not null)
+                {
+                    var creditLine = new CreditLine()
+                    {
+                        Id = credit?.CreditLines.LastOrDefault()?.Id + 1 ?? 1,
+                        CreatedDate = DateTime.Now,
+                        Description = collection["description"],
+                        Amount = -(double.Parse(collection["amount"]))
+                    };
 
-		private CreditModel GetCredits()
-		{
-			var credits = JsonFile.Read("Credits", new CreditModel());
-			return credits;
-		}
+                    if(credit != null && credit.CreditSummary != null)
+                    {
+                        credit.CreditLines.Add(creditLine);
+                        credit.CreditSummary.Total = credit.CreditSummary.Total + creditLine.Amount;
+                    }
 
-		private void SetCredits(CreditModel credits)
-		{
-			JsonFile.Write("Credits", credits);
-		}
-
-		private string GetMessage(IList<Credit> credits)
-		{
-			var text = "";
-			foreach(var credit in credits)
+                    SetCredits(_credits);
+                }
+                return RedirectToAction(nameof(Index), new { clientId = id });
+            }
+			catch(Exception ex)
 			{
-				text += "%0A";
-				text += $"✅ {credit.Client.Name.ToUpper()}: *₡ {credit.CreditSummary.Total}*. ";
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
 			}
-			return text;
 		}
-	}
+
+        // POST: CreditController/Refresh/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Refresh(int clientId, IFormCollection collection)
+        {
+            try
+            {
+                var credit = _credits.Credits.First(x => x.Client.Id == clientId);
+                var line = credit.CreditLines.First(l => l.Id == int.Parse(collection["CreditLine.Id"]));
+
+                credit.CreditSummary.Total -= line.Amount;
+
+                line.Description = collection["CreditLine.description"];
+                line.Amount = double.Parse(collection["CreditLine.amount"]);
+
+                credit.CreditSummary.Total += line.Amount;
+
+                SetCredits(_credits);
+                return RedirectToAction(nameof(Index), new { clientId = clientId });
+            }
+			catch(Exception ex)
+			{
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+			}
+		}
+
+        // POST: CreditController/Remove/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Remove(string clientId, string lineId)
+        {
+            try
+            {
+                var credit = _credits.Credits.First(c => c.Client.Id == int.Parse(clientId));
+                var line = credit.CreditLines.First(l => l.Id == int.Parse(lineId));
+                credit.CreditSummary.Total -= line.Amount;
+                credit.CreditLines.Remove(line);
+                SetCredits(_credits);
+                return RedirectToAction(nameof(Index), new { clientId = clientId });
+            }
+			catch(Exception ex)
+			{
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+			}
+		}
+
+        // POST: CreditController/Clear/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Clear(string? Id)
+        {
+            try
+            {
+                var credit = _credits.Credits.First(c => c.Client.Id == int.Parse(Id ?? "0"));
+                credit.CreditSummary.Total = 0;
+                credit.CreditLines.Clear();
+                SetCredits(_credits);
+                return RedirectToAction(nameof(Index), new { clientId = Id });
+            }
+			catch(Exception ex)
+			{
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+			}
+		}
+        #endregion
+
+        private CreditModel GetCredits()
+        {
+            var credits = JsonFile.Read("Credits", new CreditModel());
+            return credits;
+        }
+
+        private void SetCredits(CreditModel credits)
+        {
+            JsonFile.Write("Credits", credits);
+        }
+
+        private string GetMessage(IList<Credit> credits)
+        {
+            var text = "";
+            foreach(var credit in credits)
+            {
+                text += "%0A";
+                text += $"✅ {credit.Client.Name.ToUpper()}: *₡ {credit.CreditSummary.Total}*. ";
+            }
+            return text;
+        }
+    }
 }

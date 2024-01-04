@@ -32,149 +32,134 @@
         <div class="col-xl-10">
             <form id="searchForm" class="d-flex" asp-controller="Credit" asp-action="Index" method="get">
                 <div class="input-group form-floating mb-4 mt-1">
-                    <input id="searchInput" type="search" class="form-control" name="SearchString" placeholder="Buscar..." oninput="searchCredits()">
+                    <input id="searchInput" type="search" class="form-control" name="SearchString" placeholder="Buscar..." oninput="searchCredits()" autofocus>
                     <label for="floatingInput">Buscar</label>
                 </div>
             </form>
-            <div class="accordion" id="accordionFlushExample">
-                @foreach (var item in Model)
+            <div class="row row-cols-1 row-cols-md-4">
+                @foreach(var item in Model)
                 {
-                    var cumulative = 0D;
-                    <div class="accordion-item p-1 mb-2">
-                        <h2 class="accordion-header" id="flush-headingOne">
-                            <button class="accordion-button collapsed p-2" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-@item.Client.Id" aria-expanded="false" aria-controls="flush-collapse-@item.Client.Id">
-                                <div class="d-flex align-items-start">
-                                    <span class="material-icons star">
-                                        account_circle
-                                    </span>
+                    <div class="col-md-3 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <!-- Menú de acciones -->
+                                <div class="dropdown position-absolute top-0 end-0">
+                                    <button class="btn-icon" type="button" id="actionMenu" data-bs-toggle="dropdown">
+                                        <span class="material-icons">more_vert</span>
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="actionMenu">
+                                        <!-- Editar -->
+                                        <li>
+                                            <button class="dropdown-item d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#editModal-@item.Client.Id">
+                                                <span class="material-icons icon icon-dark" style="padding-right: 10px;">edit</span> Editar
+                                            </button>
+                                        </li>
+                                        <!-- Imagen -->
+                                        <li>
+                                            <button class="dropdown-item d-flex align-items-center" id="btnCopy" onclick="copyAsImage('@item.Client.Id')">
+                                                <span class="material-icons icon icon-dark" style="padding-right: 10px;">image</span> Crear Imagen
+                                            </button>
+                                        </li>
+                                        <!-- Recordatorio -->
+                                        <li>
+                                            <button class="dropdown-item d-flex align-items-center" id="btnCopy" onclick="copyToClipboard('@item.Client.Id', '@item.Client.Name', '@item.CreditSummary.Total')">
+                                                <span class="material-icons icon icon-dark" style="padding-right: 10px;">notifications</span> Crear Notificación
+                                            </button>
+                                        </li>
+                                        <!-- Eliminar -->
+                                        <li>
+                                            <button class="dropdown-item d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#deleteModal-@item.Client.Id">
+                                                <span class="material-icons icon icon-danger" style="padding-right: 10px;">delete</span> Eliminar
+                                            </button>
+                                        </li>
+                                    </ul>
                                 </div>
-                                <div class="d-flex align-items-start flex-column">
-                                    <div class="p-1">
-                                        <b style="font-size: 24px">@item.Client.Name</b>
+                                <div class="d-flex justify-content-between align-items-start" id="clientTotal-@item.Client.Id">
+                                    <div class="d-flex align-items-start">
+                                        <span class="material-icons star">
+                                            account_circle
+                                        </span>
                                     </div>
-                                    <div class="p-1">
-                                        Total: ₡ @item.CreditSummary.Total
-                                    </div>
-                                </div>
-                            </button>
-                        </h2>
-                        <div id="flush-collapse-@item.Client.Id" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
-                            <div class="accordion-body">
-                                <div class="row">
-                                    <div class="btn-group col-md-2" role="group">
-                                        <!-- Edit -->
-                                        <button type="button" class="btn" onclick="showPartial('editPartial-@item.Client.Id')">
-                                            <span class="material-icons icon icon-dark">edit</span>
-                                        </button>
-                                        <!-- Delete -->
-                                        <button type="button" class="btn" onclick="showPartial('deletePartial-@item.Client.Id')">
-                                            <span class="material-icons icon icon-danger">delete</span>
-                                        </button>
-                                    </div>
-                                    <div class="col-md-8">
-                                        <div id="editPartial-@item.Client.Id" class="partial">
-                                            <partial name="_Edit" model="@Model.FirstOrDefault(x => x.Client.Id == item.Client.Id)?.Client"></partial>
-                                        </div>
-                                        <div id="deletePartial-@item.Client.Id" class="partial">
-                                            <partial name="_Delete" model="item"></partial>
-                                        </div>
+                                    <div class="p-1 me-auto text-truncate">
+                                        <h5 class="card-title text-truncate">@item.Client.Name</h5>
+                                        <p class="card-text text-truncate">Total: ₡ @item.CreditSummary.Total</p>
                                     </div>
                                 </div>
-                                <div class="table-responsive">
-                                    <table class="table">
-                                    <thead>  
-                                        <tr>
-                                            <th>Id</th>
-                                            <th>Fecha</th>
-                                            <th>Hora</th>
-                                            <th>Descripción</th>
-                                            <th>Precio</th>
-                                            <th>Acumulado</th>
-                                            <th></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach(var line in item.CreditLines)
-                                        {
-                                            <tr>
-                                                <td>@line.Id</td>
-                                                <td>@line.CreatedDate.ToShortDateString()</td>
-                                                <td>@line.CreatedDate.ToShortTimeString()</td>
-                                                <td>@line.Description</td>
-                                                <td>₡ @line.Amount</td>
-                                                <td class="table-active">@{cumulative += @line.Amount;}₡ @cumulative</td>
-                                                <td style="text-align:center">
-                                                    <div class="btn-group mx-auto" role="group">
-                                                        <!-- Refresh -->
-                                                            <button type="button" class="btn" onclick="showPartial('refreshPartial-@item.Client.Id-@line.Id')">
-                                                            <span class="material-icons icon icon-dark">mode_edit</span>
-                                                        </button>
-                                                        <!-- Remove -->
-                                                        <button type="button" class="btn" onclick="showPartial('removePartial-@item.Client.Id-@line.Id')">
-                                                            <span class="material-icons icon icon-danger">delete</span>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <tr id="removePartial-@item.Client.Id-@line.Id">
-                                                <td colspan="7">
-                                                    <partial name="_Remove" model="new CreditConnectionModel{ClientId= item.Client.Id, LineId= line.Id}" />
-                                                </td>
-                                            </tr>
-                                            <tr id="refreshPartial-@item.Client.Id-@line.Id">
-                                                <td colspan="7">
-                                                    <partial name="_Refresh" model="new CreditConnectionModel{ClientId= item.Client.Id, CreditLine= line}" />
-                                                </td>
-                                            </tr>
-                                        }
-                                        <tr id="addPartial-@item.Client.Id">
-                                            <td colspan="7">
-                                                <partial name="_Add" model="@new CreditLine() { Id = item.Client.Id, CreatedDate = DateTime.Now }" />
-                                            </td>
-                                        </tr>
-                                        <tr id="feePartial-@item.Client.Id">
-                                            <td colspan="7">
-                                                <partial name="_Fee" model="@new CreditLine() { Id = item.Client.Id, CreatedDate = DateTime.Now }" />
-                                            </td>
-                                        </tr>
-                                        <tr id="clearPartial-@item.Client.Id">
-                                            <td colspan="7">
-                                                <partial name="_Clear" model="item" />
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <td colspan="4">
-                                                <!-- Add -->
-                                                <button type="button" class="btn" onclick="showPartial('addPartial-@item.Client.Id')">
-                                                    <span class="material-icons icon icon-primary">add_circle</span>
-                                                </button>
-                                                <!-- Fee -->
-                                                <button type="button" class="btn" onclick="showPartial('feePartial-@item.Client.Id')">
-                                                    <span class="material-icons icon icon-primary">post_add</span>
-                                                </button>
-                                                <!-- Clear -->
-                                                <button type="button" class="btn" onclick="showPartial('clearPartial-@item.Client.Id')">
-                                                    <span class="material-icons icon icon-danger">cancel</span>
-                                                </button>
-                                                <!-- Copy -->
-                                                <button type="button" class="btn" id="btnCopy" onclick="copyToClipboard('@item.Client.Id', '@item.Client.Name', '@item.CreditSummary.Total')">
-                                                    <span class="material-icons icon icon-success">content_copy</span>
-                                                </button>
-                                            </td>
-                                            <td>Total</td>
-                                            <td>₡ @item.CreditSummary.Total</td>
-                                            <td></td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
+                                <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#detailsModal-@item.Client.Id">
+                                    Ver Detalles
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal fade" id="editModal-@item.Client.Id" tabindex="-1" aria-labelledby="editModalLabel-@item.Client.Id" aria-hidden="true">>
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="detailsModalLabel-@item.Client.Id">@item.Client.Name</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
-                                <div id="CopyMessage-@item.Client.Id">
+                                <div class="modal-body">
+                                    <partial name="_Edit" model="@Model.FirstOrDefault(x => x.Client.Id == item.Client.Id)?.Client"></partial>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    <div class="modal fade" id="copySuccessModal" tabindex="-1" aria-labelledby="copySuccessModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-sm">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="copySuccessModalLabel">¡Copiado!</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal fade" id="deleteModal-@item.Client.Id" tabindex="-1" aria-labelledby="deleteModalLabel-@item.Client.Id" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="deleteModalLabel-@item.Client.Id">@item.Client.Name</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <partial name="_Delete" model="item"></partial>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal fade" id="detailsModal-@item.Client.Id" tabindex="-1" aria-labelledby="detailsModalLabel-@item.Client.Id" aria-hidden="true">
+                        <div class="modal-dialog modal-xl">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="detailsModalLabel-@item.Client.Id">Historial de @item.Client.Name</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <partial name="_Details" model="item"></partial>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @if(item.Client.Id == ViewBag.ClientId)
+                    {
+                        <script>
+                            document.addEventListener("DOMContentLoaded", function () {
+                                var clientId = @ViewBag.ClientId;
+                                var itemClientId = @item.Client.Id;
+
+                                if (clientId !== null && clientId === itemClientId) {
+                                    var modalId = 'detailsModal-' + itemClientId;
+                                    var modalElement = document.getElementById(modalId);
+
+                                    if (modalElement) {
+                                        var bootstrapModal = new bootstrap.Modal(modalElement);
+                                        bootstrapModal.show();
+                                    }
+                                }
+                            });
+                        </script>
+                    }
                 }
             </div>
         </div>
@@ -182,6 +167,8 @@
 </div>
 
 @section scripts{
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
     <script type="text/javascript">
         var delayTimer;
 
@@ -192,17 +179,42 @@
             }, 500);
         }
 
+        function copyAsImage(id) {
+            var table = document.getElementById("clientTotal-"+id);
+            html2canvas(table).then(function (canvas) {
+                canvas.toBlob(function (blob) {
+                    var imageBlob = new Blob([blob], { type: "image/png" });
+
+                    // Copy image to clipboard
+                    if (navigator.clipboard && navigator.clipboard.write) {
+                        navigator.clipboard.write([
+                            new ClipboardItem({
+                                "image/png": imageBlob
+                            })
+                        ]).then(function () {
+                            console.log('Image copied to clipboard successfully.');
+                            $('#copySuccessModal').modal('show');
+                            setTimeout(function () {
+                                $('#copySuccessModal').modal('hide');
+                            }, 3000);
+                        }).catch(function (error) {
+                            console.error('Error copying image to clipboard:', error);
+                        });
+                    } else {
+                        console.warn('Clipboard API is not supported in this browser.');
+                    }
+                });
+            });
+        }
+
         function copyToClipboard(id, name, total) {
             const message = `Hola ${name}, *La llama del Bosque* le saluda! 🔥🌳\n @ConfigurationModel.BalanceMessage ₡${total}.*`;
             navigator.clipboard.writeText(message)
                 .then(() => {
-                    const copyMessage = document.getElementById(`CopyMessage-${id}`);
-                    copyMessage.innerHTML = `
-                        <div class="alert alert-success" role="alert">
-                            ¡Copiado!
-                            <button type="button" class="btn-close float-end" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    `;
+                    $('#copySuccessModal').modal('show');
+                    setTimeout(function () {
+                        $('#copySuccessModal').modal('hide');
+                    }, 3000);
                 })
                 .catch((error) => {
                     console.error('Error al copiar al portapapeles:', error);

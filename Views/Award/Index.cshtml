@@ -118,10 +118,11 @@
                                         }
                                         <tr id="addPartial-@item.Id">
                                             <td colspan="9">
-                                                <partial name="_Add" model="@new AwardConnectionModel() { 
-                                                    AwardId = item.Id,
-                                                    AwardLine = new AwardLine(){ 
-                                                        Order = item.AwardLines.Max(al => al.Order)}}">
+                                                @{
+                                                    var maxOrder = item.AwardLines.Any() ? item.AwardLines.Max(al => al.Order) : 0;
+                                                    var awardConnectionModel = new AwardConnectionModel() { AwardId = item.Id, AwardLine = new AwardLine() { Order = maxOrder + 1 } };
+                                                }
+                                                <partial name="_Add" model="@awardConnectionModel">
                                                 </partial>
                                             </td>
                                         </tr>

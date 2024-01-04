@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace LaLlamaDelBosque.Models
+﻿namespace LaLlamaDelBosque.Models
 {
 
     public class SummaryModel
@@ -15,11 +13,11 @@ namespace LaLlamaDelBosque.Models
         public int Clients { get; set; }
         public string ClientsDescription { get; set; } = "personas";
         public string Receivable { get; set; } = "";
-		public string Received { get; set; } = "";
+        public string Received { get; set; } = "";
         public List<SummaryClient> MajorDebts { get; set; } = new List<SummaryClient>();
-		public List<SummaryClient> MinorDebts { get; set; } = new List<SummaryClient>();
+        public List<SummaryClient> MinorDebts { get; set; } = new List<SummaryClient>();
         public List<SummaryClient> InactiveClients { get; set; } = new List<SummaryClient>();
-	}
+    }
 
     public class SummaryClient
     {
@@ -27,7 +25,8 @@ namespace LaLlamaDelBosque.Models
         public string Amount { get; set; } = "";
     }
 
-    public class SummaryLotteryModel {
+    public class SummaryLotteryModel
+    {
         public int Papers { get; set; }
         public string TotalAmount { get; set; } = string.Empty;
         public string TotalBusted { get; set; } = string.Empty;

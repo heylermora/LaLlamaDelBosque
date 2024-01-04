@@ -3,6 +3,7 @@
 
 @{
     ViewData["Title"] = "Crear Papelito";
+    ViewData["CC"] = true;
 }
 
 <h1 class="display-4">@ViewData["Title"]</h1>
@@ -18,124 +19,118 @@
     </div>
 </form>
 
-<br />
-
 <form asp-action="Save">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-    <div class="row g-3">
-        @if (Model.Numbers.Any())
+    <div class="row g-2">
+        <div class="form-group col-md-2">
+            <label asp-for="Id" class="control-label">Papelito</label>
+            <input asp-for="Id" class="form-control" disabled readonly />
+        </div>
+        <div class="form-group col-md-2">
+            <label asp-for="DrawDate" class="control-label">Fecha</label>
+            <input asp-for="DrawDate" onchange="redirectToCreate('dateString', 'DrawDate')" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="form-group col-md-4">
+            <label asp-for="Lottery" class="control-label">Sorteo</label>
+            <select asp-for="Lottery" class="form-control form-select" onchange="redirectToCreate('lottery', 'Lottery')">
+                <option selected disabled>Seleccione un nombre</option>
+                @if(ViewData["Names"] is not null)
+                {
+                    @foreach(var item in ViewData["Names"] as IList<Lottery> ?? new List<Lottery>())
+                    {
+                        <option value="@item.Name">@item.Name</option>
+                    }
+                }
+            </select>
+        </div>
+        <div class="form-group col-md-4">
+            <label asp-for="ClientId" class="control-label">Cliente</label>
+            <select asp-for="ClientId" class="form-control form-select" onchange="redirectToCreate('clientId', 'ClientId')">
+                <option value="-1" selected>Seleccione un nombre</option>
+                @if(ViewData["Clients"] is not null)
+                {
+                    @foreach(var item in ViewData["Clients"] as IList<Client> ?? new List<Client>())
+                    {
+                        <option value="@item.Id">@item.Name</option>
+                    }
+                }
+            </select>
+        </div>
+    </div>
+    <div class="d-flex justify-content-end">
+         @if (Model.Numbers.Any())
         {
-            <div class="form-group col-md-2">
-                <label asp-for="Id" class="control-label">Papelito</label>
-                <input asp-for="Id" class="form-control" disabled readonly />
-                <span asp-validation-for="Id" class="text-danger"></span>
-            </div>
-            <div class="form-group col-md-4">
-                <label asp-for="DrawDate" class="control-label">Fecha</label>
-                <input asp-for="DrawDate" onchange="changeDate()" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" class="form-control" id="date-input" />
-                <span asp-validation-for="DrawDate" class="text-danger"></span>
-            </div>
-            <div class="form-group col-md-4">
-                <label asp-for="Lottery" class="control-label">Sorteo</label>
-                <select asp-for="Lottery" class="form-select">
-                    <option selected disabled>Seleccione un nombre</option>
-                    @if (ViewData["Names"] is not null)
-                    {
-                        @foreach (var item in ViewData["Names"] as IList<Lottery> ?? new List<Lottery>())
-                        {
-                            <option value="@item.Name">@item.Name</option>
-                        }
-                    }
-                </select>
-                <span asp-validation-for="Lottery" class="text-danger"></span>
-            </div>
-            <div class="form-group col-md-4">
-                <label asp-for="ClientId" class="control-label">Cliente</label>
-                <select asp-for="ClientId" class="form-select">
-                    <option selected disabled>Seleccione un nombre</option>
-                    @if(ViewData["Clients"] is not null)
-                    {
-                        @foreach(var item in ViewData["Clients"] as IList<Client> ?? new List<Client>())
-                        {
-                            <option value="@item.Id">@item.Name</option>
-                        }
-                    }
-                </select>
-                <span asp-for="Client" class="text-danger"></span>
-            </div>
-            <hr />
-            <div class="form-group col-auto">
-                <input type="submit" value="Crear" class="btn btn-primary" />
-                <input type="button" onclick="location.href='@Url.Action("Clear", "Lottery")'" value="Limpiar" class="btn btn-danger" />
-            </div>
+            <input type="submit" value="Crear" class="btn btn-primary m-2" />
+            <input type="button" onclick="location.href='@Url.Action("Clear", "Lottery")'" value="Limpiar" class="btn btn-danger m-2" />
         }
     </div>
 </form>
-<hr />
-<partial name="_Add" model="@new Numbers()" />
-        <hr />
-        @if (Model.Numbers.Any())
-        {
-            <div class="table-responsive container">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th></th>
-                            <th>Id</th>
-                            <th>Numero</th>
-                            <th>Monto</th>
-                            <th>Reventado</th>
-                            <th></th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach(var item in Model.Numbers)
-                        {
-                            <tr>
-                                <td></td>
-                                <td>@item.Id</td>
-                                <td>@item.Value</td>
-                                <td>@item.Amount</td>
-                                <td>@item.Busted</td>
-                                <td>
-                                    <!-- Remove -->
-                                    <button type="button" class="btn" onclick="location.href='@Url.Action("Remove", "Lottery", new {PaperId= Model.Id, LineId= item.Id})'">
-                                        <span class="material-icons icon icon-danger">delete</span>
-                                    </button>
-                                </td>
-                            </tr>
-                            @if((int?)TempData["Id"] == Model.Id && (int?)TempData["LineId"] == item.Id && TempData["Method"]?.ToString() == "Remove")
-                            {
-                                <tr>
-                                    <td colspan="6">
-                                        <partial name="_Remove" model="new LotteryConnectionModel{PaperId= Model.Id, LineId= item.Id??1}" />
-                                    </td>
-                                </tr>
-                            }
-                        }
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="2"></td>
-                            <th>TOTAL</th>
-                            <td><strong>@{var sum = Model.Numbers.Sum(x=>x.Amount) + Model.Numbers.Sum(x=>x.Busted);}@sum</strong></td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        }
+
+@if(Model?.Lottery.Any() ?? false)
+{
+    <partial name="_Add" model="new Numbers()"/>
+}
+
+@if (Model?.Numbers.Any() ?? false)
+{
+    <div class="table-responsive container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Id</th>
+                    <th>Numero</th>
+                    <th>Monto</th>
+                    <th>Reventado</th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach(var item in Model.Numbers)
+                {
+                    <tr>
+                        <td></td>
+                        <td>@item.Id</td>
+                        <td>@item.Value</td>
+                        <td>@item.Amount</td>
+                        <td>@item.Busted</td>
+                        <td>
+                            <!-- Remove -->
+                            <button type="button" class="btn"  onclick="showPartial('removePartial-@Model.Id-@item.Id')">
+                                <span class="material-icons icon icon-danger">delete</span>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr id="removePartial-@Model.Id-@item.Id">
+                        <td colspan="6">
+                            <partial name="_Remove" model="new LotteryConnectionModel{PaperId= Model.Id, LineId= item.Id??1}" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="2"></td>
+                    <th>TOTAL</th>
+                    <td><strong>@{var sum = Model.Numbers.Sum(x=>x.Amount) + Model.Numbers.Sum(x=>x.Busted);}@sum</strong></td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+}
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script type="text/javascript">
+        var urlDeDestino;
 
-        function changeDate() {
-            var input, date;
-            input = document.getElementById('date-input');
-            date = input.value;
-            window.location.href = '@Url.Action("Create", "Lottery")?dateString=' + date;
+        function redirectToCreate(paramName, inputId) {
+            var input = document.getElementById(inputId);
+            var value = input.value;
+            var url = '@Url.Action("Create", "Lottery")?' + paramName + '=' + encodeURIComponent(value) + '&&cc=true';
+            window.location.href = url;
         }
 
         function setFormat(id, key) {
@@ -152,37 +147,40 @@
             }
         }
 
-        function validateBustedInput(event) {
-            var amountInput = document.getElementById('amount-input');
-            var bustedInput = document.getElementById('busted-input');
-            var bustedSpan = document.getElementById('busted-span');
+        $(document).ready(function () {
+            $('form').submit(function (e) {
+                var amount = parseFloat($('#Amount').val());
+                var busted = parseFloat($('#Busted').val());
 
-            var bustedSpanHtml = bustedSpan.innerHTML;
+                if (busted > amount) {
+                    $('#Busted').siblings('.text-danger').text('El campo no puede ser mayor que el Monto.');
+                    $('#Busted').focus();
+                    e.preventDefault(); 
+                }
+                else {
+                    $('#Busted').siblings('.text-danger').text('');
+                }
+            });
+        });
 
-            var amount = parseFloat(amountInput.value);
-            var busted = parseFloat(bustedInput.value);
+        function showPartial(id) {
+            var partialDivs = document.querySelectorAll('[id*="Partial"]');
+            partialDivs.forEach(function (partialDiv) {
+                if (partialDiv.id !== id) {
+                    partialDiv.style.display = "none";
+                }
+            });
 
+            var element = document.getElementById(id);
 
-            if (busted > amount) {
-                var errorMessage = 'El reventado debe ser menor o igual al monto.';
-                setTimeout(function () {
-                    bustedSpan.innerHTML = '<span id="busted-input-error">' + errorMessage + '</span>';
-                }, 0);
-                return false;
-            }
-            else {
-                bustedSpan.innerHTML = '';
-                return true;
-            }
-        }
-
-        function submitForm(event) {
-            if (validateBustedInput()) {
-                event.target.submit();
+            if (element.style.display === "none") {
+                if (element.tagName === "DIV") {
+                    element.style.display = "block";
+                } else if (element.tagName === "TR") {
+                    element.style.display = "table-row";
+                }            
             } else {
-                var bustedSpan = document.getElementById('busted-span');
-                var errorMessage = 'El reventado debe ser mayor que cero y menor o igual al monto.';
-                bustedSpan.innerHTML = '<span id="busted-input-error">' + errorMessage + '</span>';
+                element.style.display = "none";
             }
         }
 

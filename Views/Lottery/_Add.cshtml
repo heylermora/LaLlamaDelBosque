@@ -1,20 +1,28 @@
 ﻿<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
 @model Numbers
+@{
+    var busted = ViewData["busted"] as bool?;
+}
 
-<form asp-action="Add" id="form-add" onsubmit="return submitForm(event)">
+<hr />
+
+<form asp-action="Add">
     <div class="row g-3">
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
         <div class="form-group col-md-2">
             <label asp-for="Amount" class="control-label">Monto</label>
-            <input asp-for="Amount" class="form-control" id="amount-input" autofocus />
+            <input asp-for="Amount" class="form-control" autofocus />
             <span asp-validation-for="Amount" class="text-danger"></span>
         </div>
-        <div class="form-group col-md-2">
-            <label asp-for="Busted" class="control-label">Reventado</label>
-            <input asp-for="Busted" class="form-control" id="busted-input" onkeydown="validateBustedInput()" />
-            <span asp-validation-for="Busted" class="text-danger" id="busted-span"></span>
-        </div>
+        @if (busted ?? false)
+        {
+            <div class="form-group col-md-2">
+                <label asp-for="Busted" class="control-label">Reventado</label>
+                <input asp-for="Busted" class="form-control"/>
+                <span asp-validation-for="Busted" class="text-danger"></span>
+            </div>
+        }
         <div class="form-group col-md-6">
             <label asp-for="Value" class="control-label">Números</label>
             <input asp-for="Value" id="number" class="form-control" onkeydown="setFormat('number',event.keyCode)" />
@@ -28,6 +36,4 @@
     </div>
 </form>
 
-@section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-}
+<hr />

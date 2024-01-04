@@ -1,12 +1,8 @@
 ﻿using LaLlamaDelBosque.Models;
 using LaLlamaDelBosque.Utils;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Runtime.CompilerServices;
-using System.Xml.Linq;
+using System.Reflection;
 
 namespace LaLlamaDelBosque.Controllers
 {
@@ -52,76 +48,67 @@ namespace LaLlamaDelBosque.Controllers
 
 				ViewData["Names"] = _lotteries;
 				ViewData["LotterySearchModel"] = searchModel;
-				TempData.Put("Papers", papers);
 
 				return View(papers);
 			}
 			catch(Exception ex)
 			{
-				Console.WriteLine(ex);
-				return View();
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
 			}
 		}
 
 		// GET: LotteryController/Create
-		public ActionResult Create(string dateString)
+		public ActionResult Create(string dateString, string lottery, int? clientId, bool cc = false)
 		{
-			DateTime date  = string.IsNullOrEmpty(dateString) ? DateTime.Now : DateTime.Parse(dateString);
-			_lotteries = date.ToShortDateString() == DateTime.Today.ToShortDateString() ?
-				_lotteries.Where(l => l.Hour > DateTime.Now.TimeOfDay && (l.Days?.Contains(date.DayOfWeek.ToString()) ?? true))
-					.OrderBy(l => l.Hour)
-					.ToList() : 
-				_lotteries.Where(l => (l.Days?.Contains(date.DayOfWeek.ToString()) ?? true))
-					.OrderBy(l => l.Hour)
-					.ToList();
+			cc = cc ? cc : TempData.Put<Paper>("Paper", null);
+			var paper = TempData.Get<Paper>("Paper") ?? new Paper() { CreationDate = DateTime.Now };
+
+			DateTime date = string.IsNullOrEmpty(dateString) ? paper.CreationDate : DateTime.Parse(dateString);
+			UpdateLotteries(date);
+			UpdatePaper(paper, lottery, clientId, date);
+
 			ViewData["Names"] = _lotteries;
 			ViewData["Clients"] = _credits.Select(c => c.Client).ToList();
-
-			var paper = TempData.Get<Paper>("Paper") ?? new Paper();
-			paper.Id = _papers.LastOrDefault()?.Id + 1 ?? 1;
-			paper.DrawDate = date;
-			paper.CreationDate = date;
+			ViewData["busted"] =  _lotteries.FirstOrDefault(l => l.Name == paper.Lottery)?.Busted ?? false;
 
 			TempData.Put("Paper", paper);
 			return View(paper);
 		}
 
 		// POST: LotteryController/Save
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public ActionResult Save(Paper paper)
+		public ActionResult Save()
 		{
 			try
 			{
-				var temPaper = TempData.Get<Paper>("Paper");
-				paper.Id = temPaper.Id;
-				paper.Numbers = temPaper.Numbers;
+				var paper = TempData.Get<Paper>("Paper");
 				if(paper != null)
 				{
-					paper.DrawDate = temPaper.DrawDate.Date + _lotteries.First(l => l.Name == paper.Lottery).Hour;
+					var lottery = _lotteries.First(l => l.Name == paper.Lottery);
+					paper.DrawDate = new DateTime(paper.DrawDate.Year, paper.DrawDate.Month, paper.DrawDate.Day, lottery.Hour.Hours, lottery.Hour.Minutes, lottery.Hour.Seconds);
 					paper.CreationDate = DateTime.Now;
 					_papers.Add(paper);
 					SetPapers(_papers);
-					if(paper.ClientId != null)
+					if(paper.ClientId != null && paper.ClientId != -1)
 					{
 						var amount = paper.Numbers.Sum(p => p.Amount) + paper.Numbers.Sum(p => p.Busted);
 						Add((int)paper.ClientId, paper.Lottery, amount);
 					}
 				}
 				TempData.Put<Paper>("Paper", null);
-				return RedirectToAction(nameof(Print), new {id = paper?.Id});
+				return RedirectToAction(nameof(Print), new { id = paper?.Id });
 			}
-			catch
+			catch(Exception ex)
 			{
-				return View();
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
 			}
 		}
 
 		public ActionResult Print(int id)
 		{
 			var paper = _papers.FirstOrDefault(p => p.Id == id);
-
+			var client = _credits.Select(c => c.Client).FirstOrDefault(c => c.Id == paper?.ClientId)?.Name;
 			ViewData["Date"] = DateTime.Now.ToShortDateString();
+			ViewData["Client"] = client;
 			return View(paper);
 		}
 
@@ -141,9 +128,9 @@ namespace LaLlamaDelBosque.Controllers
 				TempData.Put("Paper", paper);
 				return RedirectToAction(nameof(Create));
 			}
-			catch
+			catch(Exception ex)
 			{
-				return View();
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
 			}
 		}
 
@@ -162,8 +149,7 @@ namespace LaLlamaDelBosque.Controllers
 			}
 			catch(Exception ex)
 			{
-				Console.WriteLine(ex);
-				return RedirectToAction(nameof(Index));
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
 			}
 		}
 
@@ -173,10 +159,16 @@ namespace LaLlamaDelBosque.Controllers
 		{
 			try
 			{
+				double amount;
+				double busted;
+
+				var amountParsed = double.TryParse(collection["amount"], out amount);
+				var bustedParsed = double.TryParse(collection["busted"], out busted);
+
 				var numberList = collection["value"].ToString().TrimEnd('+').Split('+');
 
 				var paper = TempData.Get<Paper>("Paper") ?? new Paper();
-				var count = paper.Numbers.Max( p => p.Id) ?? 0;
+				var count = paper.Numbers.Max(p => p.Id) ?? 0;
 
 				foreach(var number in numberList)
 				{
@@ -184,38 +176,28 @@ namespace LaLlamaDelBosque.Controllers
 					var numbers = paper.Numbers.Find(x => x.Value == value);
 					if(numbers != null)
 					{
-						numbers.Amount += double.Parse(collection["amount"]);
-						numbers.Busted += double.Parse(collection["busted"]);
+						numbers.Amount += amount;
+						numbers.Busted += busted;
 					}
 					else
 					{
 						paper.Numbers.Add(new Number()
 						{
 							Id = ++count,
-							Amount = double.Parse(collection["amount"]),
-							Busted = double.Parse(collection["busted"]),
+							Amount = amount,
+							Busted = busted,
 							Value = number
 						});
 					}
 				}
 				paper.Numbers = paper.Numbers.OrderBy(x => x.Value).ToList();
-
 				TempData.Put("Paper", paper);
-				return RedirectToAction(nameof(Create));
+				return RedirectToAction(nameof(Create), new {cc = true});
 			}
-			catch
+			catch(Exception ex)
 			{
-				return RedirectToAction(nameof(Create));
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
 			}
-		}
-
-		// GET: LotteryController/Remove/5
-		public ActionResult Remove(int paperId, int lineId)
-		{
-			TempData["Id"] = paperId;
-			TempData["LineId"] = lineId;
-			TempData["Method"] = "Remove";
-			return RedirectToAction(nameof(Create));
 		}
 
 		// POST: LotteryController/Remove/5
@@ -232,9 +214,9 @@ namespace LaLlamaDelBosque.Controllers
 				TempData.Put("Paper", paper);
 				return RedirectToAction(nameof(Create));
 			}
-			catch
+			catch(Exception ex)
 			{
-				return RedirectToAction(nameof(Index));
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
 			}
 		}
 
@@ -243,15 +225,12 @@ namespace LaLlamaDelBosque.Controllers
 		{
 			try
 			{
-				var paper = TempData.Get<Paper>("Paper") ?? new Paper();
-				paper.Numbers.Clear();
-				TempData.Put("Paper", paper);
+				TempData.Put<Paper>("Paper", null);
 				return RedirectToAction(nameof(Create));
 			}
 			catch(Exception ex)
 			{
-				Console.WriteLine(ex);
-				return RedirectToAction(nameof(Index));
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
 			}
 		}
 
@@ -306,13 +285,34 @@ namespace LaLlamaDelBosque.Controllers
 					Amount = amount
 				};
 
-				credit?.CreditLines.Add(creditLine);
-
-				credit.CreditSummary.Total = (credit?.CreditSummary?.Total ?? 0) + creditLine.Amount;
+				if(credit != null && credit.CreditSummary != null)
+				{
+					credit.CreditLines.Add(creditLine);
+					credit.CreditSummary.Total = credit.CreditSummary.Total + creditLine.Amount;
+				}
 
 				SetCredits(_credits);
 			};
 			return;
+		}
+
+		private void UpdateLotteries(DateTime date)
+		{
+			_lotteries = _lotteries
+				.Where(l => (date.ToShortDateString() == DateTime.Today.ToShortDateString() ?
+							 l.Hour > DateTime.Now.TimeOfDay : true) &&
+							(l.Days?.Contains(date.DayOfWeek.ToString()) ?? true))
+				.OrderBy(l => l.Hour)
+				.ToList();
+		}
+
+		private void UpdatePaper(Paper paper, string lottery, int? clientId, DateTime date)
+		{
+			paper.Id = _papers.LastOrDefault()?.Id + 1 ?? 1;
+			paper.Lottery = lottery ?? paper.Lottery;
+			paper.ClientId = clientId ?? paper.ClientId;
+			paper.DrawDate = date;
+			paper.CreationDate = date;
 		}
 	}
 }

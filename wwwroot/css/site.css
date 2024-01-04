@@ -2,7 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Lora&display=swap');
 :root {
-    --background: #00CED1;
+    --background: #b2ebf2;
     --danger: #FF4136;
     --dark: #0B2239;
     --light: #FFFFFF;
@@ -82,6 +82,15 @@ h1, h2 {
 .btn {
     border-radius: .45rem;
     width: 96px;
+}
+
+.btn-icon {
+    padding: 0.2rem;
+    font-size: 1.5rem;
+    background-color: transparent;
+    border: none;
+    color: #007bff;
+    transition: color 0.3s ease-in-out;
 }
 
 span.material-icons.icon {

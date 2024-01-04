@@ -29,12 +29,18 @@
                             <strong>FECHA: </strong> @Model.CreationDate.ToShortDateString()
                             <strong>HORA: </strong> @Model.CreationDate.ToShortTimeString()
                         </p>
-                        <p><strong>SORTEO:</strong> @Model.Lottery</p>
+                        <p><strong>SORTEO: </strong> @Model.Lottery</p>
                         <p>
-                            <strong>FECHA:</strong> @Model.DrawDate.ToShortDateString()
+                            <strong>FECHA: </strong> @Model.DrawDate.ToShortDateString()
                             <strong>HORA: </strong> @Model.DrawDate.ToShortTimeString()
                         </p>
-                        <p><strong>PAPELITO:</strong> #@Model.Id</p>
+                        <p class="text-truncate">
+                            <strong>PAPELITO:</strong> #@Model.Id
+                            @if (ViewData["Client"] != null)
+                            {
+                                <strong>CLIENTE:</strong> @ViewData["Client"]
+                            }
+                        </p>
                     </div>
 
                     <div class="container">

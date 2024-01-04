@@ -1,0 +1,97 @@
+﻿@model LaLlamaDelBosque.Models.Credit
+
+@{
+    var cumulative = 0D;
+}
+
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Descripción</th>
+                <th>Precio</th>
+                <th>Acumulado</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+
+            @foreach(var line in Model.CreditLines)
+            {
+                <tr>
+                    <td>@line.Id</td>
+                    <td>@line.CreatedDate.ToShortDateString()</td>
+                    <td>@line.CreatedDate.ToShortTimeString()</td>
+                    <td>@line.Description</td>
+                    <td>₡ @line.Amount</td>
+                    <td class="table-active">
+                        @{
+                            cumulative += @line.Amount;
+                        }₡ @cumulative
+                    </td>
+                    <td style="text-align:center">
+                        <div class="btn-group mx-auto" role="group">
+                            <!-- Refresh -->
+                            <button type="button" class="btn" onclick="showPartial('refreshPartial-@Model.Client.Id-@line.Id')">
+                                <span class="material-icons icon icon-dark">mode_edit</span>
+                            </button>
+                            <!-- Remove -->
+                            <button type="button" class="btn" onclick="showPartial('removePartial-@Model.Client.Id-@line.Id')">
+                                <span class="material-icons icon icon-danger">delete</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tr id="removePartial-@Model.Client.Id-@line.Id">
+                    <td colspan="7">
+                        <partial name="_Remove" model="new CreditConnectionModel{ClientId= Model.Client.Id, LineId= line.Id}" />
+                    </td>
+                </tr>
+                <tr id="refreshPartial-@Model.Client.Id-@line.Id">
+                    <td colspan="7">
+                        <partial name="_Refresh" model="new CreditConnectionModel{ClientId= Model.Client.Id, CreditLine= line}" />
+                    </td>
+                </tr>
+            }
+            <tr id="addPartial-@Model.Client.Id">
+                <td colspan="7">
+                    <partial name="_Add" model="@new CreditLine() { Id = Model.Client.Id, CreatedDate = DateTime.Now }" />
+                </td>
+            </tr>
+            <tr id="feePartial-@Model.Client.Id">
+                <td colspan="7">
+                    <partial name="_Fee" model="@new CreditLine() { Id = Model.Client.Id, CreatedDate = DateTime.Now }" />
+                </td>
+            </tr>
+            <tr id="clearPartial-@Model.Client.Id">
+                <td colspan="7">
+                    <partial name="_Clear" model="Model" />
+                </td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="4">
+                    <!-- Add -->
+                    <button type="button" class="btn" onclick="showPartial('addPartial-@Model.Client.Id')">
+                        <span class="material-icons icon icon-primary">add_circle</span>
+                    </button>
+                    <!-- Fee -->
+                    <button type="button" class="btn" onclick="showPartial('feePartial-@Model.Client.Id')">
+                        <span class="material-icons icon icon-primary">post_add</span>
+                    </button>
+                    <!-- Clear -->
+                    <button type="button" class="btn" onclick="showPartial('clearPartial-@Model.Client.Id')">
+                        <span class="material-icons icon icon-danger">cancel</span>
+                    </button>
+                </td>
+                <td>Total</td>
+                <td>₡ @Model.CreditSummary.Total</td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
