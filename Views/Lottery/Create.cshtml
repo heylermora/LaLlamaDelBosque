@@ -4,6 +4,7 @@
 @{
     ViewData["Title"] = "Crear Papelito";
     ViewData["CC"] = true;
+    var sum = Model.Numbers.Sum(x => x.Amount) + Model.Numbers.Sum(x => x.Busted);
 }
 
 <h1 class="display-4">@ViewData["Title"]</h1>
@@ -73,51 +74,60 @@
 
 @if (Model?.Numbers.Any() ?? false)
 {
-    <div class="table-responsive container">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>Id</th>
-                    <th>Numero</th>
-                    <th>Monto</th>
-                    <th>Reventado</th>
-                    <th></th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach(var item in Model.Numbers)
-                {
-                    <tr>
-                        <td></td>
-                        <td>@item.Id</td>
-                        <td>@item.Value</td>
-                        <td>@item.Amount</td>
-                        <td>@item.Busted</td>
-                        <td>
-                            <!-- Remove -->
-                            <button type="button" class="btn"  onclick="showPartial('removePartial-@Model.Id-@item.Id')">
-                                <span class="material-icons icon icon-danger">delete</span>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr id="removePartial-@Model.Id-@item.Id">
-                        <td colspan="6">
-                            <partial name="_Remove" model="new LotteryConnectionModel{PaperId= Model.Id, LineId= item.Id??1}" />
-                        </td>
-                    </tr>
-                }
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="2"></td>
-                    <th>TOTAL</th>
-                    <td><strong>@{var sum = Model.Numbers.Sum(x=>x.Amount) + Model.Numbers.Sum(x=>x.Busted);}@sum</strong></td>
-                    <td></td>
-                </tr>
-            </tfoot>
-        </table>
+    <div class="container-fluid mb-2">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="table-responsive container overflow-auto">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Numero</th>
+                                <th>Monto</th>
+                                <th>Reventado</th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach(var item in Model.Numbers)
+                            {
+                                <tr>
+                                    <td></td>
+                                    <td>@item.Value</td>
+                                    <td>@item.Amount</td>
+                                    <td>@item.Busted</td>
+                                    <td>
+                                        <!-- Remove -->
+                                        <button type="button" class="btn" onclick="showPartial('removePartial-@Model.Id-@item.Id')">
+                                            <span class="material-icons icon icon-danger">delete</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr id="removePartial-@Model.Id-@item.Id">
+                                    <td colspan="6">
+                                        <partial name="_Remove" model="new LotteryConnectionModel{PaperId= Model.Id, LineId= item.Id??1}" />
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+            <div class="col-lg-4">
+                <div class="card" style="background: linear-gradient(135deg, #3B82F6, #64b5f6);">
+                    <div class="card-body">
+                        <h2 class="card-title">Resumen</h2>
+                        <p class="card-text">Monto Total: @Model.Numbers.Sum(x => x.Amount)</p>
+                        <p class="card-text">Reventado Total: @Model.Numbers.Sum(x => x.Busted)</p>
+                        <hr>
+                        <p class="card-text" style="font-weight: bold; font-size: 1.2rem;">Total General: @sum</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
     </div>
 }
 

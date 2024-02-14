@@ -58,7 +58,7 @@ namespace LaLlamaDelBosque.Controllers
 		}
 
 		// GET: LotteryController/Create
-		public ActionResult Create(string dateString, string lottery, int? clientId, bool cc = false)
+		public ActionResult Create(string? dateString, string? lottery, int? clientId, bool cc = false)
 		{
 			cc = cc ? cc : TempData.Put<Paper>("Paper", null);
 			var paper = TempData.Get<Paper>("Paper") ?? new Paper() { CreationDate = DateTime.Now };
@@ -126,7 +126,7 @@ namespace LaLlamaDelBosque.Controllers
 					paper.Numbers = numbers ?? new List<Number>();
 				}
 				TempData.Put("Paper", paper);
-				return RedirectToAction(nameof(Create));
+				return RedirectToAction(nameof(Create), new { cc = true });
 			}
 			catch(Exception ex)
 			{
