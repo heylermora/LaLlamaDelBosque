@@ -2,9 +2,11 @@
 using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Rotativa.AspNetCore;
 using Rotativa.AspNetCore.Options;
 using System.Globalization;
+using System.Reflection;
 
 namespace LaLlamaDelBosque.Controllers
 {
@@ -17,10 +19,11 @@ namespace LaLlamaDelBosque.Controllers
         public CreditController()
         {
 			_credits = GetCredits();
+
         }
 
         // GET: CreditController
-        public ActionResult Index(string searchString, int clientId)
+        public ActionResult Index(string searchString, int clientId, int currentPage = 1)
         {
             var credits = _credits.Credits;
             if(!string.IsNullOrEmpty(searchString))
@@ -28,7 +31,18 @@ namespace LaLlamaDelBosque.Controllers
                 credits = credits.Where(s => s.Client.Name.ToLower().Contains(searchString.ToLower())).ToList();
             }
             credits = credits.OrderBy(c => c.Client.Name).ToList();
-            ViewBag.ClientId = clientId;
+
+			int totalItems = credits.Count();
+			int totalPages = (int)Math.Ceiling((double)totalItems / 20);
+			currentPage = Math.Max(1, Math.Min(currentPage, totalPages));
+			int startIndex = (currentPage - 1) * 20;
+			int endIndex = Math.Min(startIndex + 20 - 1, totalItems - 1);
+
+			credits = credits.Where((item, index) => index >= startIndex && index <= endIndex).ToList();
+
+			ViewBag.TotalPages = totalPages;
+			ViewBag.CurrentPage = currentPage;
+			ViewBag.ClientId = clientId;
 
             return View(credits);
         }
@@ -122,7 +136,7 @@ namespace LaLlamaDelBosque.Controllers
         // POST: CreditController/Add
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Add(int id, IFormCollection collection)
+        public ActionResult Add(int id, int currentPage, IFormCollection collection)
         {
             try
             {
@@ -145,7 +159,7 @@ namespace LaLlamaDelBosque.Controllers
 
                     SetCredits(_credits);
                 }
-                return RedirectToAction(nameof(Index), new { clientId = id });
+                return RedirectToAction(nameof(Index), new { clientId = id, currentPage = currentPage });
             }
 			catch(Exception ex)
 			{
@@ -156,7 +170,7 @@ namespace LaLlamaDelBosque.Controllers
         // POST: CreditController/Fee
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Fee(int id, IFormCollection collection)
+        public ActionResult Fee(int id, int currentPage, IFormCollection collection)
         {
             try
             {
@@ -179,7 +193,7 @@ namespace LaLlamaDelBosque.Controllers
 
                     SetCredits(_credits);
                 }
-                return RedirectToAction(nameof(Index), new { clientId = id });
+                return RedirectToAction(nameof(Index), new { clientId = id, currentPage = currentPage });
             }
 			catch(Exception ex)
 			{
@@ -190,7 +204,7 @@ namespace LaLlamaDelBosque.Controllers
         // POST: CreditController/Refresh/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Refresh(int clientId, IFormCollection collection)
+        public ActionResult Refresh(int clientId, int currentPage, IFormCollection collection)
         {
             try
             {
@@ -205,7 +219,7 @@ namespace LaLlamaDelBosque.Controllers
                 credit.CreditSummary.Total += line.Amount;
 
                 SetCredits(_credits);
-                return RedirectToAction(nameof(Index), new { clientId = clientId });
+                return RedirectToAction(nameof(Index), new { clientId = clientId, currentPage = currentPage });
             }
 			catch(Exception ex)
 			{
@@ -216,7 +230,7 @@ namespace LaLlamaDelBosque.Controllers
         // POST: CreditController/Remove/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Remove(string clientId, string lineId)
+        public ActionResult Remove(string clientId, int currentPage, string lineId)
         {
             try
             {
@@ -236,7 +250,7 @@ namespace LaLlamaDelBosque.Controllers
         // POST: CreditController/Clear/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Clear(string? Id)
+        public ActionResult Clear(string? Id, int currentPage)
         {
             try
             {
@@ -244,7 +258,7 @@ namespace LaLlamaDelBosque.Controllers
                 credit.CreditSummary.Total = 0;
                 credit.CreditLines.Clear();
                 SetCredits(_credits);
-                return RedirectToAction(nameof(Index), new { clientId = Id });
+                return RedirectToAction(nameof(Index), new { clientId = Id, currentPage = currentPage });
             }
 			catch(Exception ex)
 			{

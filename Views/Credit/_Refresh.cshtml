@@ -1,10 +1,13 @@
 ﻿@model LaLlamaDelBosque.Models.CreditConnectionModel
+@{
+    var currentPage = ViewBag.currentPage;
+}
 
 <form asp-action="Refresh" asp-route-clientid=@Model.ClientId class="row g-3">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <div class="form-group col-1">
         <input asp-for="CreditLine.Id" class="form-control" readonly />
-        <span asp-validation-for="CreditLine.Id" class="text-danger"></span>
+        <input type="hidden" name="currentPage" value="@currentPage" />
     </div>
     <div class="form-group col-auto">
         <input asp-for="CreditLine.CreatedDate" class="form-control" readonly />

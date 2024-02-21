@@ -7,35 +7,38 @@
 
 @using System.Web;
 @using Microsoft.AspNetCore.Mvc;
+@using System.Linq
 
 @{
-    ViewData["Title"] = "Créditos de Clientes";
+    var currentPage = ViewBag.currentPage;
+    var totalPages = ViewBag.totalPages;
 }
 
-<h1 class="display-4">@ViewData["Title"]</h1>
-
 <div class="container">
-    <div class="btn-group mx-auto col-2" role="group">
-        <!-- Add -->
-        <button type="button" class="btn"
-                onclick="location.href='@Url.Action("Create", "Credit")'">
-            <span class="material-icons icon icon-primary">add_circle</span>
-        </button>
-        <!-- PDF -->
-        <button type="button" class="btn"
-                    onclick="location.href='@Url.Action("IndexPdf", "Credit")'">
-            <span class="material-icons icon icon-success">article</span>
-        </button>
-    </div>
-
     <div class="row justify-content-md-center">
-        <div class="col-xl-10">
-            <form id="searchForm" class="d-flex" asp-controller="Credit" asp-action="Index" method="get">
-                <div class="input-group form-floating mb-4 mt-1">
-                    <input id="searchInput" type="search" class="form-control" name="SearchString" placeholder="Buscar..." oninput="searchCredits()" autofocus>
-                    <label for="floatingInput">Buscar</label>
+        <div>
+            <div class="d-flex align-items-center mt-2 mb-2">
+                <div class="btn-group ms-2" role="group">
+                <button type="button" class="btn" onclick="location.href='@Url.Action("Create", "Credit")'">
+                    <span class="material-icons icon icon-primary">add_circle</span>
+                </button>
+                <button type="button" class="btn" onclick="location.href='@Url.Action("IndexPdf", "Credit")'">
+                    <span class="material-icons icon icon-success">article</span>
+                </button>
                 </div>
-            </form>
+                <form id="searchForm" class="d-flex flex-grow-1" asp-controller="Credit" asp-action="Index" method="get">
+                <div class="input-group">
+                    <input id="searchInput" type="search" class="form-control" name="SearchString" placeholder="Buscar..." oninput="searchCredits()" autofocus aria-label="Campo de búsqueda">
+                    <button class="btn btn-primary" type="submit" id="searchButton" aria-label="Buscar"><span class="material-icons">search</span></button>
+                </div>
+                </form>
+                <div class="form-check form-switch m-2">
+                <input class="form-check-input" type="checkbox" id="saldoSwitch" disabled>
+                <label class="form-check-label" for="saldoSwitch">
+                    <span class="material-icons icon icon-success">paid</span>
+                </label>
+                </div>
+            </div>
             <div class="row row-cols-1 row-cols-md-4">
                 @foreach(var item in Model)
                 {
@@ -75,13 +78,15 @@
                                     </ul>
                                 </div>
                                 <div class="d-flex justify-content-between align-items-start" id="clientTotal-@item.Client.Id">
-                                    <div class="d-flex align-items-start">
+                                    <div class="d-flex mt-auto mb-auto">
                                         <span class="material-icons star">
                                             account_circle
                                         </span>
                                     </div>
-                                    <div class="p-1 me-auto text-truncate">
-                                        <h5 class="card-title text-truncate">@item.Client.Name</h5>
+                                    <div class="p-1 me-auto">
+                                        <h2 class="text-truncate">
+                                            <b style="font-size: 24px">@item.Client.Name</b>
+                                        </h2>
                                         <p class="card-text text-truncate">Total: ₡ @item.CreditSummary.Total</p>
                                     </div>
                                 </div>
@@ -162,6 +167,16 @@
                     }
                 }
             </div>
+            <nav>
+                <ul class="pagination justify-content-center">
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <li class="page-item @(i == currentPage ? "active" : "")">
+                            <a class="page-link" href="?currentPage=@i">@i</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
         </div>
     </div>
 </div>
@@ -176,7 +191,7 @@
             clearTimeout(delayTimer);
             delayTimer = setTimeout(function () {
                 document.getElementById('searchForm').submit();
-            }, 500);
+            }, 600);
         }
 
         function copyAsImage(id) {
@@ -241,6 +256,5 @@
                 element.style.display = "none";
             }
         }
-
     </script>
 }

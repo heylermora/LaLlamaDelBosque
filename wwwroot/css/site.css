@@ -34,7 +34,7 @@ body {
     margin-bottom: 60px;
 }
 
-nav {
+.navbar {
     background: var(--dark);
 }
 
@@ -134,4 +134,4 @@ span.material-icons.star {
 
 [id*="Partial"] {
     display: none;
-}
+} 

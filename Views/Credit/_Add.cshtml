@@ -1,9 +1,13 @@
 ﻿@model CreditLine
+@{
+    var currentPage = ViewBag.currentPage;
+}
 
 <form asp-action="Add" class="row g-3">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <div class="form-group">
         <input asp-for="Id" class="form-control visually-hidden" />
+        <input type="hidden" name="currentPage" value="@currentPage" />
     </div>
     <div class="form-group col-auto">
         <label asp-for="CreatedDate" class="form-label">Fecha de creación</label>

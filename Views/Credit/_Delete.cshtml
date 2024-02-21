@@ -1,9 +1,13 @@
 ﻿@model LaLlamaDelBosque.Models.Credit
+@{
+    var currentPage = ViewBag.currentPage;
+}
 
 @if(Model?.Client?.Id != null)
 {
     <h6>¿Desea eliminar a este cliente?</h6>
     <form asp-action="Delete" asp-route-id="@Model.Client.Id">
+        <input type="hidden" name="currentPage" value="@currentPage" />
         <input type="submit" value="Eliminar" class="btn btn-danger" />
         <input type="button" onclick="location.href='@Url.Action("Index", "Credit")'" value="Cancelar" class="btn btn-secondary" />
     </form>
