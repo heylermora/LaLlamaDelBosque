@@ -4,6 +4,7 @@
 @{
 	ViewData["Title"] = "Listado de Ventas";
 	var searchModel = ViewData["LotterySearchModel"] as LotterySearchModel;
+	var numberAward = ViewBag.Number;
 	var total = 0d;
 	var totales = 0d;
 	var value = 0;
@@ -16,6 +17,18 @@
 <partial name="_Search" model="@searchModel" />
     
 <hr />
+
+@if(numberAward != null){
+	<div class="card text-center">
+		<div class="card-header bg-primary text-white">
+			<h5 class="card-title">Número Ganador</h5>
+		</div>
+		<div class="card-body">
+			<h2 class="card-text" id="numero-ganador">@numberAward</h2>
+		</div>
+	</div>
+	<hr />
+}
 
 @if (Model != null && Model.Any())
 {
@@ -34,19 +47,14 @@
 					<tbody>
 						@for (var j = 0; j < 20; j++)
 						{
+							value = 20 * i + j;
+							var awardStyle = value.ToString("D2") == numberAward ? "background-color: var(--danger); font-weight: bold;" : "";
+							var sumAmount = Model.Sum(m => m.Numbers.Where(n => n.Value == value.ToString("D2")).Sum(n => n.Amount));
+							var sumBusted = Model.Sum(m => m.Numbers.Where(n => n.Value == value.ToString("D2")).Sum(n => n.Busted));
 							<tr>
-								<td>@{value = 20 * i + j;}@value.ToString("D2")</td>
-								@if(Model.Sum(m => m.Numbers.Where(n => n.Value == value.ToString("D2")).Sum(n => n.Amount)) > 0)
-								{
-									<td>₡ @Model.Sum(m => m.Numbers.Where(n => n.Value == value.ToString("D2")).Sum(n => n.Amount))</td>
-								}else{
-									<td></td>
-								}
-								@if(Model.Sum(m => m.Numbers.Where(n => n.Value == value.ToString("D2")).Sum(n => n.Busted)) > 0){
-									<td>₡ @Model.Sum(m => m.Numbers.Where(n => n.Value == value.ToString("D2")).Sum(n => n.Busted))</td>
-								}else{
-									<td></td>
-								}
+								<td style="@awardStyle">@value.ToString("D2")</td>
+								<td style="@awardStyle">@(sumAmount > 0 ? $"₡ {sumAmount}" : "")</td>
+								<td style="@awardStyle">@(sumBusted > 0 ? $"₡ {sumBusted}" : "")</td>
 							</tr>
 						}
 					</tbody>

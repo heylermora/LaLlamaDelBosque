@@ -134,4 +134,9 @@ span.material-icons.star {
 
 [id*="Partial"] {
     display: none;
-} 
+}
+
+.custom-tooltip .tooltip-inner {
+    background-color: var(--secondary);
+    color: var(--light);
+}

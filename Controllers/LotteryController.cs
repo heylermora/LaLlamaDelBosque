@@ -11,12 +11,15 @@ namespace LaLlamaDelBosque.Controllers
 		private List<Lottery> _lotteries;
 		private readonly List<Paper> _papers;
 		private readonly List<Credit> _credits;
+		private readonly List<Award> _awards;
+
 
 		public LotteryController()
 		{
 			_lotteries = GetLotteries();
 			_papers = GetPapers();
 			_credits = GetCredits();
+			_awards = GetAwards();
 		}
 
 		// GET: LotteryController
@@ -38,12 +41,15 @@ namespace LaLlamaDelBosque.Controllers
 					(id == null && lottery != null && p.Lottery == lottery) ||
 					(id != null && lottery != null && p.Id == id && p.Lottery == lottery) ||
 					(lottery == "TODOS")) &&
-					(p.CreationDate.Date >= fromDate && p.CreationDate.Date <= toDate)
+					(p.DrawDate.Date >= fromDate && p.DrawDate.Date <= toDate)
 				).ToList();
 
-				if(papers.Count > 1000)
+				if((papers.All(p => p.DrawDate.Date == searchModel.FromDate.Value.Date && 
+									searchModel.FromDate.Value.Date == searchModel.ToDate.Value.Date) 
+									&& !string.IsNullOrEmpty(lottery) && lottery != "TODOS" && papers.Count > 0) || papers.Count == 1)
 				{
-					papers.RemoveRange(0, 500);
+					var number = _awards.FirstOrDefault(a => a.Date.Date == searchModel.FromDate)?.AwardLines.FirstOrDefault(l => l.Description == lottery)?.Number;
+					ViewBag.Number = number;
 				}
 
 				ViewData["Names"] = _lotteries;
@@ -270,6 +276,12 @@ namespace LaLlamaDelBosque.Controllers
 				Credits = credits
 			};
 			JsonFile.Write("Credits", creditModel);
+		}
+
+		private List<Award> GetAwards()
+		{
+			var award = JsonFile.Read("Awards", new AwardModel());
+			return award.Awards.ToList();
 		}
 
 		private void Add(int id, string lottery, double amount)

@@ -1,5 +1,6 @@
 ﻿@model LaLlamaDelBosque.Models.CreditConnectionModel
 @{
+    var searchString = ViewBag.searchString;
     var currentPage = ViewBag.currentPage;
 }
 
@@ -7,6 +8,7 @@
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <div class="form-group col-1">
         <input asp-for="CreditLine.Id" class="form-control" readonly />
+        <input type="hidden" name="searchString" value="@searchString" />
         <input type="hidden" name="currentPage" value="@currentPage" />
     </div>
     <div class="form-group col-auto">

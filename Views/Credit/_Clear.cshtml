@@ -1,11 +1,13 @@
 ﻿@model LaLlamaDelBosque.Models.Credit
 @{
+    var searchString = ViewBag.searchString;
     var currentPage = ViewBag.currentPage;
 }
 
 <h6>¿Desea eliminar todas las líneas de este cliente?</h6>
 
 <form asp-action="Clear" asp-route-id=@Model.Client.Id>
+    <input type="hidden" name="searchString" value="@searchString" />
     <input type="hidden" name="currentPage" value="@currentPage" />
     <input type="submit" value="Eliminar" class="btn btn-danger" />
     <input type="button" onclick="location.href='@Url.Action("Index", "Credit")'" value="Cancelar" class="btn btn-secondary" />

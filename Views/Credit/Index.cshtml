@@ -12,32 +12,39 @@
 @{
     var currentPage = ViewBag.currentPage;
     var totalPages = ViewBag.totalPages;
+    var searchString = ViewBag.searchString;
 }
 
 <div class="container">
     <div class="row justify-content-md-center">
         <div>
             <div class="d-flex align-items-center mt-2 mb-2">
-                <div class="btn-group ms-2" role="group">
-                <button type="button" class="btn" onclick="location.href='@Url.Action("Create", "Credit")'">
-                    <span class="material-icons icon icon-primary">add_circle</span>
-                </button>
-                <button type="button" class="btn" onclick="location.href='@Url.Action("IndexPdf", "Credit")'">
-                    <span class="material-icons icon icon-success">article</span>
-                </button>
+                <div class="btn-group ms-4 me-4" role="group">
+                    <button type="button" class="btn"
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="top"
+                        data-tooltip-class="custom-tooltip"
+                        title="Nuevo Cliente" 
+                        onclick="location.href='@Url.Action("Create", "Credit")'">
+                        <span class="material-icons icon icon-primary">add_circle</span>
+                    </button>
+                    <div class="form-check form-switch d-flex flex-column align-items-center ps-3 pe-3">
+                        <span class="material-icons icon icon-success">paid</span>
+                        <input class="form-check-input m-0" type="checkbox" id="saldoSwitch" disabled>
+                    </div>
+                    <button type="button" class="btn"
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="top"
+                        title="Descargar reporte de créditos"
+                        onclick="location.href='@Url.Action("IndexPdf", "Credit")'">
+                        <span class="material-icons icon icon-success">article</span>
+                    </button>
                 </div>
                 <form id="searchForm" class="d-flex flex-grow-1" asp-controller="Credit" asp-action="Index" method="get">
-                <div class="input-group">
-                    <input id="searchInput" type="search" class="form-control" name="SearchString" placeholder="Buscar..." oninput="searchCredits()" autofocus aria-label="Campo de búsqueda">
-                    <button class="btn btn-primary" type="submit" id="searchButton" aria-label="Buscar"><span class="material-icons">search</span></button>
-                </div>
+                    <div class="input-group">
+                        <input id="searchInput" type="search" class="form-control" name="SearchString" value="@searchString" placeholder="Buscar..." oninput="searchCredits()" autofocus aria-label="Campo de búsqueda">
+                    </div>
                 </form>
-                <div class="form-check form-switch m-2">
-                <input class="form-check-input" type="checkbox" id="saldoSwitch" disabled>
-                <label class="form-check-label" for="saldoSwitch">
-                    <span class="material-icons icon icon-success">paid</span>
-                </label>
-                </div>
             </div>
             <div class="row row-cols-1 row-cols-md-4">
                 @foreach(var item in Model)
@@ -190,8 +197,10 @@
         function searchCredits() {
             clearTimeout(delayTimer);
             delayTimer = setTimeout(function () {
+                var searchString = document.getElementById('searchInput').value;
+                document.getElementById('searchForm').action = '/Credit/Index?searchString=' + encodeURIComponent(searchString);
                 document.getElementById('searchForm').submit();
-            }, 600);
+            }, 1000);
         }
 
         function copyAsImage(id) {
