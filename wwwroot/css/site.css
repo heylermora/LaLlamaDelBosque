@@ -91,6 +91,7 @@ h1, h2 {
     border: none;
     color: #007bff;
     transition: color 0.3s ease-in-out;
+    height: 24px;
 }
 
 span.material-icons.icon {
@@ -101,6 +102,22 @@ span.material-icons.icon {
 span.material-icons.star {
     color: var(--dark);
     font-size: 60px;
+}
+
+span.text-bg-primary {
+    background: var(--primary);
+}
+
+span.text-bg-success {
+    background: var(--success);
+}
+
+span.text-bg-warning {
+    background: var(--warning);
+}
+
+span.text-bg-danger {
+    background: var(--danger);
 }
 
 .icon-danger {

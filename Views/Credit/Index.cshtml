@@ -8,11 +8,28 @@
 @using System.Web;
 @using Microsoft.AspNetCore.Mvc;
 @using System.Linq
+@using LaLlamaDelBosque.Utils;
+
 
 @{
     var currentPage = ViewBag.currentPage;
     var totalPages = ViewBag.totalPages;
     var searchString = ViewBag.searchString;
+}
+
+@functions {
+    string GetStatusClass(int status) {
+        switch (status) {
+            case 2:
+                return "text-bg-success";
+            case 3:
+                return "text-bg-warning";
+            case 4:
+                return "text-bg-danger";
+            default:
+                return "text-bg-primary";
+        }
+    }
 }
 
 <div class="container">
@@ -52,37 +69,40 @@
                     <div class="col-md-3 mb-4">
                         <div class="card">
                             <div class="card-body">
-                                <!-- Menú de acciones -->
-                                <div class="dropdown position-absolute top-0 end-0">
-                                    <button class="btn-icon" type="button" id="actionMenu" data-bs-toggle="dropdown">
-                                        <span class="material-icons">more_vert</span>
-                                    </button>
-                                    <ul class="dropdown-menu" aria-labelledby="actionMenu">
-                                        <!-- Editar -->
-                                        <li>
-                                            <button class="dropdown-item d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#editModal-@item.Client.Id">
-                                                <span class="material-icons icon icon-dark" style="padding-right: 10px;">edit</span> Editar
-                                            </button>
-                                        </li>
-                                        <!-- Imagen -->
-                                        <li>
-                                            <button class="dropdown-item d-flex align-items-center" id="btnCopy" onclick="copyAsImage('@item.Client.Id')">
-                                                <span class="material-icons icon icon-dark" style="padding-right: 10px;">image</span> Crear Imagen
-                                            </button>
-                                        </li>
-                                        <!-- Recordatorio -->
-                                        <li>
-                                            <button class="dropdown-item d-flex align-items-center" id="btnCopy" onclick="copyToClipboard('@item.Client.Id', '@item.Client.Name', '@item.CreditSummary.Total')">
-                                                <span class="material-icons icon icon-dark" style="padding-right: 10px;">notifications</span> Crear Notificación
-                                            </button>
-                                        </li>
-                                        <!-- Eliminar -->
-                                        <li>
-                                            <button class="dropdown-item d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#deleteModal-@item.Client.Id">
-                                                <span class="material-icons icon icon-danger" style="padding-right: 10px;">delete</span> Eliminar
-                                            </button>
-                                        </li>
-                                    </ul>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge @GetStatusClass(item.CreditSummary.Status)">@Constants.LimitStatus[item.CreditSummary.Status]</span>
+                                    <!-- Menú de acciones -->
+                                    <div class="dropdown-menu-end">
+                                        <button class="btn-icon" type="button" id="actionMenu" data-bs-toggle="dropdown">
+                                            <span class="material-icons">more_vert</span>
+                                        </button>
+                                        <ul class="dropdown-menu" aria-labelledby="actionMenu">
+                                            <!-- Editar -->
+                                            <li>
+                                                <button class="dropdown-item d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#editModal-@item.Client.Id">
+                                                    <span class="material-icons icon icon-dark" style="padding-right: 10px;">edit</span> Editar
+                                                </button>
+                                            </li>
+                                            <!-- Imagen -->
+                                            <li>
+                                                <button class="dropdown-item d-flex align-items-center" id="btnCopy" onclick="copyAsImage('@item.Client.Id')">
+                                                    <span class="material-icons icon icon-dark" style="padding-right: 10px;">image</span> Crear Imagen
+                                                </button>
+                                            </li>
+                                            <!-- Recordatorio -->
+                                            <li>
+                                                <button class="dropdown-item d-flex align-items-center" id="btnCopy" onclick="copyToClipboard('@item.Client.Id', '@item.Client.Name', '@item.CreditSummary.Total')">
+                                                    <span class="material-icons icon icon-dark" style="padding-right: 10px;">notifications</span> Crear Notificación
+                                                </button>
+                                            </li>
+                                            <!-- Eliminar -->
+                                            <li>
+                                                <button class="dropdown-item d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#deleteModal-@item.Client.Id">
+                                                    <span class="material-icons icon icon-danger" style="padding-right: 10px;">delete</span> Eliminar
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </div>
                                 <div class="d-flex justify-content-between align-items-start" id="clientTotal-@item.Client.Id">
                                     <div class="d-flex mt-auto mb-auto">
@@ -263,6 +283,14 @@
                 }            
             } else {
                 element.style.display = "none";
+            }
+        }
+
+        function GetStatusClass(status) {
+            if (status === 4) {
+                return 'text-bg-danger';
+            } else {
+                return 'text-bg-primary';
             }
         }
     </script>

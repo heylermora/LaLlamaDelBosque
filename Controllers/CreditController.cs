@@ -40,6 +40,11 @@ namespace LaLlamaDelBosque.Controllers
 
 			credits = credits.Where((item, index) => index >= startIndex && index <= endIndex).ToList();
 
+			foreach(var credit in credits)
+			{
+				credit.CreditSummary.CalculateStatus(credit.Client.Limit);
+			}
+
 			ViewBag.TotalPages = totalPages;
 			ViewBag.CurrentPage = currentPage;
 			ViewBag.ClientId = clientId;
@@ -77,8 +82,9 @@ namespace LaLlamaDelBosque.Controllers
                     {
                         Id = _credits.Credits.LastOrDefault()?.Client.Id + 1 ?? 1,
                         Name = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(collection["name"]),
-                        Phone = collection["phone"]
-                    }
+                        Phone = collection["phone"],
+                        Limit = double.Parse(collection["limit"])
+					}
                 };
 
 				_credits.Credits.Add(credit);
@@ -103,8 +109,9 @@ namespace LaLlamaDelBosque.Controllers
                 {
                     Id = int.Parse(id),
                     Name = collection["name"],
-                    Phone = collection["phone"]
-                };
+                    Phone = collection["phone"],
+					Limit = double.Parse(collection["limit"])
+				};
                 SetCredits(_credits);
                 return RedirectToAction(nameof(Index));
             }

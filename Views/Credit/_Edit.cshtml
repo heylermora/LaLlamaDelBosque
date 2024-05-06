@@ -20,6 +20,11 @@
             <input asp-for="Phone" class="form-control" />
             <span asp-validation-for="Phone" class="text-danger"></span>
         </div>
+        <div class="form-group col-auto">
+            <label class="control-label">Límite</label>
+            <input asp-for="Limit" class="form-control" />
+            <span asp-validation-for="Limit" class="text-danger"></span>
+        </div>
         <div class="form-group">
             <input type="submit" value="Guardar" class="btn btn-primary" />
             <input type="button" onclick="location.href='@Url.Action("Index", "Credit")'" value="Cancelar" class="btn btn-secondary" />
