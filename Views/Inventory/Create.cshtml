@@ -1,0 +1,129 @@
+﻿@model LaLlamaDelBosque.Models.Article
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<div class="container">
+    <h1>Definición de Artículos</h1>
+    <hr />
+    <form asp-action="Create">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="row">
+            <div class="col-md-8">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="Id" class="control-label">Código</label>
+                            <input asp-for="Id" class="form-control" />
+                            <span asp-validation-for="Id" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="Code" class="control-label">Cabys</label>
+                            <input asp-for="Code" class="form-control" />
+                            <span asp-validation-for="Code" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Name" class="control-label">Nombre</label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-group">
+                    <label asp-for="FamilyId" class="control-label">Familia</label>
+                    <select asp-for="FamilyId" class="form-control form-select">
+                        <option selected disabled>Familias</option>
+                        @if(ViewData["Families"] is not null)
+                        {
+                            @foreach(var item in ViewData["Families"] as IList<Family> ?? new List<Family>())
+                            {
+                                <option value="@item.Id">@item.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label asp-for="DepartmentId" class="control-label">Departamento</label>
+                    <select asp-for="DepartmentId" class="form-control form-select">
+                        <option selected disabled>Departamentos</option>
+                        @if(ViewData["Departments"] is not null)
+                        {
+                            @foreach(var item in ViewData["Departments"] as IList<Department> ?? new List<Department>())
+                            {
+                                <option value="@item.Id">@item.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-group">
+                    <label asp-for="Stock" class="control-label"></label>
+                    <input asp-for="Stock" class="form-control" />
+                    <span asp-validation-for="Stock" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="VAT" class="control-label">Impuesto</label>
+                    <input asp-for="VAT" class="form-control" />
+                    <span asp-validation-for="VAT" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+        <hr />
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label asp-for="CostPrice" class="control-label">Costo - Artículo</label>
+                    <div class="input-group">
+                        <div class="input-group-text">₡</div>
+                        <input asp-for="CostPrice" class="form-control" />
+                    </div>
+                    <span asp-validation-for="CostPrice" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label asp-for="Utility" class="control-label">Utilidad</label>
+                    <div class="input-group">
+                        <div class="input-group-text">%</div>
+                        <input asp-for="Utility" class="form-control" />
+                    </div>
+                    <span asp-validation-for="Utility" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label asp-for="NetPrice" class="control-label">Precio - Artículo</label>
+                    <div class="input-group">
+                        <div class="input-group-text">₡</div>
+                        <input asp-for="NetPrice" class="form-control" />
+                    </div>
+                    <span asp-validation-for="NetPrice" class="text-danger"></span>
+                </div>
+                <div class="form-group border border-dark p-1 mt-2 rounded">
+                    <label asp-for="SalePrice" class="control-label">Precio - Venta</label>
+                    <div class="input-group">
+                        <div class="input-group-text">₡</div>
+                        <input asp-for="SalePrice" class="form-control text-success" />
+                    </div>
+                    <span asp-validation-for="SalePrice" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+        <hr />
+        <div class="form-group">
+            <input type="submit" value="Crear" class="btn btn-primary" />
+            &nbsp;&nbsp;&nbsp;
+            <a asp-action="Index" style="color: var(--dark);">Volver</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

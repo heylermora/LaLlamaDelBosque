@@ -1,0 +1,10 @@
+﻿@model LaLlamaDelBosque.Models.Supplier
+
+@if(Model?.Id != null)
+{
+    <h6>¿Desea eliminar a esta Proveedor?</h6>
+    <form asp-action="Delete" asp-route-id="@Model.Id">
+        <input type="submit" value="Eliminar" class="btn btn-danger" />
+        <input type="button" onclick="location.href='@Url.Action("Index", "Supplier")'" value="Cancelar" class="btn btn-secondary" />
+    </form>
+}

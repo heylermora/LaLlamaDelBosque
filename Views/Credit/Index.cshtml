@@ -47,7 +47,7 @@
                     </button>
                     <div class="form-check form-switch d-flex flex-column align-items-center ps-3 pe-3">
                         <span class="material-icons icon icon-success">paid</span>
-                        <input class="form-check-input m-0" type="checkbox" id="saldoSwitch" disabled>
+                        <input class="form-check-input m-0" type="checkbox" id="saldoSwitch" onclick="toggleSwitch()" checked>
                     </div>
                     <button type="button" class="btn"
                         data-bs-toggle="tooltip"
@@ -286,12 +286,8 @@
             }
         }
 
-        function GetStatusClass(status) {
-            if (status === 4) {
-                return 'text-bg-danger';
-            } else {
-                return 'text-bg-primary';
-            }
+        function toggleSwitch() {
+            var switchState = document.getElementById("saldoSwitch").checked;
         }
     </script>
 }
