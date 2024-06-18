@@ -110,7 +110,7 @@ namespace LaLlamaDelBosque.Controllers
                     Id = int.Parse(id),
                     Name = collection["name"],
                     Phone = collection["phone"],
-					Limit = double.Parse(collection["limit"])
+					Limit = !string.IsNullOrEmpty(collection["limit"]) ? double.Parse(collection["limit"]) : null
 				};
                 SetCredits(_credits);
                 return RedirectToAction(nameof(Index));

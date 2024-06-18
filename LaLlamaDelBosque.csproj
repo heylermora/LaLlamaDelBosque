@@ -22,12 +22,30 @@
     <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.3.0" />
 	<PackageReference Include="Microsoft.AspNet.Razor" Version="3.3.0" />
 	<PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="6.0.9" />
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="6.0.13" />
+	<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.29" />
+	<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.29">
+	  <PrivateAssets>all</PrivateAssets>
+	  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	</PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="6.0.16" />
     <PackageReference Include="bootstrap" Version="5.3.2" />
     <PackageReference Include="Microsoft.Web.Infrastructure" Version="2.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="RestSharp" Version="110.2.0" />
     <PackageReference Include="Rotativa.AspNetCore" Version="1.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\css\" />
+    <Folder Include="wwwroot\images\" />
+    <Folder Include="wwwroot\js\" />
+    <Folder Include="wwwroot\lib\bootstrap\" />
+    <Folder Include="wwwroot\lib\bootstrap\dist\js\" />
+    <Folder Include="wwwroot\lib\jquery-validation-unobtrusive\" />
+    <Folder Include="wwwroot\lib\jquery-validation\" />
+    <Folder Include="wwwroot\lib\jquery-validation\dist\" />
+    <Folder Include="wwwroot\lib\jquery\" />
+    <Folder Include="wwwroot\lib\jquery\dist\" />
   </ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties data_4credits_1json__JsonSchema="https://beaujs.com/schema.json" /></VisualStudio></ProjectExtensions>

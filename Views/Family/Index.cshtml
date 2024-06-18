@@ -1,0 +1,90 @@
+﻿<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/LaLlamaDelBosque.styles.css" asp-append-version="true" />
+
+@model IEnumerable<LaLlamaDelBosque.Models.Family>
+
+<div class="d-flex align-items-center mt-2 mb-2">
+    <button type="button" class="btn"
+            data-bs-toggle="tooltip"
+            data-bs-placement="top"
+            data-tooltip-class="custom-tooltip"
+            title="Nueva Familia"
+            onclick="location.href='@Url.Action("Create", "Family")'">
+        <span class="material-icons icon icon-primary">add_circle</span>
+    </button>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-4">
+        <h1>Familias</h1>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>
+                            Id
+                        </th>
+                        <th>
+                            Nombre
+                        </th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var item in Model) {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Id)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Name)
+                        </td>
+                        <td style="text-align:center">
+                            <div class="btn-group mx-auto" role="group">
+                                <!-- Edit -->
+                                <button type="button" class="btn" data-bs-toggle="modal" data-bs-target="#editModal-@item.Id">
+                                    <span class="material-icons icon icon-dark">mode_edit</span>
+                                </button>
+                                <!-- Delete -->
+                                <button type="button" class="btn" data-bs-toggle="modal" data-bs-target="#deleteModal-@item.Id">
+                                    <span class="material-icons icon icon-danger">delete</span>
+                                </button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="modal fade" id="editModal-@item.Id" tabindex="-1" aria-labelledby="editModalLabel-@item.Id" aria-hidden="true">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="detailsModalLabel-@item.Id">@item.Name</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <partial name="_Edit" model="@Model.FirstOrDefault(x => x.Id == item.Id)"></partial>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal fade" id="deleteModal-@item.Id" tabindex="-1" aria-labelledby="deleteModalLabel-@item.Id" aria-hidden="true">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deleteModalLabel-@item.Id">@item.Name</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <partial name="_Delete" model="item"></partial>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
