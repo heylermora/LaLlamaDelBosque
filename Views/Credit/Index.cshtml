@@ -59,10 +59,20 @@
                 </div>
                 <form id="searchForm" class="d-flex flex-grow-1" asp-controller="Credit" asp-action="Index" method="get">
                     <div class="input-group">
-                        <input id="searchInput" type="search" class="form-control" name="SearchString" value="@searchString" placeholder="Buscar..." oninput="searchCredits()" autofocus aria-label="Campo de búsqueda">
+                        <input id="searchInput" type="search" class="form-control" name="SearchString" value="@searchString" placeholder="Buscar..."  autofocus aria-label="Campo de búsqueda">
                     </div>
                 </form>
             </div>
+
+            <script>
+                document.getElementById('searchInput').addEventListener("keyup", function (event) {
+                    if (event.key === "enter") {
+                        event.preventDefault();
+                        document.getElementById('searchForm').submit();
+                    }
+                });
+            </script>
+                    
             <div class="row row-cols-1 row-cols-md-4">
                 @foreach(var item in Model)
                 {
