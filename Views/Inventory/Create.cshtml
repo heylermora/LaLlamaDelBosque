@@ -22,7 +22,9 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label asp-for="Code" class="control-label">Cabys</label>
-                            <input asp-for="Code" class="form-control" />
+                            <select id="cabysSelect" class="form-control" asp-for="Code">
+                                <option value="" selected disabled>Seleccione un producto CABYS</option>
+                            </select>
                             <span asp-validation-for="Code" class="text-danger"></span>
                         </div>
                     </div>
@@ -38,7 +40,7 @@
                     <label asp-for="FamilyId" class="control-label">Familia</label>
                     <select asp-for="FamilyId" class="form-control form-select">
                         <option selected disabled>Familias</option>
-                        @if(ViewData["Families"] is not null)
+                        @if (ViewData["Families"] is not null)
                         {
                             @foreach(var item in ViewData["Families"] as IList<Family> ?? new List<Family>())
                             {
@@ -51,9 +53,9 @@
                     <label asp-for="DepartmentId" class="control-label">Departamento</label>
                     <select asp-for="DepartmentId" class="form-control form-select">
                         <option selected disabled>Departamentos</option>
-                        @if(ViewData["Departments"] is not null)
+                        @if (ViewData["Departments"] is not null)
                         {
-                            @foreach(var item in ViewData["Departments"] as IList<Department> ?? new List<Department>())
+                            @foreach (var item in ViewData["Departments"] as IList<Department> ?? new List<Department>())
                             {
                                 <option value="@item.Id">@item.Name</option>
                             }
@@ -69,7 +71,7 @@
                 </div>
                 <div class="form-group">
                     <label asp-for="VAT" class="control-label">Impuesto</label>
-                    <input asp-for="VAT" class="form-control" />
+                    <input id="vatInput" asp-for="VAT" class="form-control" readonly />
                     <span asp-validation-for="VAT" class="text-danger"></span>
                 </div>
             </div>
@@ -125,5 +127,27 @@
 </div>
 
 @section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/Cabys/GetCabysProducts')
+                .then(response => response.json())
+                .then(data => {
+                    var cabysSelect = document.getElementById('cabysSelect');
+                    data.forEach(function(product) {
+                        var option = document.createElement('option');
+                        option.value = product["Código Cabys"];
+                        option.text = product["Descripción (Código Cabys)"];
+                        option.setAttribute('data-vat', product["Impuesto"]);
+                        cabysSelect.appendChild(option);
+                    });
+                });
+
+            document.getElementById('cabysSelect').addEventListener('change', function () {
+                var selectedOption = this.options[this.selectedIndex];
+                var vatValue = selectedOption.getAttribute('data-vat');
+                document.getElementById('vatInput').value = vatValue;
+            });
+        });
+    </script>
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }
