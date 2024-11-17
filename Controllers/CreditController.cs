@@ -2,11 +2,9 @@
 using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Rotativa.AspNetCore;
 using Rotativa.AspNetCore.Options;
 using System.Globalization;
-using System.Reflection;
 
 namespace LaLlamaDelBosque.Controllers
 {
@@ -18,7 +16,7 @@ namespace LaLlamaDelBosque.Controllers
 
         public CreditController()
         {
-			_credits = GetCredits();
+            _credits = GetCredits();
 
         }
 
@@ -32,25 +30,25 @@ namespace LaLlamaDelBosque.Controllers
             }
             credits = credits.OrderBy(c => c.Client.Name).ToList();
 
-			int totalItems = credits.Count();
-			int totalPages = (int)Math.Ceiling((double)totalItems / 20);
-			currentPage = Math.Max(1, Math.Min(currentPage, totalPages));
-			int startIndex = (currentPage - 1) * 20;
-			int endIndex = Math.Min(startIndex + 20 - 1, totalItems - 1);
+            int totalItems = credits.Count();
+            int totalPages = (int)Math.Ceiling((double)totalItems / 20);
+            currentPage = Math.Max(1, Math.Min(currentPage, totalPages));
+            int startIndex = (currentPage - 1) * 20;
+            int endIndex = Math.Min(startIndex + 20 - 1, totalItems - 1);
 
-			credits = credits.Where((item, index) => index >= startIndex && index <= endIndex).ToList();
+            credits = credits.Where((item, index) => index >= startIndex && index <= endIndex).ToList();
 
-			foreach(var credit in credits)
-			{
-				credit.CreditSummary.CalculateStatus(credit.Client.Limit);
-			}
+            foreach(var credit in credits)
+            {
+                credit.CreditSummary.CalculateStatus(credit.Client.Limit);
+            }
 
-			ViewBag.TotalPages = totalPages;
-			ViewBag.CurrentPage = currentPage;
-			ViewBag.ClientId = clientId;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.CurrentPage = currentPage;
+            ViewBag.ClientId = clientId;
             ViewBag.SearchString = searchString;
 
-			return View(credits);
+            return View(credits);
         }
 
         public ActionResult IndexPdf()
@@ -84,18 +82,18 @@ namespace LaLlamaDelBosque.Controllers
                         Name = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(collection["name"]),
                         Phone = collection["phone"],
                         Limit = double.Parse(collection["limit"])
-					}
+                    }
                 };
 
-				_credits.Credits.Add(credit);
+                _credits.Credits.Add(credit);
                 SetCredits(_credits);
                 return RedirectToAction(nameof(Index));
             }
             catch(Exception ex)
             {
-				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
-			}
-		}
+                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+            }
+        }
 
         // POST: CreditController/Edit/5
         [HttpPost]
@@ -110,16 +108,16 @@ namespace LaLlamaDelBosque.Controllers
                     Id = int.Parse(id),
                     Name = collection["name"],
                     Phone = collection["phone"],
-					Limit = !string.IsNullOrEmpty(collection["limit"]) ? double.Parse(collection["limit"]) : null
-				};
+                    Limit = !string.IsNullOrEmpty(collection["limit"]) ? double.Parse(collection["limit"]) : null
+                };
                 SetCredits(_credits);
                 return RedirectToAction(nameof(Index));
             }
-			catch(Exception ex)
-			{
-				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
-			}
-		}
+            catch(Exception ex)
+            {
+                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+            }
+        }
 
         // POST: CreditController/Delete/5
         [HttpPost]
@@ -133,11 +131,11 @@ namespace LaLlamaDelBosque.Controllers
                 SetCredits(_credits);
                 return RedirectToAction(nameof(Index));
             }
-			catch(Exception ex)
-			{
-				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
-			}
-		}
+            catch(Exception ex)
+            {
+                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+            }
+        }
 
         #region Credit Line
 
@@ -167,13 +165,13 @@ namespace LaLlamaDelBosque.Controllers
 
                     SetCredits(_credits);
                 }
-                return RedirectToAction(nameof(Index), new { searchString = searchString, clientId = id, currentPage = currentPage,  });
+                return RedirectToAction(nameof(Index), new { searchString = searchString, clientId = id, currentPage = currentPage, });
             }
-			catch(Exception ex)
-			{
-				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
-			}
-		}
+            catch(Exception ex)
+            {
+                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+            }
+        }
 
         // POST: CreditController/Fee
         [HttpPost]
@@ -203,11 +201,11 @@ namespace LaLlamaDelBosque.Controllers
                 }
                 return RedirectToAction(nameof(Index), new { searchString = searchString, clientId = id, currentPage = currentPage });
             }
-			catch(Exception ex)
-			{
-				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
-			}
-		}
+            catch(Exception ex)
+            {
+                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+            }
+        }
 
         // POST: CreditController/Refresh/5
         [HttpPost]
@@ -229,11 +227,11 @@ namespace LaLlamaDelBosque.Controllers
                 SetCredits(_credits);
                 return RedirectToAction(nameof(Index), new { searchString = searchString, clientId = clientId, currentPage = currentPage });
             }
-			catch(Exception ex)
-			{
-				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
-			}
-		}
+            catch(Exception ex)
+            {
+                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+            }
+        }
 
         // POST: CreditController/Remove/5
         [HttpPost]
@@ -249,11 +247,11 @@ namespace LaLlamaDelBosque.Controllers
                 SetCredits(_credits);
                 return RedirectToAction(nameof(Index), new { searchString = searchString, clientId = clientId, currentPage = currentPage });
             }
-			catch(Exception ex)
-			{
-				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
-			}
-		}
+            catch(Exception ex)
+            {
+                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+            }
+        }
 
         // POST: CreditController/Clear/5
         [HttpPost]
@@ -268,11 +266,11 @@ namespace LaLlamaDelBosque.Controllers
                 SetCredits(_credits);
                 return RedirectToAction(nameof(Index), new { searchString = searchString, clientId = Id, currentPage = currentPage });
             }
-			catch(Exception ex)
-			{
-				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
-			}
-		}
+            catch(Exception ex)
+            {
+                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+            }
+        }
         #endregion
 
         private CreditModel GetCredits()

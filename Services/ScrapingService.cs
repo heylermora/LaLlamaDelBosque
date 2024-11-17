@@ -1,71 +1,50 @@
-﻿using HtmlAgilityPack;
-using LaLlamaDelBosque.Models;
+﻿using LaLlamaDelBosque.Models;
+using LaLlamaDelBosque.Services.NewFolder.Scrapers;
+using LaLlamaDelBosque.Services.Scrapers;
 using LaLlamaDelBosque.Utils;
+using NuGet.Packaging;
 
 namespace LaLlamaDelBosque.Services
 {
     public class ScrapingService
     {
-        private readonly List<ScrapingLottery> _scrapinglotteries;
+        private readonly List<ScrapingLottery> _scrapingLotteries;
         private readonly List<Lottery> _lotteries;
         private readonly List<Paper> _papers;
+        private readonly HttpClient _httpClient;
 
         public ScrapingService()
         {
-            _scrapinglotteries = GetScrapingLotteries();
+            _scrapingLotteries = GetScrapingLotteries();
             _lotteries = GetLotteries();
             _papers = GetPapers();
+
+            _httpClient = new HttpClient();
         }
 
-        public Award Add(List<string>? descriptions)
+        public async Task<Award> Add()
         {
             var award = new Award()
             {
                 Date = DateTime.Today,
+                AwardLines = new List<AwardLine>()
             };
-            string url = "https://www.loteriasloterias.com/";
-            var web = new HtmlWeb();
-            var doc = web.Load(url);
 
-            foreach(var scrapinglottery in _scrapinglotteries)
+            var scrapers = new List<BaseScraper>
             {
-                var index = 0;
-                var line = new AwardLine();
-                var tableNode = doc.DocumentNode.SelectSingleNode($"//table[@class='premios']//tr[td='{scrapinglottery.Name}'][td='{scrapinglottery.Hour}']");
+                new JpsNuevosTiemposScraper(_httpClient),
+                new NicaraguaLotoDiariaScraper(_httpClient),
+                new DominicanaLaPrimeraScraper(_httpClient),
+                new HondurasLotoDiariaScraper(_httpClient)
+            };
 
-                if(tableNode != null)
-                {
-                    var description = _lotteries.First(x => x.Order == scrapinglottery.Order).Name;
-                    if(!descriptions?.Contains(description) ?? true)
-                    {
-                        foreach(var tdNode in tableNode.Descendants("td"))
-                        {
-                            var value = tdNode.InnerText;
-                            switch(index)
-                            {
-                                case 0:
-
-                                    line.Order = scrapinglottery.Order;
-                                    line.Description = description;
-                                    break;
-                                case 2:
-                                    var papers = _papers.Where(x => x.Lottery == description && x.DrawDate.ToShortDateString() == DateTime.Today.ToShortDateString() && x.Numbers.Any(x => x.Value == value));
-                                    var amount = papers.Sum(x => x.Numbers.Sum(n => n.Value == value ? n.Amount : 0));
-                                    var busted = papers.Sum(x => x.Numbers.Sum(n => n.Value == value ? n.Busted : 0));
-                                    line.Number = value;
-                                    line.Amount = amount;
-                                    line.Busted = busted;
-                                    line.Award = line.TimesAmount * amount + line.TimesBusted * busted;
-                                    break;
-                            }
-                            index++;
-                        }
-                        award.AwardLines.Add(line);
-                    }
-                }
-
+            foreach(var scraper in scrapers)
+            {
+                var awardLines = await scraper.ScrapeAwards(_scrapingLotteries, _lotteries, _papers);
+                award.AwardLines.AddRange(awardLines);
             }
 
+            award.AwardLines = award.AwardLines.OrderBy(x => x.Order).ToList();
             return award;
         }
 

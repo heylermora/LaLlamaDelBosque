@@ -1,6 +1,4 @@
-﻿using System.Collections.ObjectModel;
-
-namespace LaLlamaDelBosque.Models
+﻿namespace LaLlamaDelBosque.Models
 {
 	public class InventoryModel
 	{

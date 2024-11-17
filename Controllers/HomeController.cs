@@ -17,7 +17,7 @@ namespace LaLlamaDelBosque.Controllers
 
         public HomeController()
         {
-			_credits = GetCredits();
+            _credits = GetCredits();
             _papers = GetPapers();
             _summary = GetSummary();
         }
@@ -36,18 +36,18 @@ namespace LaLlamaDelBosque.Controllers
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error(string? ErrorMsg, string? ErrorStack)
         {
-			if(ErrorMsg == null)
-			{
-				var exceptionHandlerPathFeature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
+            if(ErrorMsg == null)
+            {
+                var exceptionHandlerPathFeature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
 
-				if(exceptionHandlerPathFeature?.Error is not null)
-				{
-					// Obtener el mensaje de error de la excepción
-					ErrorMsg = exceptionHandlerPathFeature.Error.Message;
+                if(exceptionHandlerPathFeature?.Error is not null)
+                {
+                    // Obtener el mensaje de error de la excepción
+                    ErrorMsg = exceptionHandlerPathFeature.Error.Message;
                     ErrorStack = exceptionHandlerPathFeature.Error.StackTrace;
-				}
-			}
-			return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier, ErrorMsg = ErrorMsg, ErrorStack = ErrorStack });
+                }
+            }
+            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier, ErrorMsg = ErrorMsg, ErrorStack = ErrorStack });
         }
 
         private CreditModel GetCredits()

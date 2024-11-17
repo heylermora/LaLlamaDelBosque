@@ -1,9 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.IO;
 
 namespace LaLlamaDelBosque.Controllers
 {
-    public class CabysController : Controller
+    public class CabysController: Controller
     {
         [HttpGet]
         public IActionResult GetCabysProducts()

@@ -1,8 +1,6 @@
 ﻿using LaLlamaDelBosque.Models;
 using LaLlamaDelBosque.Utils;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Mvc;
-using System.Reflection;
 
 namespace LaLlamaDelBosque.Controllers
 {
@@ -12,7 +10,6 @@ namespace LaLlamaDelBosque.Controllers
 		private readonly List<Paper> _papers;
 		private readonly List<Credit> _credits;
 		private readonly List<Award> _awards;
-
 
 		public LotteryController()
 		{
@@ -44,8 +41,8 @@ namespace LaLlamaDelBosque.Controllers
 					(p.DrawDate.Date >= fromDate && p.DrawDate.Date <= toDate)
 				).ToList();
 
-				if((papers.All(p => p.DrawDate.Date == searchModel.FromDate.Value.Date && 
-									searchModel.FromDate.Value.Date == searchModel.ToDate.Value.Date) 
+				if((papers.All(p => p.DrawDate.Date == searchModel.FromDate.Value.Date &&
+									searchModel.FromDate.Value.Date == searchModel.ToDate.Value.Date)
 									&& !string.IsNullOrEmpty(lottery) && lottery != "TODOS" && papers.Count > 0) || papers.Count == 1)
 				{
 					var number = _awards.FirstOrDefault(a => a.Date.Date == searchModel.FromDate)?.AwardLines.FirstOrDefault(l => l.Description == lottery)?.Number;
@@ -75,7 +72,7 @@ namespace LaLlamaDelBosque.Controllers
 
 			ViewData["Names"] = _lotteries;
 			ViewData["Clients"] = _credits.Select(c => c.Client).ToList();
-			ViewData["busted"] =  _lotteries.FirstOrDefault(l => l.Name == paper.Lottery)?.Busted ?? false;
+			ViewData["busted"] = _lotteries.FirstOrDefault(l => l.Name == paper.Lottery)?.Busted ?? false;
 
 			TempData.Put("Paper", paper);
 			return View(paper);
@@ -198,7 +195,7 @@ namespace LaLlamaDelBosque.Controllers
 				}
 				paper.Numbers = paper.Numbers.OrderBy(x => x.Value).ToList();
 				TempData.Put("Paper", paper);
-				return RedirectToAction(nameof(Create), new {cc = true});
+				return RedirectToAction(nameof(Create), new { cc = true });
 			}
 			catch(Exception ex)
 			{

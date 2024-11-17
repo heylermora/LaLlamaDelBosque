@@ -1,0 +1,5 @@
+﻿<h6>¿Desea eliminar todas las tablas?</h6>
+<form asp-action="DeleteAll">
+    <input type="submit" value="Eliminar" class="btn btn-danger" />
+    <input type="button" onclick="location.href='@Url.Action("Index", "Award")'" value="Cancelar" class="btn btn-secondary" />
+</form>

@@ -5,28 +5,27 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace LaLlamaDelBosque.Controllers
 {
-    [Authorize]
+	[Authorize]
 
-    public class InventoryController: Controller
-    {
-        private InventoryModel _inventory;
+	public class InventoryController: Controller
+	{
+		private InventoryModel _inventory;
 		private FamilyModel _families;
 		private DepartmentModel _departments;
 
-
 		public InventoryController()
-        {
+		{
 			_inventory = GetInventory();
-            _families = GetFamilies();
-            _departments = GetDepartments();
-        }
+			_families = GetFamilies();
+			_departments = GetDepartments();
+		}
 
-        // GET: InventoryController
-        public ActionResult Index()
-        {
-            var credits = _inventory.Inventory;
+		// GET: InventoryController
+		public ActionResult Index()
+		{
+			var credits = _inventory.Inventory;
 			return View(credits);
-        }
+		}
 
 		// GET: InventoryController/Create
 		public ActionResult Create()
@@ -36,12 +35,11 @@ namespace LaLlamaDelBosque.Controllers
 			return View();
 		}
 
-
 		private InventoryModel GetInventory()
-        {
-            var inventory = JsonFile.Read("Inventory", new InventoryModel());
-            return inventory;
-        }
+		{
+			var inventory = JsonFile.Read("Inventory", new InventoryModel());
+			return inventory;
+		}
 
 		private FamilyModel GetFamilies()
 		{
@@ -56,8 +54,8 @@ namespace LaLlamaDelBosque.Controllers
 		}
 
 		private void SetInventory(InventoryModel inventory)
-        {
-            JsonFile.Write("Inventory", inventory);
-        }
-    }
+		{
+			JsonFile.Write("Inventory", inventory);
+		}
+	}
 }

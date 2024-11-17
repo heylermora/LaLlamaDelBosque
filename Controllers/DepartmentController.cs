@@ -2,32 +2,26 @@
 using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Rotativa.AspNetCore;
-using Rotativa.AspNetCore.Options;
-using System.Globalization;
-using System.Reflection;
-using System.Xml.Linq;
 
 namespace LaLlamaDelBosque.Controllers
 {
-    [Authorize]
+	[Authorize]
 
-    public class DepartmentController: Controller
-    {
-        private DepartmentModel _departments;
+	public class DepartmentController: Controller
+	{
+		private DepartmentModel _departments;
 
-        public DepartmentController()
-        {
+		public DepartmentController()
+		{
 			_departments = GetDepartments();
-        }
+		}
 
-        // GET: DepartmentController
-        public ActionResult Index()
-        {
-            var departments = _departments.Departments;
+		// GET: DepartmentController
+		public ActionResult Index()
+		{
+			var departments = _departments.Departments;
 			return View(departments);
-        }
+		}
 
 		// GET: DepartmentController/Create
 		public ActionResult Create()
@@ -95,14 +89,14 @@ namespace LaLlamaDelBosque.Controllers
 		}
 
 		private DepartmentModel GetDepartments()
-        {
-            var departments = JsonFile.Read("Department", new DepartmentModel());
-            return departments;
-        }
+		{
+			var departments = JsonFile.Read("Department", new DepartmentModel());
+			return departments;
+		}
 
-        private void SetDepartments(DepartmentModel department)
-        {
-            JsonFile.Write("Department", department);
-        }
-    }
+		private void SetDepartments(DepartmentModel department)
+		{
+			JsonFile.Write("Department", department);
+		}
+	}
 }

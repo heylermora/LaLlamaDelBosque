@@ -2,32 +2,26 @@
 using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Rotativa.AspNetCore;
-using Rotativa.AspNetCore.Options;
-using System.Globalization;
-using System.Reflection;
-using System.Xml.Linq;
 
 namespace LaLlamaDelBosque.Controllers
 {
-    [Authorize]
+	[Authorize]
 
-    public class FamilyController: Controller
-    {
-        private FamilyModel _families;
+	public class FamilyController: Controller
+	{
+		private FamilyModel _families;
 
-        public FamilyController()
-        {
+		public FamilyController()
+		{
 			_families = GetFamilies();
-        }
+		}
 
-        // GET: FamilyController
-        public ActionResult Index()
-        {
-            var families = _families.Families;
+		// GET: FamilyController
+		public ActionResult Index()
+		{
+			var families = _families.Families;
 			return View(families);
-        }
+		}
 
 		// GET: FamilyController/Create
 		public ActionResult Create()
@@ -95,14 +89,14 @@ namespace LaLlamaDelBosque.Controllers
 		}
 
 		private FamilyModel GetFamilies()
-        {
-            var families = JsonFile.Read("Family", new FamilyModel());
-            return families;
-        }
+		{
+			var families = JsonFile.Read("Family", new FamilyModel());
+			return families;
+		}
 
-        private void SetFamilies(FamilyModel family)
-        {
-            JsonFile.Write("Family", family);
-        }
-    }
+		private void SetFamilies(FamilyModel family)
+		{
+			JsonFile.Write("Family", family);
+		}
+	}
 }

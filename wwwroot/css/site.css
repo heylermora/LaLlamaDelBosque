@@ -157,3 +157,22 @@ span.text-bg-danger {
     background-color: var(--secondary);
     color: var(--light);
 }
+
+.circle {
+    width: 30px;
+    height: 30px;
+    background: radial-gradient(at top left, var(--danger) 20%, #800000);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+    transition: transform 0.5s ease;
+    transform-style: preserve-3d;
+}
+
+.circle:hover {
+    transform: rotate(360deg);
+}

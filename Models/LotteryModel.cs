@@ -1,5 +1,4 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace LaLlamaDelBosque.Models
 {
@@ -25,6 +24,7 @@ namespace LaLlamaDelBosque.Models
 
     public class ScrapingLottery
     {
+        public string Type { get; set; } = "";
         public int Order { get; set; }
         public string Name { get; set; } = "";
         public string Hour { get; set; } = "";
@@ -44,15 +44,15 @@ namespace LaLlamaDelBosque.Models
         public string? Value { get; set; } = null;
 
         [Required(ErrorMessage = "El campo es requerido.")]
-		[Range(1, double.MaxValue, ErrorMessage = "El campo debe ser mayor que 0.")]
-		public double Amount { get; set; }
+        [Range(1, double.MaxValue, ErrorMessage = "El campo debe ser mayor que 0.")]
+        public double Amount { get; set; }
 
         [Required(ErrorMessage = "El campo es requerido.")]
         [Range(0, double.MaxValue, ErrorMessage = "El campo debe ser mayor o igual que 0.")]
         public double? Busted { get; set; } = 0;
-	}
+    }
 
-	public class PaperModel
+    public class PaperModel
     {
         public List<Paper> Papers { get; set; } = new List<Paper>();
     }

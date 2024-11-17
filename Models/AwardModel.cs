@@ -11,9 +11,10 @@
         public string Number { get; set; } = "";
         public double Busted { get; set; }
         public double Amount { get; set; }
-        public double TimesBusted { get; set; }
+        public double TimesBusted { get; set; } = 200;
         public double TimesAmount { get; set; } = 85;
         public double Award { get; set; }
+        public bool IsBusted { get; set; }
     }
     public class Award
     {

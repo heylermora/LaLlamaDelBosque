@@ -14,16 +14,46 @@
 }
 
 <h1 class="display-4">@ViewData["Title"]</h1>
-<p>Los datos de esta página son obtenidos de <a href="https://www.loteriasloterias.com/">www.loteriasloterias.com</a></p>
+<p>
+    Los datos de esta página son obtenidos de:
+    <a href="https://www.jpsloteria.com/loteria-resultados" target="_blank">TICA</a>,
+    <a href="https://nuevaya.com.ni/loto-diaria-de-nicaragua/" target="_blank">NICA</a>,
+    <a href="https://www.yelu.hn/lottery/results/la-diaria" target="_blank">HONDUREÑA</a>,
+    <a href="https://www.yelu.do/leidsa/results/la-primera" target="_blank">LA PRIMERA</a>.
+</p>
+
 
 <div class="btn-group mx-auto" role="group">
     <!-- Update -->
     <button type="button" class="btn"
+            data-bs-toggle="tooltip"
+            data-bs-placement="top"
+            data-tooltip-class="custom-tooltip"
+            title="Actualizar tabla"
             onclick="location.href='@Url.Action("Create", "Award")'">
         <span class="material-icons icon icon-primary">update</span>
     </button>
+    <button type="button" class="btn"
+            data-bs-toggle="modal"
+            data-bs-target="#deleteAllModal"
+            title="Eliminar todas las tablas">
+        <span class="material-icons icon icon-danger">delete</span>
+    </button>
 </div>
 
+<div class="modal fade" id="deleteAllModal" tabindex="-1" aria-labelledby="deleteModalAllLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Premios</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <partial name="_DeleteAll"></partial>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="container">
     <div class="row justify-content-md-center">
         <div class="col-xl-10">
@@ -80,6 +110,7 @@
                                         <tr>
                                             <th>Id</th>
                                             <th>Descripción</th>
+                                            <th></th>
                                             <th>Número</th>
                                             <th>Monto</th>
                                             <th>Reventado</th>
@@ -100,6 +131,11 @@
                                             <tr>
                                                 <td>@line.Order</td>
                                                 <td>@line.Description</td>
+                                                <td>@if(line.IsBusted)
+                                                    {
+                                                        <div class="circle">R</div>
+                                                    }
+                                                </td>
                                                 <td>@line.Number</td>
                                                 <td>₡ @line.Amount</td>
                                                 <td>₡ @line.Busted</td>

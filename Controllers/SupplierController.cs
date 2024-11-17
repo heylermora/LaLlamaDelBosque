@@ -2,32 +2,26 @@
 using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Rotativa.AspNetCore;
-using Rotativa.AspNetCore.Options;
-using System.Globalization;
-using System.Reflection;
-using System.Xml.Linq;
 
 namespace LaLlamaDelBosque.Controllers
 {
-    [Authorize]
+	[Authorize]
 
-    public class SupplierController: Controller
-    {
-        private SupplierModel _suppliers;
+	public class SupplierController: Controller
+	{
+		private SupplierModel _suppliers;
 
-        public SupplierController()
-        {
+		public SupplierController()
+		{
 			_suppliers = GetSuppliers();
-        }
+		}
 
-        // GET: SupplierController
-        public ActionResult Index()
-        {
-            var suppliers = _suppliers.Suppliers;
+		// GET: SupplierController
+		public ActionResult Index()
+		{
+			var suppliers = _suppliers.Suppliers;
 			return View(suppliers);
-        }
+		}
 
 		// GET: SupplierController/Create
 		public ActionResult Create()
@@ -95,14 +89,14 @@ namespace LaLlamaDelBosque.Controllers
 		}
 
 		private SupplierModel GetSuppliers()
-        {
-            var suppliers = JsonFile.Read("Supplier", new SupplierModel());
-            return suppliers;
-        }
+		{
+			var suppliers = JsonFile.Read("Supplier", new SupplierModel());
+			return suppliers;
+		}
 
-        private void SetSuppliers(SupplierModel supplier)
-        {
-            JsonFile.Write("Supplier", supplier);
-        }
-    }
+		private void SetSuppliers(SupplierModel supplier)
+		{
+			JsonFile.Write("Supplier", supplier);
+		}
+	}
 }

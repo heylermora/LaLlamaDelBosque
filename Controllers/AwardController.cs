@@ -19,7 +19,7 @@ namespace LaLlamaDelBosque.Controllers
 
         public AwardController()
         {
-			_awards = GetAwards();
+            _awards = GetAwards();
             _scrapingService = new ScrapingService();
         }
 
@@ -41,19 +41,19 @@ namespace LaLlamaDelBosque.Controllers
         }
 
         // GET: AwardController/Create
-        public ActionResult Create()
+        public async Task<ActionResult> Create()
         {
             var award = _awards?.Awards?.FirstOrDefault(x => x.Date == DateTime.Today);
             if(award == null)
             {
-                award = _scrapingService.Add(null);
+                award = await _scrapingService.Add();
                 award.Id = _awards?.Awards?.LastOrDefault()?.Id + 1 ?? 0;
                 _awards?.Awards.Add(award);
             }
             else
             {
-                var descriptions = award.AwardLines.Select(a => a.Description).ToList();
-                var awardLines = _scrapingService.Add(descriptions).AwardLines;
+                award.AwardLines.Clear();
+                var awardLines = (await _scrapingService.Add()).AwardLines;
                 award.AwardLines.AddRange(awardLines);
             }
             SetAwards(_awards);
@@ -80,11 +80,11 @@ namespace LaLlamaDelBosque.Controllers
                 SetAwards(_awards);
                 return RedirectToAction(nameof(Index));
             }
-			catch(Exception ex)
-			{
-				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
-			}
-		}
+            catch(Exception ex)
+            {
+                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+            }
+        }
 
         // POST: AwardController/Delete/5
         [HttpPost]
@@ -93,16 +93,33 @@ namespace LaLlamaDelBosque.Controllers
         {
             try
             {
-                var credit = _awards.Awards.First(x => x.Id == int.Parse(id));
-                _awards.Awards.Remove(credit);
+                var award = _awards.Awards.First(x => x.Id == int.Parse(id));
+                _awards.Awards.Remove(award);
                 SetAwards(_awards);
                 return RedirectToAction(nameof(Index));
             }
-			catch(Exception ex)
-			{
-				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
-			}
-		}
+            catch(Exception ex)
+            {
+                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+            }
+        }
+
+        // POST: AwardController/Delete
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult DeleteAll()
+        {
+            try
+            {
+                _awards.Awards.Clear();
+                SetAwards(_awards);
+                return RedirectToAction(nameof(Index));
+            }
+            catch(Exception ex)
+            {
+                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+            }
+        }
 
         // POST: AwardController/Add
         [HttpPost]
@@ -131,11 +148,11 @@ namespace LaLlamaDelBosque.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-			catch(Exception ex)
-			{
-				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
-			}
-		}
+            catch(Exception ex)
+            {
+                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+            }
+        }
 
         private AwardModel GetAwards()
         {
