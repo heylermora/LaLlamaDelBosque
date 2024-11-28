@@ -45,10 +45,6 @@
                         onclick="location.href='@Url.Action("Create", "Credit")'">
                         <span class="material-icons icon icon-primary">add_circle</span>
                     </button>
-                    <div class="form-check form-switch d-flex flex-column align-items-center ps-3 pe-3">
-                        <span class="material-icons icon icon-success">paid</span>
-                        <input class="form-check-input m-0" type="checkbox" id="saldoSwitch" onclick="toggleSwitch()" checked>
-                    </div>
                     <button type="button" class="btn"
                         data-bs-toggle="tooltip"
                         data-bs-placement="top"
@@ -59,245 +55,259 @@
                 </div>
                 <form id="searchForm" class="d-flex flex-grow-1" asp-controller="Credit" asp-action="Index" method="get">
                     <div class="input-group">
-                        <input id="searchInput" type="search" class="form-control" name="SearchString" value="@searchString" placeholder="Buscar..."  autofocus aria-label="Campo de búsqueda">
+                        <input id="searchInput" type="search" class="form-control" name="SearchString" 
+                            value="@(searchString != "__limit__" ? searchString : "")" placeholder="Buscar..." autofocus>
                     </div>
                 </form>
-            </div>
+                <div class="form-check form-switch d-flex align-items-center ps-3 pe-3" title="Mostrar solo los usuarios con saldo excedido">
+                    <span class="material-icons icon icon-danger me-2">production_quantity_limits</span>
+                    <input class="form-check-input m-0 ms-auto" type="checkbox" id="saldoSwitch" onclick="redirectToIndex()"
+                           @(searchString == "__limit__" ? "checked" : "")
+                           @(searchString == "__limit__" ? "searchString=null;" : "") />
+                    </div>
+                </div>
 
-            <script>
-                document.getElementById('searchInput').addEventListener("keyup", function (event) {
-                    if (event.key === "enter") {
-                        event.preventDefault();
-                        document.getElementById('searchForm').submit();
-                    }
-                });
-            </script>
+                <script>
+                    document.getElementById('searchInput').addEventListener("keyup", function (event) {
+                        if (event.key === "enter") {
+                            event.preventDefault();
+                            document.getElementById('searchForm').submit();
+                        }
+                    });
+                </script>
                     
-            <div class="row row-cols-1 row-cols-md-4">
-                @foreach(var item in Model)
+                <div class="row row-cols-1 row-cols-md-4">
+                    @foreach(var item in Model)
                 {
-                    <div class="col-md-3 mb-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="badge @GetStatusClass(item.CreditSummary.Status)">@Constants.LimitStatus[item.CreditSummary.Status]</span>
-                                    <!-- Menú de acciones -->
-                                    <div class="dropdown-menu-end">
-                                        <button class="btn-icon" type="button" id="actionMenu" data-bs-toggle="dropdown">
-                                            <span class="material-icons">more_vert</span>
-                                        </button>
-                                        <ul class="dropdown-menu" aria-labelledby="actionMenu">
-                                            <!-- Editar -->
-                                            <li>
-                                                <button class="dropdown-item d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#editModal-@item.Client.Id">
-                                                    <span class="material-icons icon icon-dark" style="padding-right: 10px;">edit</span> Editar
-                                                </button>
-                                            </li>
-                                            <!-- Imagen -->
-                                            <li>
-                                                <button class="dropdown-item d-flex align-items-center" id="btnCopy" onclick="copyAsImage('@item.Client.Id')">
-                                                    <span class="material-icons icon icon-dark" style="padding-right: 10px;">image</span> Crear Imagen
-                                                </button>
-                                            </li>
-                                            <!-- Recordatorio -->
-                                            <li>
-                                                <button class="dropdown-item d-flex align-items-center" id="btnCopy" onclick="copyToClipboard('@item.Client.Id', '@item.Client.Name', '@item.CreditSummary.Total')">
-                                                    <span class="material-icons icon icon-dark" style="padding-right: 10px;">notifications</span> Crear Notificación
-                                                </button>
-                                            </li>
-                                            <!-- Eliminar -->
-                                            <li>
-                                                <button class="dropdown-item d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#deleteModal-@item.Client.Id">
-                                                    <span class="material-icons icon icon-danger" style="padding-right: 10px;">delete</span> Eliminar
-                                                </button>
-                                            </li>
-                                        </ul>
+                        <div class="col-md-3 mb-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge @GetStatusClass(item.CreditSummary.Status)">@Constants.LimitStatus[item.CreditSummary.Status]</span>
+                                        <!-- Menú de acciones -->
+                                        <div class="dropdown-menu-end">
+                                            <button class="btn-icon" type="button" id="actionMenu" data-bs-toggle="dropdown">
+                                                <span class="material-icons">more_vert</span>
+                                            </button>
+                                            <ul class="dropdown-menu" aria-labelledby="actionMenu">
+                                                <!-- Editar -->
+                                                <li>
+                                                    <button class="dropdown-item d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#editModal-@item.Client.Id">
+                                                        <span class="material-icons icon icon-dark" style="padding-right: 10px;">edit</span> Editar
+                                                    </button>
+                                                </li>
+                                                <!-- Imagen -->
+                                                <li>
+                                                    <button class="dropdown-item d-flex align-items-center" id="btnCopy" onclick="copyAsImage('@item.Client.Id')">
+                                                        <span class="material-icons icon icon-dark" style="padding-right: 10px;">image</span> Crear Imagen
+                                                    </button>
+                                                </li>
+                                                <!-- Recordatorio -->
+                                                <li>
+                                                    <button class="dropdown-item d-flex align-items-center" id="btnCopy" onclick="copyToClipboard('@item.Client.Id', '@item.Client.Name', '@item.CreditSummary.Total')">
+                                                        <span class="material-icons icon icon-dark" style="padding-right: 10px;">notifications</span> Crear Notificación
+                                                    </button>
+                                                </li>
+                                                <!-- Eliminar -->
+                                                <li>
+                                                    <button class="dropdown-item d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#deleteModal-@item.Client.Id">
+                                                        <span class="material-icons icon icon-danger" style="padding-right: 10px;">delete</span> Eliminar
+                                                    </button>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-start" id="clientTotal-@item.Client.Id">
+                                        <div class="d-flex mt-auto mb-auto">
+                                            <span class="material-icons star">
+                                                account_circle
+                                            </span>
+                                        </div>
+                                        <div class="p-1 me-auto">
+                                            <h2 class="text-truncate">
+                                                <b style="font-size: 24px">@item.Client.Name</b>
+                                            </h2>
+                                            <p class="card-text text-truncate">Total: ₡ @item.CreditSummary.Total</p>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#detailsModal-@item.Client.Id">
+                                        Ver Detalles
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal fade" id="editModal-@item.Client.Id" tabindex="-1" aria-labelledby="editModalLabel-@item.Client.Id" aria-hidden="true">>
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="detailsModalLabel-@item.Client.Id">@item.Client.Name</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <partial name="_Edit" model="@Model.FirstOrDefault(x => x.Client.Id == item.Client.Id)?.Client"></partial>
                                     </div>
                                 </div>
-                                <div class="d-flex justify-content-between align-items-start" id="clientTotal-@item.Client.Id">
-                                    <div class="d-flex mt-auto mb-auto">
-                                        <span class="material-icons star">
-                                            account_circle
-                                        </span>
-                                    </div>
-                                    <div class="p-1 me-auto">
-                                        <h2 class="text-truncate">
-                                            <b style="font-size: 24px">@item.Client.Name</b>
-                                        </h2>
-                                        <p class="card-text text-truncate">Total: ₡ @item.CreditSummary.Total</p>
+                            </div>
+                        </div>
+                        <div class="modal fade" id="copySuccessModal" tabindex="-1" aria-labelledby="copySuccessModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-sm">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="copySuccessModalLabel">¡Copiado!</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                     </div>
                                 </div>
-                                <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#detailsModal-@item.Client.Id">
-                                    Ver Detalles
-                                </button>
                             </div>
                         </div>
-                    </div>
-                    <div class="modal fade" id="editModal-@item.Client.Id" tabindex="-1" aria-labelledby="editModalLabel-@item.Client.Id" aria-hidden="true">>
-                        <div class="modal-dialog modal-lg">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="detailsModalLabel-@item.Client.Id">@item.Client.Name</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <partial name="_Edit" model="@Model.FirstOrDefault(x => x.Client.Id == item.Client.Id)?.Client"></partial>
+                        <div class="modal fade" id="deleteModal-@item.Client.Id" tabindex="-1" aria-labelledby="deleteModalLabel-@item.Client.Id" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="deleteModalLabel-@item.Client.Id">@item.Client.Name</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <partial name="_Delete" model="item"></partial>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="modal fade" id="copySuccessModal" tabindex="-1" aria-labelledby="copySuccessModalLabel" aria-hidden="true">
-                        <div class="modal-dialog modal-sm">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="copySuccessModalLabel">¡Copiado!</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal fade" id="deleteModal-@item.Client.Id" tabindex="-1" aria-labelledby="deleteModalLabel-@item.Client.Id" aria-hidden="true">
-                        <div class="modal-dialog modal-lg">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="deleteModalLabel-@item.Client.Id">@item.Client.Name</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <partial name="_Delete" model="item"></partial>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal fade" id="detailsModal-@item.Client.Id" tabindex="-1" aria-labelledby="detailsModalLabel-@item.Client.Id" aria-hidden="true">
-                        <div class="modal-dialog modal-xl">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="detailsModalLabel-@item.Client.Id">Historial de @item.Client.Name</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <partial name="_Details" model="item"></partial>
+                        <div class="modal fade" id="detailsModal-@item.Client.Id" tabindex="-1" aria-labelledby="detailsModalLabel-@item.Client.Id" aria-hidden="true">
+                            <div class="modal-dialog modal-xl">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="detailsModalLabel-@item.Client.Id">Historial de @item.Client.Name</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <partial name="_Details" model="item"></partial>
 
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    @if(item.Client.Id == ViewBag.ClientId)
+                        @if(item.Client.Id == ViewBag.ClientId)
                     {
-                        <script>
-                            document.addEventListener("DOMContentLoaded", function () {
-                                var clientId = @ViewBag.ClientId;
-                                var itemClientId = @item.Client.Id;
+                            <script>
+                                document.addEventListener("DOMContentLoaded", function () {
+                                    var clientId = @ViewBag.ClientId;
+                                    var itemClientId = @item.Client.Id;
 
-                                if (clientId !== null && clientId === itemClientId) {
-                                    var modalId = 'detailsModal-' + itemClientId;
-                                    var modalElement = document.getElementById(modalId);
+                                    if (clientId !== null && clientId === itemClientId) {
+                                        var modalId = 'detailsModal-' + itemClientId;
+                                        var modalElement = document.getElementById(modalId);
 
-                                    if (modalElement) {
-                                        var bootstrapModal = new bootstrap.Modal(modalElement);
-                                        bootstrapModal.show();
+                                        if (modalElement) {
+                                            var bootstrapModal = new bootstrap.Modal(modalElement);
+                                            bootstrapModal.show();
+                                        }
                                     }
-                                }
-                            });
-                        </script>
+                                });
+                            </script>
                     }
                 }
-            </div>
-            <nav>
-                <ul class="pagination justify-content-center">
-                    @for (int i = 1; i <= totalPages; i++)
+                </div>
+                <nav>
+                    <ul class="pagination justify-content-center">
+                        @for (int i = 1; i <= totalPages; i++)
                     {
-                        <li class="page-item @(i == currentPage ? "active" : "")">
-                            <a class="page-link" href="?currentPage=@i">@i</a>
-                        </li>
+                            <li class="page-item @(i == currentPage ? "active" : "")">
+                                <a class="page-link" href="?currentPage=@i">@i</a>
+                            </li>
                     }
-                </ul>
-            </nav>
+                    </ul>
+                </nav>
+            </div>
         </div>
     </div>
-</div>
 
-@section scripts{
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    @section scripts{
+        <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
-    <script type="text/javascript">
-        var delayTimer;
+        <script type="text/javascript">
+            var delayTimer;
 
-        function searchCredits() {
-            clearTimeout(delayTimer);
-            delayTimer = setTimeout(function () {
-                var searchString = document.getElementById('searchInput').value;
-                document.getElementById('searchForm').action = '/Credit/Index?searchString=' + encodeURIComponent(searchString);
-                document.getElementById('searchForm').submit();
-            }, 1000);
-        }
+            function searchCredits() {
+                clearTimeout(delayTimer);
+                delayTimer = setTimeout(function () {
+                    var searchString = document.getElementById('searchInput').value;
+                    document.getElementById('searchForm').action = '/Credit/Index?searchString=' + encodeURIComponent(searchString);
+                    document.getElementById('searchForm').submit();
+                }, 1000);
+            }
 
-        function copyAsImage(id) {
-            var table = document.getElementById("clientTotal-"+id);
-            html2canvas(table).then(function (canvas) {
-                canvas.toBlob(function (blob) {
-                    var imageBlob = new Blob([blob], { type: "image/png" });
+            function copyAsImage(id) {
+                var table = document.getElementById("clientTotal-"+id);
+                html2canvas(table).then(function (canvas) {
+                    canvas.toBlob(function (blob) {
+                        var imageBlob = new Blob([blob], { type: "image/png" });
 
-                    // Copy image to clipboard
-                    if (navigator.clipboard && navigator.clipboard.write) {
-                        navigator.clipboard.write([
-                            new ClipboardItem({
-                                "image/png": imageBlob
-                            })
-                        ]).then(function () {
-                            console.log('Image copied to clipboard successfully.');
-                            $('#copySuccessModal').modal('show');
-                            setTimeout(function () {
-                                $('#copySuccessModal').modal('hide');
-                            }, 3000);
-                        }).catch(function (error) {
-                            console.error('Error copying image to clipboard:', error);
-                        });
-                    } else {
-                        console.warn('Clipboard API is not supported in this browser.');
+                        // Copy image to clipboard
+                        if (navigator.clipboard && navigator.clipboard.write) {
+                            navigator.clipboard.write([
+                                new ClipboardItem({
+                                    "image/png": imageBlob
+                                })
+                            ]).then(function () {
+                                console.log('Image copied to clipboard successfully.');
+                                $('#copySuccessModal').modal('show');
+                                setTimeout(function () {
+                                    $('#copySuccessModal').modal('hide');
+                                }, 3000);
+                            }).catch(function (error) {
+                                console.error('Error copying image to clipboard:', error);
+                            });
+                        } else {
+                            console.warn('Clipboard API is not supported in this browser.');
+                        }
+                    });
+                });
+            }
+
+            function copyToClipboard(id, name, total) {
+                const message = `Hola ${name}, *La llama del Bosque* le saluda! 🔥🌳\n @ConfigurationModel.BalanceMessage ₡${total}.*`;
+                navigator.clipboard.writeText(message)
+                    .then(() => {
+                        $('#copySuccessModal').modal('show');
+                        setTimeout(function () {
+                            $('#copySuccessModal').modal('hide');
+                        }, 3000);
+                    })
+                    .catch((error) => {
+                        console.error('Error al copiar al portapapeles:', error);
+                    });
+            }
+
+            function showPartial(id) {
+                var partialDivs = document.querySelectorAll('[id*="Partial"]');
+                partialDivs.forEach(function (partialDiv) {
+                    if (partialDiv.id !== id) {
+                        partialDiv.style.display = "none";
                     }
                 });
-            });
-        }
 
-        function copyToClipboard(id, name, total) {
-            const message = `Hola ${name}, *La llama del Bosque* le saluda! 🔥🌳\n @ConfigurationModel.BalanceMessage ₡${total}.*`;
-            navigator.clipboard.writeText(message)
-                .then(() => {
-                    $('#copySuccessModal').modal('show');
-                    setTimeout(function () {
-                        $('#copySuccessModal').modal('hide');
-                    }, 3000);
-                })
-                .catch((error) => {
-                    console.error('Error al copiar al portapapeles:', error);
-                });
-        }
+                var element = document.getElementById(id);
 
-        function showPartial(id) {
-            var partialDivs = document.querySelectorAll('[id*="Partial"]');
-            partialDivs.forEach(function (partialDiv) {
-                if (partialDiv.id !== id) {
-                    partialDiv.style.display = "none";
+                if (element.style.display === "none") {
+                    if (element.tagName === "DIV") {
+                        element.style.display = "block";
+                    } else if (element.tagName === "TR") {
+                        element.style.display = "table-row";
+                    }            
+                } else {
+                    element.style.display = "none";
                 }
-            });
-
-            var element = document.getElementById(id);
-
-            if (element.style.display === "none") {
-                if (element.tagName === "DIV") {
-                    element.style.display = "block";
-                } else if (element.tagName === "TR") {
-                    element.style.display = "table-row";
-                }            
-            } else {
-                element.style.display = "none";
             }
-        }
 
-        function toggleSwitch() {
-            var switchState = document.getElementById("saldoSwitch").checked;
-        }
-    </script>
-}
+            function redirectToIndex() {
+                var toggle = document.getElementById("saldoSwitch");
+                if (toggle.checked) {
+                    window.location.href = '@Url.Action("Index", "Credit", new { searchString = "__limit__" })';
+                }
+                else 
+                {
+                    window.location.href = '@Url.Action("Index", "Credit")';
+                }
+            }
+        </script>
+    }

@@ -309,7 +309,7 @@ namespace LaLlamaDelBosque.Controllers
 		{
 			_lotteries = _lotteries
 				.Where(l => (date.ToShortDateString() == DateTime.Today.ToShortDateString() ?
-							 l.Hour > DateTime.Now.TimeOfDay : true) &&
+							 l.Hour.Add(TimeSpan.FromMinutes(-10)) > DateTime.Now.TimeOfDay : true) &&
 							(l.Days?.Contains(date.DayOfWeek.ToString()) ?? true))
 				.OrderBy(l => l.Hour)
 				.ToList();

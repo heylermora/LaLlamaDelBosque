@@ -14,10 +14,19 @@ namespace LaLlamaDelBosque.Services.NewFolder.Scrapers
 
 		protected override List<AwardLine> ProcessHtml(string htmlContent, List<ScrapingLottery> scrapingLotteries, List<Lottery> lotteries, List<Paper> papers)
 		{
+			var awardLines = new List<AwardLine>();
+
 			var doc = new HtmlDocument();
 			doc.LoadHtml(htmlContent);
 
-			var awardLines = new List<AwardLine>();
+			var extractedDate = DateTime.Parse(doc.DocumentNode.SelectSingleNode("//time[@datetime]")?.GetAttributeValue("datetime", "")
+					?? throw new InvalidOperationException("No se pudo extraer la fecha."));
+
+			if(extractedDate.Date != DateTime.Today)
+				return awardLines;
+
+			var extractedData = new List<(int Order, string Description, string Number, bool IsBusted)>();
+
 			var tableNode = doc.DocumentNode.SelectSingleNode("//table[contains(@class, 'numeros-md-mov numeros-gr-esc')]");
 
 			if(tableNode != null)
@@ -36,27 +45,13 @@ namespace LaLlamaDelBosque.Services.NewFolder.Scrapers
 						{
 							var order = scrapingLotteries.First(x => x.Name == cells[0]?.InnerText.Trim()).Order;
 							var description = lotteries.First(x => x.Order == order).Name;
+							var number = cells[1]?.InnerText.Trim() ?? "";
+							if(string.IsNullOrEmpty(number) || number == "--") continue;
 
-							var value = cells[1]?.InnerText.Trim() ?? "";
-							if (!string.IsNullOrEmpty(value) && value != "--")
+							var isBusted = Constants.BustedList.Contains(cells[2]?.InnerText.Trim() ?? "");
+							var awardLine = CreateAwardLine(order, description, number, isBusted, papers);
+							if(awardLine != null)
 							{
-								papers = papers.Where(x => x.Lottery == description && x.DrawDate.ToShortDateString() == DateTime.Today.ToShortDateString() && x.Numbers.Any(x => x.Value == value)).ToList();
-								var amount = papers.Sum(x => x.Numbers.Sum(n => n.Value == value ? n.Amount : 0));
-								var busted = papers.Sum(x => x.Numbers.Sum(n => n.Value == value ? n.Busted : 0));
-
-								var isBusted = Constants.BustedList.Contains(cells[2]?.InnerText.Trim() ?? "");
-								var award = isBusted ? 85 * amount + 200 * busted : 85 * amount;
-
-								var awardLine = new AwardLine
-								{
-									Order = order,
-									Description = description,
-									Number = value,
-									Amount = amount,
-									Busted = busted,
-									Award = award,
-									IsBusted = isBusted
-								};
 								awardLines.Add(awardLine);
 							}
 						}
