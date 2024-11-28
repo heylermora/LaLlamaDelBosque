@@ -24,10 +24,23 @@ namespace LaLlamaDelBosque.Controllers
         public ActionResult Index(string searchString, int clientId, int currentPage = 1)
         {
             var credits = _credits.Credits;
-            if(!string.IsNullOrEmpty(searchString))
+
+			foreach(var credit in credits)
+			{
+				credit.CreditSummary.CalculateStatus(credit.Client.Limit);
+			}
+
+			if(!string.IsNullOrEmpty(searchString))
             {
-                credits = credits.Where(s => s.Client.Name.ToLower().Contains(searchString.ToLower())).ToList();
-            }
+                if(searchString == "__limit__")
+                {
+                    credits = credits.Where(s => s.CreditSummary.Status == 4).ToList();
+                }
+                else
+                {
+					credits = credits.Where(s => s.Client.Name.ToLower().Contains(searchString.ToLower())).ToList();
+				}
+			}
             credits = credits.OrderBy(c => c.Client.Name).ToList();
 
             int totalItems = credits.Count();
@@ -37,11 +50,6 @@ namespace LaLlamaDelBosque.Controllers
             int endIndex = Math.Min(startIndex + 20 - 1, totalItems - 1);
 
             credits = credits.Where((item, index) => index >= startIndex && index <= endIndex).ToList();
-
-            foreach(var credit in credits)
-            {
-                credit.CreditSummary.CalculateStatus(credit.Client.Limit);
-            }
 
             ViewBag.TotalPages = totalPages;
             ViewBag.CurrentPage = currentPage;

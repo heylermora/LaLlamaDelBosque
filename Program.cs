@@ -10,7 +10,7 @@ builder.Services.AddRazorPages();
 
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromSeconds(20);
+    options.IdleTimeout = TimeSpan.FromMinutes(1);
 });
 
 builder.Services.AddAuthentication(options =>
@@ -20,7 +20,16 @@ builder.Services.AddAuthentication(options =>
     options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 }).AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, config =>
 {
-    config.AccessDeniedPath = "/Manage/ErrorAcceso";
+	config.ExpireTimeSpan = TimeSpan.FromMinutes(1);
+	config.Events = new CookieAuthenticationEvents
+	{
+		OnRedirectToLogin = context =>
+		{
+			context.Response.Redirect("https://localhost:7262/");
+			return Task.CompletedTask;
+		}
+	};
+	config.AccessDeniedPath = "/Manage/ErrorAcceso";
 });
 builder.Services.AddAuthorization();
 

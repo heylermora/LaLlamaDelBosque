@@ -1,4 +1,5 @@
-﻿using LaLlamaDelBosque.Models;
+﻿using LaLlamaDelBosque.Interfaces;
+using LaLlamaDelBosque.Models;
 using LaLlamaDelBosque.Services.NewFolder.Scrapers;
 using LaLlamaDelBosque.Services.Scrapers;
 using LaLlamaDelBosque.Utils;
@@ -30,7 +31,7 @@ namespace LaLlamaDelBosque.Services
                 AwardLines = new List<AwardLine>()
             };
 
-            var scrapers = new List<BaseScraper>
+            var scrapers = new List<IScraperStrategy>
             {
                 new JpsNuevosTiemposScraper(_httpClient),
                 new NicaraguaLotoDiariaScraper(_httpClient),

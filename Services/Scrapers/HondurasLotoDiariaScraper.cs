@@ -14,10 +14,18 @@ namespace LaLlamaDelBosque.Services.NewFolder.Scrapers
 
 		protected override List<AwardLine> ProcessHtml(string htmlContent, List<ScrapingLottery> scrapingLotteries, List<Lottery> lotteries, List<Paper> papers)
 		{
+			var awardLines = new List<AwardLine>();
+
 			var doc = new HtmlDocument();
 			doc.LoadHtml(htmlContent);
 
-			var awardLines = new List<AwardLine>();
+			var dateNode = doc.DocumentNode.SelectSingleNode("//div[@class='lotto_title']/b");
+			var extractedDate = DateTime.Parse(dateNode?.InnerText.Trim().Split('-')[0]
+								?? throw new InvalidOperationException("No se pudo extraer la fecha."));
+
+			if(extractedDate.Date != DateTime.Today)
+				return awardLines;
+
 			var lotteryNodes = doc.DocumentNode.SelectNodes("//div[@class='lotto_numbers']/div[@class='lotto_numbers']");
 
 			if(lotteryNodes != null)
@@ -31,31 +39,21 @@ namespace LaLlamaDelBosque.Services.NewFolder.Scrapers
 						var order = scrapingLotteries.First(x => x.Name == titleNode?.InnerText.Trim()).Order;
 						var description = lotteries.First(x => x.Order == order).Name;
 
-						var resultNode = lotteryNode.SelectSingleNode(".//div[contains(@class, 'lotto_no_r bbb1')]");
+						var numberNode = lotteryNode.SelectSingleNode(".//div[contains(@class, 'lotto_no_r bbb1')]");
 						var bustedNode = lotteryNode.SelectSingleNode(".//div[contains(@class, 'lotto_no_r bbb5')]");
-						if(resultNode != null && bustedNode != null)
+						if(numberNode != null && bustedNode != null)
 						{
-							var amountValue = resultNode.InnerText.Trim();
+							var number = numberNode.InnerText.Trim();
 							var bustedValue = bustedNode.InnerText.Trim();
 
-							papers = papers.Where(x => x.Lottery == description && x.DrawDate.ToShortDateString() == DateTime.Today.ToShortDateString() && x.Numbers.Any(x => x.Value == amountValue)).ToList();
-							var amount = papers.Sum(x => x.Numbers.Sum(n => n.Value == amountValue ? n.Amount : 0));
-							var busted = papers.Sum(x => x.Numbers.Sum(n => n.Value == amountValue ? n.Busted : 0));
+							papers = papers.Where(x => x.Lottery == description && x.DrawDate.ToShortDateString() == DateTime.Today.ToShortDateString() && x.Numbers.Any(x => x.Value == number)).ToList();
 
 							var isBusted = Constants.BustedList.Contains(bustedValue);
-							var award = isBusted ? 85 * amount + 200 * busted : 85 * amount;
-							var awardLine = new AwardLine
+							var awardLine = CreateAwardLine(order, description, number, isBusted, papers);
+							if(awardLine != null)
 							{
-								Order = order,
-								Description = description,
-								Number = amountValue,
-								Amount = amount,
-								Busted = busted,
-								Award = award,
-								IsBusted = isBusted
-							};
-
-							awardLines.Add(awardLine);
+								awardLines.Add(awardLine);
+							}
 						}
 					}
 				}

@@ -13,10 +13,18 @@ namespace LaLlamaDelBosque.Services.NewFolder.Scrapers
 
 		protected override List<AwardLine> ProcessHtml(string htmlContent, List<ScrapingLottery> scrapingLotteries, List<Lottery> lotteries, List<Paper> papers)
 		{
+			var awardLines = new List<AwardLine>();
+
 			var doc = new HtmlDocument();
 			doc.LoadHtml(htmlContent);
 
-			var awardLines = new List<AwardLine>();
+			var dateNode = doc.DocumentNode.SelectSingleNode("//div[@class='lotto_title']/b");
+			var extractedDate = DateTime.Parse(dateNode?.InnerText.Trim().Split('-')[0]
+								?? throw new InvalidOperationException("No se pudo extraer la fecha."));
+
+			if(extractedDate.Date != DateTime.Today)
+				return awardLines;
+
 			var lotteryNodes = doc.DocumentNode.SelectNodes("//div[@class='lotto_numbers']")
 				.Where(node => node.SelectNodes(".//div[contains(@class, 'lotto_numbers')]") == null
 					|| !node.SelectNodes(".//div[contains(@class, 'lotto_numbers')]").Any())
@@ -36,24 +44,13 @@ namespace LaLlamaDelBosque.Services.NewFolder.Scrapers
 						var resultNode = lotteryNode.SelectSingleNode(".//div[contains(@class, 'lotto_no_r bbb1')]");
 						if(resultNode != null)
 						{
-							var value = resultNode.InnerText.Trim();
+							var number = resultNode.InnerText.Trim();
 
-							papers = papers.Where(x => x.Lottery == description && x.DrawDate.ToShortDateString() == DateTime.Today.ToShortDateString() && x.Numbers.Any(x => x.Value == value)).ToList();
-							var amount = papers.Sum(x => x.Numbers.Sum(n => n.Value == value ? n.Amount : 0));
-							var busted = papers.Sum(x => x.Numbers.Sum(n => n.Value == value ? n.Busted : 0));
-
-							var awardLine = new AwardLine
+							var awardLine = CreateAwardLine(order, description, number, false, papers);
+							if(awardLine != null)
 							{
-								Order = order,
-								Description = description,
-								Number = value,
-								Amount = amount,
-								Busted = busted,
-								Award = 85 * amount,
-								IsBusted = false
-							};
-
-							awardLines.Add(awardLine);
+								awardLines.Add(awardLine);
+							}
 						}
 					}
 				}

@@ -2,6 +2,7 @@
 using LaLlamaDelBosque.Models;
 using LaLlamaDelBosque.Services.Scrapers;
 using LaLlamaDelBosque.Utils;
+using System.Text.RegularExpressions;
 
 namespace LaLlamaDelBosque.Services.NewFolder.Scrapers
 {
@@ -32,6 +33,11 @@ namespace LaLlamaDelBosque.Services.NewFolder.Scrapers
 
 						if(cells != null && cells.Count == 3)
 						{
+							if(!DateTime.TryParse(cells[0]?.InnerText.Trim(), out var extractedDate) || extractedDate.Date != DateTime.Today)
+							{
+								continue;
+							}
+
 							var order = scrapingLotteries.First(x => x.Name == cells[1]?.InnerText.Trim()).Order;
 							var description = lotteries.First(x => x.Order == order).Name;
 
@@ -42,21 +48,12 @@ namespace LaLlamaDelBosque.Services.NewFolder.Scrapers
 								var amount = papers.Sum(x => x.Numbers.Sum(n => n.Value == values[0] ? n.Amount : 0));
 								var busted = papers.Sum(x => x.Numbers.Sum(n => n.Value == values[0] ? n.Busted : 0));
 
-								var isBusted = Constants.BustedList.Contains(values[1]);
-								var award = isBusted ? 85 * amount + 200 * busted : 85 * amount;
-
-								var awardLine = new AwardLine
+								var isBusted = Constants.BustedList.Contains(Regex.Replace(values[1], @"\(([^)]+)\)", "$1"));
+								var awardLine = CreateAwardLine(order, description, values[0].Trim(), isBusted, papers);
+								if(awardLine != null)
 								{
-									Order = order,
-									Description = description,
-									Number = values[0],
-									Amount = amount,
-									Busted = busted,
-									Award = award,
-									IsBusted = isBusted
-								};
-
-								awardLines.Add(awardLine);
+									awardLines.Add(awardLine);
+								}
 							}
 						}
 					}

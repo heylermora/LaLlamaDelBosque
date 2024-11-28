@@ -43,22 +43,28 @@ namespace LaLlamaDelBosque.Controllers
         // GET: AwardController/Create
         public async Task<ActionResult> Create()
         {
-            var award = _awards?.Awards?.FirstOrDefault(x => x.Date == DateTime.Today);
-            if(award == null)
-            {
-                award = await _scrapingService.Add();
-                award.Id = _awards?.Awards?.LastOrDefault()?.Id + 1 ?? 0;
-                _awards?.Awards.Add(award);
-            }
-            else
-            {
-                award.AwardLines.Clear();
-                var awardLines = (await _scrapingService.Add()).AwardLines;
-                award.AwardLines.AddRange(awardLines);
-            }
-            SetAwards(_awards);
-            return RedirectToAction(nameof(Index));
-        }
+			try
+			{
+				var award = _awards?.Awards?.FirstOrDefault(x => x.Date == DateTime.Today);
+                if(award == null)
+                {
+                    award = await _scrapingService.Add();
+                    award.Id = _awards?.Awards?.LastOrDefault()?.Id + 1 ?? 0;
+                    _awards?.Awards.Add(award);
+                }
+                else
+                {
+                    var awardLines = (await _scrapingService.Add()).AwardLines;
+                    award.AwardLines.AddRange(awardLines);
+                }
+                SetAwards(_awards);
+                return RedirectToAction(nameof(Index));
+			}
+			catch(Exception ex)
+			{
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message, errorStack = ex.StackTrace });
+			}
+		}
 
         // POST: AwardController/Edit/5
         [HttpPost]
@@ -117,7 +123,7 @@ namespace LaLlamaDelBosque.Controllers
             }
             catch(Exception ex)
             {
-                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message, errorStack = ex.StackTrace });
             }
         }
 
@@ -150,7 +156,7 @@ namespace LaLlamaDelBosque.Controllers
             }
             catch(Exception ex)
             {
-                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message, errorStack = ex.StackTrace });
             }
         }
 
