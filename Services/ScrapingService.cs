@@ -1,6 +1,5 @@
 ﻿using LaLlamaDelBosque.Interfaces;
 using LaLlamaDelBosque.Models;
-using LaLlamaDelBosque.Services.NewFolder.Scrapers;
 using LaLlamaDelBosque.Services.Scrapers;
 using LaLlamaDelBosque.Utils;
 using NuGet.Packaging;

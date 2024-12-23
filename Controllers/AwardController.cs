@@ -54,7 +54,8 @@ namespace LaLlamaDelBosque.Controllers
                 }
                 else
                 {
-                    var awardLines = (await _scrapingService.Add()).AwardLines;
+					award.AwardLines.Clear();
+					var awardLines = (await _scrapingService.Add()).AwardLines;
                     award.AwardLines.AddRange(awardLines);
                 }
                 SetAwards(_awards);

@@ -1,9 +1,8 @@
 ﻿using HtmlAgilityPack;
 using LaLlamaDelBosque.Models;
-using LaLlamaDelBosque.Services.Scrapers;
 using LaLlamaDelBosque.Utils;
 
-namespace LaLlamaDelBosque.Services.NewFolder.Scrapers
+namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class JpsNuevosTiemposScraper: BaseScraper
 	{

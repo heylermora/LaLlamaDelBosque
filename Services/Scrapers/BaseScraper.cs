@@ -46,7 +46,13 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				.ToList();
 
 			if(!filteredPapers.Any())
-				return null;
+				return new AwardLine
+				{
+					Order = order,
+					Description = description,
+					Number = number,
+					IsBusted = isBusted
+				};
 
 			var amount = filteredPapers.Sum(x => x.Numbers.Sum(n => n.Value == number ? n.Amount : 0));
 			var busted = filteredPapers.Sum(x => x.Numbers.Sum(n => n.Value == number ? n.Busted : 0));

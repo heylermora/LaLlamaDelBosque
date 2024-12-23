@@ -4,7 +4,7 @@ using LaLlamaDelBosque.Services.Scrapers;
 using LaLlamaDelBosque.Utils;
 using System.Text.RegularExpressions;
 
-namespace LaLlamaDelBosque.Services.NewFolder.Scrapers
+namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class NicaraguaLotoDiariaScraper: BaseScraper
 	{
@@ -42,7 +42,8 @@ namespace LaLlamaDelBosque.Services.NewFolder.Scrapers
 							var description = lotteries.First(x => x.Order == order).Name;
 
 							var values = cells[2]?.InnerText.Trim().Split(" ");
-							if(!string.IsNullOrEmpty(values?[0]) && !string.IsNullOrEmpty(values?[1]))
+
+							if(values?.Length > 1 && !string.IsNullOrWhiteSpace(values[0]) && !string.IsNullOrWhiteSpace(values[1]))
 							{
 								papers = papers.Where(x => x.Lottery == description && x.DrawDate.ToShortDateString() == DateTime.Today.ToShortDateString() && x.Numbers.Any(x => x.Value == values[0])).ToList();
 								var amount = papers.Sum(x => x.Numbers.Sum(n => n.Value == values[0] ? n.Amount : 0));

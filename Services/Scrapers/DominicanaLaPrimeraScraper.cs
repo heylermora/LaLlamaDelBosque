@@ -1,8 +1,7 @@
 ﻿using HtmlAgilityPack;
 using LaLlamaDelBosque.Models;
-using LaLlamaDelBosque.Services.Scrapers;
 
-namespace LaLlamaDelBosque.Services.NewFolder.Scrapers
+namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class DominicanaLaPrimeraScraper: BaseScraper
 	{
