@@ -45,10 +45,6 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 							if(values?.Length > 1 && !string.IsNullOrWhiteSpace(values[0]) && !string.IsNullOrWhiteSpace(values[1]))
 							{
-								papers = papers.Where(x => x.Lottery == description && x.DrawDate.ToShortDateString() == DateTime.Today.ToShortDateString() && x.Numbers.Any(x => x.Value == values[0])).ToList();
-								var amount = papers.Sum(x => x.Numbers.Sum(n => n.Value == values[0] ? n.Amount : 0));
-								var busted = papers.Sum(x => x.Numbers.Sum(n => n.Value == values[0] ? n.Busted : 0));
-
 								var isBusted = Constants.BustedList.Contains(Regex.Replace(values[1], @"\(([^)]+)\)", "$1"));
 								var awardLine = CreateAwardLine(order, description, values[0].Trim(), isBusted, papers);
 								if(awardLine != null)
