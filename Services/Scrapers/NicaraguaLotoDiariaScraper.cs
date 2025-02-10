@@ -9,50 +9,56 @@ namespace LaLlamaDelBosque.Services.Scrapers
 	public class NicaraguaLotoDiariaScraper: BaseScraper
 	{
 		public NicaraguaLotoDiariaScraper(HttpClient httpClient)
-			: base(httpClient, "https://nuevaya.com.ni/loto-diaria-de-nicaragua/")
+			: base(httpClient, "https://www.tiemposnica.com/")
 		{
 		}
 
 		protected override List<AwardLine> ProcessHtml(string htmlContent, List<ScrapingLottery> scrapingLotteries, List<Lottery> lotteries, List<Paper> papers)
 		{
+			var filteredLotteries = scrapingLotteries.Where(x => x.Type == "NICA").ToList();
 			var doc = new HtmlDocument();
 			doc.LoadHtml(htmlContent);
 
 			var awardLines = new List<AwardLine>();
-			var figureNode = doc.DocumentNode.SelectSingleNode("//figure");
 
-			if(figureNode != null)
+			var contentInnerNode = doc.DocumentNode.Descendants("div")
+												   .FirstOrDefault(node => node.GetAttributeValue("class", "").Contains("content_inner clr"));
+
+			if(contentInnerNode != null)
 			{
-				var rowNodes = figureNode.SelectNodes(".//tr[td and (td[not(.//strong)]/text()[normalize-space() != ''])]");
+				var results = contentInnerNode.Descendants("div")
+										.Where(node => node.GetAttributeValue("class", "").Contains("draw_results"))
+										.ToList();
 
-				if(rowNodes != null)
+				if(results != null)
 				{
-					foreach(var row in rowNodes)
+					foreach(var result in results)
 					{
-						var cells = row.SelectNodes(".//td");
+						var dateNode = result.SelectSingleNode(".//div[@class='draw_content']//ul[@class='list list_inline']/li");
+						if(dateNode == null || !DateTime.TryParse(dateNode.InnerText.Trim(), out var extractedDate) || extractedDate.Date != DateTime.Today)
+							continue;
 
-						if(cells != null && cells.Count == 3)
-						{
-							if(!DateTime.TryParse(cells[0]?.InnerText.Trim(), out var extractedDate) || extractedDate.Date != DateTime.Today)
-							{
-								continue;
-							}
+						var lotteryText = result.SelectSingleNode(".//h3[@class='number_heading']//span[@class='optional']")?.InnerText.Trim() ?? "";
+						var timeText = result.SelectSingleNode(".//div[@class='logo_lockup']//p[@class='draw_date']")?.InnerText.Trim() ?? "";
 
-							var order = scrapingLotteries.First(x => x.Name == cells[1]?.InnerText.Trim()).Order;
-							var description = lotteries.First(x => x.Order == order).Name;
+						var lottery = filteredLotteries.FirstOrDefault(x => x.Name == lotteryText && x.Hour == timeText);
+						if(lottery == null)
+							continue;
 
-							var values = cells[2]?.InnerText.Trim().Split(" ");
+						var order = lottery.Order;
+						var description = lotteries.FirstOrDefault(x => x.Order == order)?.Name ?? "";
 
-							if(values?.Length > 1 && !string.IsNullOrWhiteSpace(values[0]) && !string.IsNullOrWhiteSpace(values[1]))
-							{
-								var isBusted = Constants.BustedList.Contains(Regex.Replace(values[1], @"\(([^)]+)\)", "$1"));
-								var awardLine = CreateAwardLine(order, description, values[0].Trim(), isBusted, papers);
-								if(awardLine != null)
-								{
-									awardLines.Add(awardLine);
-								}
-							}
-						}
+						var numberNodes = result.SelectNodes(".//ul[@class='draw_numbers']//li[@class='number main']");
+						if(numberNodes == null || !numberNodes.Any())
+							continue;
+
+						var value = string.Join("", numberNodes.Select(node => node.InnerText.Trim()));
+						if(string.IsNullOrEmpty(value))
+							continue;
+
+						var awardLine = CreateAwardLine(order, description, value.Trim(), false, papers);
+						if(awardLine != null)
+							awardLines.Add(awardLine);
 					}
 				}
 			}

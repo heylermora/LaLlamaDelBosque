@@ -1,5 +1,6 @@
 ﻿using LaLlamaDelBosque.Interfaces;
 using LaLlamaDelBosque.Models;
+using System.Net.Sockets;
 
 namespace LaLlamaDelBosque.Services.Scrapers
 {
@@ -19,11 +20,29 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				   List<Lottery> lotteries,
 				   List<Paper> papers)
 		{
-			var response = await _httpClient.GetAsync(_url);
-			response.EnsureSuccessStatusCode();
-			var htmlContent = await response.Content.ReadAsStringAsync();
+			try
+			{
+				var response = await _httpClient.GetAsync(_url);
+				response.EnsureSuccessStatusCode();
+				var htmlContent = await response.Content.ReadAsStringAsync();
 
-			return ProcessHtml(htmlContent, scrapingLotteries, lotteries, papers);
+				return ProcessHtml(htmlContent, scrapingLotteries, lotteries, papers);
+			}
+			catch(HttpRequestException httpEx)
+			{
+				var errorMessage = $"Error HTTP al realizar la solicitud a la URL {_url}. Detalles: {httpEx.Message}";
+				throw new InvalidOperationException(errorMessage, httpEx);
+			}
+			catch(TaskCanceledException timeoutEx)
+			{
+				var errorMessage = $"La solicitud HTTP excedió el tiempo de espera para la URL {_url}. Detalles: {timeoutEx.Message}";
+				throw new InvalidOperationException(errorMessage, timeoutEx);
+			}
+			catch(Exception ex)
+			{
+				var errorMessage = $"Error inesperado al procesar la solicitud HTTP para la URL {_url}. Detalles: {ex.Message}";
+				throw new InvalidOperationException(errorMessage, ex);
+			}
 		}
 
 		protected abstract List<AwardLine> ProcessHtml(
