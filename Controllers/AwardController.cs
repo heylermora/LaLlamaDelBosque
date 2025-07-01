@@ -89,7 +89,7 @@ namespace LaLlamaDelBosque.Controllers
             }
             catch(Exception ex)
             {
-                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message, errorStack = ex.StackTrace });
             }
         }
 
@@ -107,7 +107,7 @@ namespace LaLlamaDelBosque.Controllers
             }
             catch(Exception ex)
             {
-                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message, errorStack = ex.StackTrace });
             }
         }
 

@@ -1,6 +1,5 @@
 ﻿using HtmlAgilityPack;
 using LaLlamaDelBosque.Models;
-using LaLlamaDelBosque.Services.Scrapers;
 using LaLlamaDelBosque.Utils;
 using System.Text.RegularExpressions;
 
@@ -9,58 +8,53 @@ namespace LaLlamaDelBosque.Services.Scrapers
 	public class NicaraguaLotoDiariaScraper: BaseScraper
 	{
 		public NicaraguaLotoDiariaScraper(HttpClient httpClient)
-			: base(httpClient, "https://www.tiemposnica.com/")
+			: base(httpClient, "https://www.yelu.com.ni/lottery/loto-nicaragua-hoy")
 		{
 		}
 
-		protected override List<AwardLine> ProcessHtml(string htmlContent, List<ScrapingLottery> scrapingLotteries, List<Lottery> lotteries, List<Paper> papers)
+		protected override List<AwardLine> ProcessHtml(
+			string htmlContent,
+			List<ScrapingLottery> scrapingLotteries,
+			List<Lottery> lotteries,
+			List<Paper> papers)
 		{
-			var filteredLotteries = scrapingLotteries.Where(x => x.Type == "NICA").ToList();
+			var awardLines = new List<AwardLine>();
+			var nicaLotteries = scrapingLotteries.Where(x => x.Type == "NICA").ToList();
+
 			var doc = new HtmlDocument();
 			doc.LoadHtml(htmlContent);
 
-			var awardLines = new List<AwardLine>();
+			var draws = doc.DocumentNode.SelectNodes("//div[contains(@class, 'lotto_numbers') and div[contains(@class, 'lotto_no_time')]]");
+			if(draws == null) return awardLines;
 
-			var contentInnerNode = doc.DocumentNode.Descendants("div")
-												   .FirstOrDefault(node => node.GetAttributeValue("class", "").Contains("content_inner clr"));
-
-			if(contentInnerNode != null)
+			foreach(var draw in draws)
 			{
-				var results = contentInnerNode.Descendants("div")
-										.Where(node => node.GetAttributeValue("class", "").Contains("draw_results"))
-										.ToList();
+				var timeNode = draw.SelectSingleNode(".//div[contains(@class, 'lotto_no_time')]");
+				var digit1Node = draw.SelectSingleNode(".//div[contains(@class, 'bbb1')]");
+				var digit2Node = draw.SelectSingleNode(".//div[contains(@class, 'bbb2')]");
+				var plus1Node = draw.SelectSingleNode(".//div[contains(@class, 'bbb5')]");
 
-				if(results != null)
-				{
-					foreach(var result in results)
-					{
-						var dateNode = result.SelectSingleNode(".//div[@class='draw_content']//ul[@class='list list_inline']/li");
-						if(dateNode == null || !DateTime.TryParse(dateNode.InnerText.Trim(), out var extractedDate) || extractedDate.Date != DateTime.Today)
-							continue;
+				if(timeNode == null || digit1Node == null || digit2Node == null || plus1Node == null)
+					continue;
 
-						var lotteryText = result.SelectSingleNode(".//h3[@class='number_heading']//span[@class='optional']")?.InnerText.Trim() ?? "";
-						var timeText = result.SelectSingleNode(".//div[@class='logo_lockup']//p[@class='draw_date']")?.InnerText.Trim() ?? "";
+				var timeText = timeNode.InnerText.Trim().ToLower();  // "11am", "3pm", "9pm"
+				timeText = timeText.Replace("am", ":00 am").Replace("pm", ":00 pm");
 
-						var lottery = filteredLotteries.FirstOrDefault(x => x.Name == lotteryText && x.Hour == timeText);
-						if(lottery == null)
-							continue;
+				var matchedLottery = nicaLotteries.FirstOrDefault(l => l.Hour.Replace(".", "").ToLower() == timeText);
+				if(matchedLottery == null) continue;
 
-						var order = lottery.Order;
-						var description = lotteries.FirstOrDefault(x => x.Order == order)?.Name ?? "";
+				var numberText = digit1Node.InnerText.Trim() + digit2Node.InnerText.Trim();  // ej: "18"
+				if(!Regex.IsMatch(numberText, @"^\d{2}$")) continue;
 
-						var numberNodes = result.SelectNodes(".//ul[@class='draw_numbers']//li[@class='number main']");
-						if(numberNodes == null || !numberNodes.Any())
-							continue;
+				var plus1Text = plus1Node.InnerText.Trim().ToUpper();  // ej: JG, 2X, 3X
 
-						var value = string.Join("", numberNodes.Select(node => node.InnerText.Trim()));
-						if(string.IsNullOrEmpty(value))
-							continue;
+				var order = matchedLottery.Order;
+				var description = lotteries.FirstOrDefault(l => l.Order == order)?.Name ?? "";
+				var isBusted = Constants.BustedList.Contains(plus1Text);
 
-						var awardLine = CreateAwardLine(order, description, value.Trim(), false, papers);
-						if(awardLine != null)
-							awardLines.Add(awardLine);
-					}
-				}
+				var awardLine = CreateAwardLine(order, description, numberText, isBusted, papers);
+				if(awardLine != null)
+					awardLines.Add(awardLine);
 			}
 
 			return awardLines;

@@ -5,6 +5,7 @@
     double totalAmount = Model.Numbers.Sum(t => t.Amount);
     double totalNumbers = Model.Numbers.Sum(t => t.Busted);
     double total = totalAmount + totalNumbers;
+    total *= Convert.ToInt32(ViewData["Cant"]);
 }
 
 <!DOCTYPE html>
@@ -35,11 +36,11 @@
                             <strong>HORA: </strong> @Model.DrawDate.ToShortTimeString()
                         </p>
                         <p class="text-truncate">
-                            <strong>PAPELITO:</strong> #@Model.Id
                             @if (ViewData["Client"] != null)
                             {
                                 <strong>CLIENTE:</strong> @ViewData["Client"]
                             }
+                            <strong>PAPELITO:</strong> @ViewData["Ids"]
                         </p>
                     </div>
 
