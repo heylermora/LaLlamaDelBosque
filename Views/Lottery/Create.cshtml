@@ -4,7 +4,9 @@
 @{
     ViewData["Title"] = "Crear Papelito";
     ViewData["CC"] = true;
-    var sum = Model.Numbers.Sum(x => x.Amount) + Model.Numbers.Sum(x => x.Busted);
+    var cant = Model.Lottery.Split(",").Count();
+    var subsum = Model.Numbers.Sum(x => x.Amount) + Model.Numbers.Sum(x => x.Busted);
+    var sum = subsum * cant;
 }
 
 <h1 class="display-4">@ViewData["Title"]</h1>
@@ -32,21 +34,47 @@
             <input asp-for="DrawDate" onchange="redirectToCreate('dateString', 'DrawDate')" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" class="form-control" />
         </div>
         <div class="form-group col-md-4">
-            <label asp-for="Lottery" class="control-label">Sorteo</label>
-            <select asp-for="Lottery" class="form-control form-select" onchange="redirectToCreate('lottery', 'Lottery')">
-                <option selected disabled>Seleccione un nombre</option>
-                @if(ViewData["Names"] is not null)
-                {
-                    @foreach(var item in ViewData["Names"] as IList<Lottery> ?? new List<Lottery>())
+            <label asp-for="SelectedLotteries" class="control-label">Sorteos</label>
+            <div class="position-relative">
+                <div id="customSelect" class="form-select" onclick="toggleDropdown()">
+                    <span id="selectedLotteriesText">Seleccione uno o varios</span>
+                </div>
+
+
+                <!-- UL con checkboxes (se muestra al hacer clic) -->
+                <ul id="customDropdown"
+                    class="list-group position-absolute w-100"
+                    style="z-index: 1000; display: none; max-height: 400px; overflow-y: auto; background: white; border: 1px solid #ced4da; border-top: none;">
+                    @if(ViewData["Names"] is IList<Lottery> lotteries)
                     {
-                        <option value="@item.Name">@item.Name</option>
+                        <li class="list-group-item bg-light">
+                            <input type="checkbox"
+                                   class="form-check-input me-2"
+                                   id="selectAll"
+                                   onchange="toggleSelectAll(this)"
+                                    @(Model.SelectedLotteries.Count() == lotteries.Count() ? "checked" : "indeterminate") />
+                            <label class="form-check-label fw-bold" for="selectAll">Seleccionar todos</label>
+                        </li>
+                        foreach(var item in lotteries)
+                        {
+                            <li class="list-group-item">
+                                <input type="checkbox"
+                                       class="form-check-input child-checkbox me-2"
+                                       name="SelectedLotteries"
+                                       value="@item.Name"
+                                       id="lottery_@item.Order"
+                                       onchange="updateSelected()"
+                                       @(Model.SelectedLotteries.Contains(item.Name) ? "checked" : "") />
+                                <label class="form-check-label" for="lottery_@item.Order">@item.Name</label>
+                            </li>
+                        }
                     }
-                }
-            </select>
-        </div>
+                </ul>
+            </div>
+        </div>       
         <div class="form-group col-md-4">
             <label asp-for="ClientId" class="control-label">Cliente</label>
-            <select asp-for="ClientId" class="form-control form-select" onchange="redirectToCreate('clientId', 'ClientId')">
+            <select asp-for="ClientId" class="form-control form-select" onchange="redirectToCreate('clientId', 'ClientId', )">
                 <option value="-1" selected>Seleccione un nombre</option>
                 @if(ViewData["Clients"] is not null)
                 {
@@ -67,8 +95,19 @@
     </div>
 </form>
 
-@if(Model?.Lottery.Any() ?? false)
+@if(Model?.SelectedLotteries.Any() ?? false)
 {
+    <div class="alert alert-info d-flex align-items-start gap-2 flex-wrap mt-1">
+        <span class="fw-bold">
+            <i class="bi bi-check-circle-fill me-1"></i> Sorteos seleccionados:
+        </span>
+        <div class="d-flex flex-wrap gap-1">
+            @foreach(var name in Model.SelectedLotteries)
+            {
+                <span class="badge bg-primary text-light">@name</span>
+            }
+        </div>
+    </div>
     <partial name="_Add" model="new Numbers()"/>
 }
 
@@ -122,6 +161,7 @@
                         <p class="card-text">Monto Total: @Model.Numbers.Sum(x => x.Amount)</p>
                         <p class="card-text">Reventado Total: @Model.Numbers.Sum(x => x.Busted)</p>
                         <hr>
+                        <p class="card-text" style="font-weight: bold; font-size: 1rem;">Total Papelito: @subsum</p>
                         <p class="card-text" style="font-weight: bold; font-size: 1.2rem;">Total General: @sum</p>
                     </div>
                 </div>
@@ -134,12 +174,24 @@
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script type="text/javascript">
-        var urlDeDestino;
 
         function redirectToCreate(paramName, inputId) {
-            var input = document.getElementById(inputId);
-            var value = input.value;
-            var url = '@Url.Action("Create", "Lottery")?' + paramName + '=' + encodeURIComponent(value) + '&&cc=true';
+            const input = document.getElementById(inputId);
+            const value = input.value;
+
+            const selectedLotteries = @Html.Raw(Json.Serialize(Model?.Lottery));
+            const clientId = '@Model?.ClientId';
+            const date = '@Model?.DrawDate.ToString("yyyy-MM-dd")';
+
+            const queryParams = new URLSearchParams();
+            queryParams.set(paramName, value);
+            queryParams.set('cc', 'true');
+
+            if (paramName !== 'SelectedLotteries') queryParams.set('SelectedLotteries', selectedLotteries);
+            if (paramName !== 'clientId') queryParams.set('clientId', clientId);
+            if (paramName !== 'dateString') queryParams.set('dateString', date);
+
+            const url = '@Url.Action("Create", "Lottery")' + '?' + queryParams.toString();
             window.location.href = url;
         }
 
@@ -193,6 +245,66 @@
                 element.style.display = "none";
             }
         }
+
+        // Toggle de visibilidad al hacer clic en el div
+        function toggleDropdown() {
+            const dropdown = document.getElementById('customDropdown');
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function updateSelected() {
+            const dropdown = document.getElementById('customDropdown');
+            const checkboxes = dropdown.querySelectorAll('input[name="SelectedLotteries"]');
+            const checked = dropdown.querySelectorAll('input[name="SelectedLotteries"]:checked');
+            const selectAll = dropdown.querySelector('#selectAll');
+            const values = Array.from(checked).map(cb => cb.value);
+
+            // Crear input temporal con valores
+            const tempInput = document.createElement('input');
+            tempInput.type = 'hidden';
+            tempInput.id = 'tempSelectedLotteries';
+            tempInput.value = Array.from(checked).map(cb => cb.value).join(',');
+            document.body.appendChild(tempInput);
+
+            // Redirigir usando el input temporal
+            redirectToCreate("SelectedLotteries", "tempSelectedLotteries");
+        }
+
+        function toggleSelectAll(masterCheckbox) {
+            const dropdown = document.getElementById('customDropdown');
+            const checkboxes = dropdown.querySelectorAll('input[name="SelectedLotteries"]');
+
+            checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
+            updateSelected();
+        }
+
+        // Cerrar el dropdown al hacer clic fuera
+        document.addEventListener('click', function (event) {
+            const dropdown = document.getElementById('customDropdown');
+            const customSelect = document.getElementById('customSelect');
+
+            if (!customSelect.contains(event.target) && !dropdown.contains(event.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const checkboxes = document.querySelectorAll('.child-checkbox');
+            const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+            const selectAll = document.getElementById('selectAll');
+
+            selectAll.checked = checkedCount === checkboxes.length;
+            selectAll.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+
+            // Mostrar el dropdown si viene keepSelection=true en la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const cc = urlParams.get('cc');
+
+            if (cc === 'true' && checkedCount > 0) {
+                const dropdown = document.getElementById('customDropdown');
+                dropdown.style.display = 'block';
+            }
+        });
 
     </script>
 }

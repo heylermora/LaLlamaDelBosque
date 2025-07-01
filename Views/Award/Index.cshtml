@@ -14,16 +14,16 @@
 }
 
 <h1 class="display-4">@ViewData["Title"]</h1>
-<p>
-    Los datos de esta página son obtenidos de:
-    <a href="https://www.jpsloteria.com/loteria-resultados" target="_blank">TICA</a>,
-    <a href="https://www.tiemposnica.com/" target="_blank">NICA</a>,
-    <a href="https://www.yelu.hn/lottery/results/la-diaria" target="_blank">HONDUREÑA</a>,
-    <a href="https://www.yelu.do/leidsa/results/la-primera" target="_blank">LA PRIMERA</a>.
-</p>
-<p>
-    <span class="text-muted"><b>📝 Nota:</b> Ahora NICA <b>no</b> muestra si es reventado. Si es necesario, realice el proceso manualmente.</span>
-</p>
+<div class="alert alert-light border mt-3" role="alert">
+    <strong>Fuentes oficiales:</strong>
+    <div class="mt-2 d-flex flex-wrap gap-2">
+        <a href="https://www.jpsloteria.com/loteria-resultados" target="_blank" class="badge bg-success text-decoration-none">TICA</a>
+        <a href="https://www.yelu.com.ni/lottery/loto-nicaragua-hoy" target="_blank" class="badge bg-success text-decoration-none">NICA</a>
+        <a href="https://www.yelu.hn/lottery/results/la-diaria" target="_blank" class="badge bg-success text-decoration-none">HONDUREÑA</a>
+        <a href="https://www.yelu.do/leidsa/results/la-primera" target="_blank" class="badge bg-success text-decoration-none">LA PRIMERA</a>
+    </div>
+</div>
+
 
 <div class="btn-group mx-auto" role="group">
     <!-- Update -->
@@ -106,7 +106,16 @@
                                         </tr>
                                     </thead>
                                 </table>
-                                <div id="CopyMessage-@item.Id"></div>
+                                <div class="modal fade" id="copySuccessModal-@item.Id" tabindex="-1" aria-labelledby="copySuccessModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog modal-sm">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="copySuccessModalLabel">¡Copiado!</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                                 <table class="table">
                                     <thead>  
                                         <tr>
@@ -205,8 +214,11 @@
                                 "image/png": imageBlob
                             })
                         ]).then(function () {
-                            console.log('La imagen se copió al portapapeles correctamente.');
-                            document.getElementById('CopyMessage-'.concat(id)).innerHTML = '<div class="alert alert-success" role = "alert">¡Copiado!<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+                            console.log('Image copied to clipboard successfully.');
+                            $('#copySuccessModal-'.concat(id)).modal('show');
+                            setTimeout(function () {
+                                $('#copySuccessModal-'.concat(id)).modal('hide');
+                            }, 3000);
                         }).catch(function (error) {
                             console.error('Error al copiar la imagen al portapapeles:', error);
                         });
