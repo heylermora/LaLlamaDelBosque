@@ -160,18 +160,22 @@ namespace LaLlamaDelBosque.Controllers
 			}
 		}
 
-		public ActionResult Print(List<int> ids)
+		public ActionResult Print(List<int>? ids = null, int? id = null)
 		{
-			var papers = _papers.Where(p => ids.Contains(p.Id)).ToList();
-			ViewData["Ids"] = ids.Count();
+			var selectedIds = (ids?.Any() == true) ? ids : (id.HasValue ? new List<int> { id.Value } : null);
+			if(selectedIds == null || !selectedIds.Any()) return BadRequest("No se especificaron IDs válidos.");
+
+			var papers = _papers.Where(p => selectedIds.Contains(p.Id)).ToList();
+			if(!papers.Any()) return NotFound();
 
 			var paper = papers.First();
 			paper.Lottery = string.Join(", ", papers.Select(p => p.Lottery).Distinct());
-			var client = _credits.Select(c => c.Client).FirstOrDefault(c => c.Id == paper?.ClientId)?.Name;
+
 			ViewData["Date"] = DateTime.Now.ToShortDateString();
-			ViewData["Client"] = client;
-			ViewData["Cant"] = ids.Count;
-			ViewData["Ids"] = string.Join(", ", papers.Select(p => "#" + p.Id).Distinct());
+			ViewData["Client"] = _credits.Select(c => c.Client).FirstOrDefault(c => c.Id == paper.ClientId)?.Name;
+			ViewData["Cant"] = selectedIds.Count;
+			ViewData["Ids"] = string.Join(", ", papers.Select(p => "#" + p.Id));
+
 			return View(paper);
 		}
 
