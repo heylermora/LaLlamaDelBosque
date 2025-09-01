@@ -14,16 +14,37 @@
 }
 
 <h1 class="display-4">@ViewData["Title"]</h1>
-<div class="alert alert-light border mt-3" role="alert">
-    <strong>Fuentes oficiales:</strong>
-    <div class="mt-2 d-flex flex-wrap gap-2">
-        <a href="https://www.jpsloteria.com/loteria-resultados" target="_blank" class="badge bg-success text-decoration-none">TICA</a>
-        <a href="https://www.yelu.com.ni/lottery/loto-nicaragua-hoy" target="_blank" class="badge bg-success text-decoration-none">NICA</a>
-        <a href="https://www.yelu.hn/lottery/results/la-diaria" target="_blank" class="badge bg-success text-decoration-none">HONDUREÑA</a>
-        <a href="https://www.yelu.do/leidsa/results/la-primera" target="_blank" class="badge bg-success text-decoration-none">LA PRIMERA</a>
+<div class="alert alert-light border rounded-3 shadow-sm py-2 px-3" role="alert">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <h5 class="text-uppercase mb-0 me-2">FUENTES OFICIALES:</h5>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="https://www.jpsloteria.com/loteria-resultados" target="_blank"
+               class="btn btn-outline-dark btn-sm py-1 rounded-pill px-2 text-uppercase text-nowrap"
+               style="width: auto; text-align: center;">
+                Tica
+            </a>
+            <a href="https://tiemposnicas.com/" target="_blank"
+               class="btn btn-outline-dark btn-sm py-1 rounded-pill px-2 text-uppercase text-nowrap"
+               style="width: auto; text-align: center;">
+                Nica
+            </a>
+            <a href="https://www.yelu.hn/lottery/results/la-diaria" target="_blank"
+               class="btn btn-outline-dark btn-sm py-1 rounded-pill px-2 text-uppercase text-nowrap"
+               style="width: auto; text-align: center;">
+                Hondureña
+            </a>
+            <a href="https://www.yelu.do/leidsa/results/la-primera" target="_blank"
+               class="btn btn-outline-dark btn-sm py-1 rounded-pill px-2 text-uppercase text-nowrap"
+               style="width: auto; text-align: center;">
+                La Primera
+            </a>
+        </div>
+    </div>
+
+    <div class="small text-muted mt-1">
+        Nota: <strong>Nica</strong> no muestra el número <em>reventado</em>.
     </div>
 </div>
-
 
 <div class="btn-group mx-auto" role="group">
     <!-- Update -->

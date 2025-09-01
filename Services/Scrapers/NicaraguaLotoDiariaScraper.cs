@@ -1,14 +1,17 @@
 ﻿using HtmlAgilityPack;
 using LaLlamaDelBosque.Models;
 using LaLlamaDelBosque.Utils;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class NicaraguaLotoDiariaScraper: BaseScraper
 	{
+		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
+
 		public NicaraguaLotoDiariaScraper(HttpClient httpClient)
-			: base(httpClient, "https://www.yelu.com.ni/lottery/loto-nicaragua-hoy")
+			: base(httpClient, "https://tiemposnicas.com/")
 		{
 		}
 
@@ -19,38 +22,48 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			List<Paper> papers)
 		{
 			var awardLines = new List<AwardLine>();
+
 			var nicaLotteries = scrapingLotteries.Where(x => x.Type == "NICA").ToList();
+			var hourToLottery = nicaLotteries
+				.Select(l => new { Key = l.Hour, Value = l })
+				.Where(x => x.Key != null)
+				.ToDictionary(x => x.Key!, x => x.Value);
+
+			if(hourToLottery.Count == 0) return awardLines;
+
+			var orderToName = lotteries
+				.GroupBy(l => l.Order)
+				.ToDictionary(g => g.Key, g => g.First().Name);
 
 			var doc = new HtmlDocument();
 			doc.LoadHtml(htmlContent);
 
-			var draws = doc.DocumentNode.SelectNodes("//div[contains(@class, 'lotto_numbers') and div[contains(@class, 'lotto_no_time')]]");
-			if(draws == null) return awardLines;
+			var horaNodes = doc.DocumentNode.SelectNodes("//div[@class='hora']");
+			if(horaNodes == null || horaNodes.Count == 0) return awardLines;
 
-			foreach(var draw in draws)
+			foreach(var horaNode in horaNodes)
 			{
-				var timeNode = draw.SelectSingleNode(".//div[contains(@class, 'lotto_no_time')]");
-				var digit1Node = draw.SelectSingleNode(".//div[contains(@class, 'bbb1')]");
-				var digit2Node = draw.SelectSingleNode(".//div[contains(@class, 'bbb2')]");
-				var plus1Node = draw.SelectSingleNode(".//div[contains(@class, 'bbb5')]");
+				var horaText = Clean(horaNode.InnerText);
+				var hourKey = horaText;
+				if(hourKey == null) continue;
 
-				if(timeNode == null || digit1Node == null || digit2Node == null || plus1Node == null)
+				if(!hourToLottery.TryGetValue(hourKey, out var matchedLottery))
 					continue;
 
-				var timeText = timeNode.InnerText.Trim().ToLower();  // "11am", "3pm", "9pm"
-				timeText = timeText.Replace("am", ":00 am").Replace("pm", ":00 pm");
+				var premioNode = horaNode.SelectSingleNode("following-sibling::div[@class='premio'][1]");
+				if(premioNode == null) continue;
 
-				var matchedLottery = nicaLotteries.FirstOrDefault(l => l.Hour.Replace(".", "").ToLower() == timeText);
-				if(matchedLottery == null) continue;
+				var digitNodes = premioNode.SelectNodes(".//div[@class='numero']//span[@class='digito']");
+				if(digitNodes == null || digitNodes.Count < 2) continue;
 
-				var numberText = digit1Node.InnerText.Trim() + digit2Node.InnerText.Trim();  // ej: "18"
-				if(!Regex.IsMatch(numberText, @"^\d{2}$")) continue;
+				var numberText = string.Concat(digitNodes.Select(d => Clean(d.InnerText)));
+				if(!TwoDigits.IsMatch(numberText)) continue;
 
-				var plus1Text = plus1Node.InnerText.Trim().ToUpper();  // ej: JG, 2X, 3X
+				// En el HTML actual no aparece plus (JG/2X/3X)
+				var isBusted = false;
 
 				var order = matchedLottery.Order;
-				var description = lotteries.FirstOrDefault(l => l.Order == order)?.Name ?? "";
-				var isBusted = Constants.BustedList.Contains(plus1Text);
+				var description = orderToName.TryGetValue(order, out var name) ? name : string.Empty;
 
 				var awardLine = CreateAwardLine(order, description, numberText, isBusted, papers);
 				if(awardLine != null)
@@ -59,5 +72,8 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 			return awardLines;
 		}
+
+		private static string Clean(string? s) =>
+			Regex.Replace(HtmlEntity.DeEntitize(s ?? "").Replace('\u00A0', ' '), @"\s+", " ").Trim();
 	}
 }
