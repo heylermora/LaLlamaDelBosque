@@ -9,7 +9,7 @@
     {
       "Type": "NICA",
       "Order": 2,
-      "Name": "Loteria Nica",
+      "Name": "Lotería Nica 12PM",
       "Hour": "12:00 PM"
     },
     {
@@ -26,7 +26,7 @@
     {
       "Type": "NICA",
       "Order": 5,
-      "Name": "Tiempos Nica",
+      "Name": "Lotería Nica 3PM",
       "Hour": "3:00 PM"
     },
     {
@@ -49,7 +49,7 @@
     {
       "Type": "NICA",
       "Order": 9,
-      "Name": "Loteria Nica",
+      "Name": "Lotería Nica 6PM",
       "Hour": "6:00 PM"
     },
     {
@@ -61,7 +61,7 @@
     {
       "Type": "NICA",
       "Order": 11,
-      "Name": "Loteria Nica",
+      "Name": "Lotería Nica 9PM",
       "Hour": "9:00 PM"
     },
     {

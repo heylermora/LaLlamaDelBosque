@@ -32,8 +32,8 @@
     },
     {
       "Order": 2,
-      "Name": "NICA 11 AM",
-      "Hour": "11:00:00",
+      "Name": "NICA 12 PM",
+      "Hour": "12:00:00",
       "Busted": true
     },
     {

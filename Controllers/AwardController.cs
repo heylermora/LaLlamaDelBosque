@@ -136,7 +136,7 @@ namespace LaLlamaDelBosque.Controllers
             try
             {
                 var award = _awards.Awards.FirstOrDefault(x => x.Id == awardId);
-                if(award is not null && double.Parse(collection["AwardLine.amount"]) > 0)
+                if(award is not null && double.Parse(collection["AwardLine.amount"]) >= 0)
                 {
                     var awardLine = new AwardLine()
                     {
@@ -147,7 +147,7 @@ namespace LaLlamaDelBosque.Controllers
                         Busted = double.Parse(collection["AwardLine.busted"]),
                         TimesBusted = double.Parse(collection["AwardLine.timesbusted"]),
                         TimesAmount = double.Parse(collection["AwardLine.timesamount"]),
-                        Award = double.Parse(collection["AwardLine.amount"]) * double.Parse(collection["AwardLine.timesamount"]) + double.Parse(collection["AwardLine.timesbusted"]) * double.Parse(collection["AwardLine.timesbusted"]),
+                        Award = double.Parse(collection["AwardLine.amount"]) * double.Parse(collection["AwardLine.timesamount"]) + double.Parse(collection["AwardLine.busted"]) * double.Parse(collection["AwardLine.timesbusted"]),
                     };
                     award?.AwardLines.Add(awardLine);
 

@@ -1,7 +1,6 @@
 ﻿using HtmlAgilityPack;
 using LaLlamaDelBosque.Models;
 using LaLlamaDelBosque.Utils;
-using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace LaLlamaDelBosque.Services.Scrapers
@@ -9,9 +8,11 @@ namespace LaLlamaDelBosque.Services.Scrapers
 	public class NicaraguaLotoDiariaScraper: BaseScraper
 	{
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
+		private static readonly Regex SorteoHour = new(@"SORTEO\s+(\d{1,2})\s*([AP]M)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		private static readonly Regex MultiXRegex =	new(@"\(Multi\s*X\)\s*=\s*([A-Za-z0-9]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
 		public NicaraguaLotoDiariaScraper(HttpClient httpClient)
-			: base(httpClient, "https://tiemposnicas.com/")
+			: base(httpClient, "https://nicatiempos.com/")
 		{
 		}
 
@@ -23,11 +24,10 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		{
 			var awardLines = new List<AwardLine>();
 
-			var nicaLotteries = scrapingLotteries.Where(x => x.Type == "NICA").ToList();
-			var hourToLottery = nicaLotteries
-				.Select(l => new { Key = l.Hour, Value = l })
-				.Where(x => x.Key != null)
-				.ToDictionary(x => x.Key!, x => x.Value);
+			// NICA: mapa literal "12PM", "3PM", "6PM", "9PM"
+			var hourToLottery = scrapingLotteries
+				.Where(x => x.Type == "NICA" && !string.IsNullOrWhiteSpace(x.Hour))
+				.ToDictionary(x => x.Hour!.Trim().ToUpperInvariant(), x => x);
 
 			if(hourToLottery.Count == 0) return awardLines;
 
@@ -38,36 +38,56 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			var doc = new HtmlDocument();
 			doc.LoadHtml(htmlContent);
 
-			var horaNodes = doc.DocumentNode.SelectNodes("//div[@class='hora']");
-			if(horaNodes == null || horaNodes.Count == 0) return awardLines;
+			// Cada bloque "section" de sorteo dentro del loop-item
+			var sectionNodes = doc.DocumentNode.SelectNodes(
+				"//div[contains(@class,'e-loop-item')]//div[contains(@class,'e-con-full') and contains(@class,'e-con') and contains(@class,'e-child')][.//h2[contains(.,'SORTEO')]]"
+			);
 
-			foreach(var horaNode in horaNodes)
+			if(sectionNodes == null || sectionNodes.Count == 0) return awardLines;
+
+			foreach(var section in sectionNodes)
 			{
-				var horaText = Clean(horaNode.InnerText);
-				var hourKey = horaText;
-				if(hourKey == null) continue;
+				// 1) Hora desde el H2 que contiene "SORTEO …"
+				var hourH2 = section.SelectSingleNode(".//h2[contains(.,'SORTEO')]");
+				if(hourH2 == null) continue;
+
+				var m = SorteoHour.Match(Clean(hourH2.InnerText));
+				if(!m.Success) continue;
+
+				var hourKey = $"{int.Parse(m.Groups[1].Value)}:00 {m.Groups[2].Value.ToUpperInvariant()}";
 
 				if(!hourToLottery.TryGetValue(hourKey, out var matchedLottery))
 					continue;
 
-				var premioNode = horaNode.SelectSingleNode("following-sibling::div[@class='premio'][1]");
-				if(premioNode == null) continue;
+				// 2) Número dentro del mismo bloque: .ball h2
+				var numberH2 =
+					section.SelectSingleNode(".//div[contains(@class,'ball')]//h2") ??
+					section.SelectSingleNode(".//div[contains(@class,'ball')]/h2");
 
-				var digitNodes = premioNode.SelectNodes(".//div[@class='numero']//span[@class='digito']");
-				if(digitNodes == null || digitNodes.Count < 2) continue;
+				if(numberH2 == null) continue;                  // p.ej. 6PM no trae número aún
+				var numberText = Clean(numberH2.InnerText);
+				if(!TwoDigits.IsMatch(numberText)) continue;     // ignora "XX" u otros no-2-dígitos
 
-				var numberText = string.Concat(digitNodes.Select(d => Clean(d.InnerText)));
-				if(!TwoDigits.IsMatch(numberText)) continue;
-
-				// En el HTML actual no aparece plus (JG/2X/3X)
-				var isBusted = false;
-
+				// 3) Crear AwardLine
 				var order = matchedLottery.Order;
 				var description = orderToName.TryGetValue(order, out var name) ? name : string.Empty;
 
-				var awardLine = CreateAwardLine(order, description, numberText, isBusted, papers);
-				if(awardLine != null)
-					awardLines.Add(awardLine);
+				string? multiX = null;
+				var isBusted = false;
+
+				var multiXH3 = section.SelectSingleNode(".//h3[contains(.,'(Multi X)')]");
+				if(multiXH3 != null)
+				{
+					var mt = MultiXRegex.Match(Clean(multiXH3.InnerText));
+					if(mt.Success)
+					{
+						multiX = mt.Groups[1].Value.ToUpperInvariant(); // "JG", "2X", "3X", "XX", etc.
+						isBusted = Constants.BustedList.Contains(multiX);
+					}
+				}
+
+				var line = CreateAwardLine(order, description, numberText, isBusted, papers);
+				if(line != null) awardLines.Add(line);
 			}
 
 			return awardLines;
