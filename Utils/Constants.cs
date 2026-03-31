@@ -10,6 +10,6 @@
 			{ 4, "Límite excedido" }
 		};
 
-		public static readonly List<string> BustedList = new() { "R", "3X", "5X" };
+		public static readonly List<string> BustedList = new() { "R", "JG", "3X", "5X", "7X" };
 	}
 }

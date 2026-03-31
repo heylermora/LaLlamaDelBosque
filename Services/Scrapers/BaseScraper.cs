@@ -56,7 +56,8 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			string description,
 			string number,
 			bool isBusted,
-			List<Paper> papers)
+			List<Paper> papers,
+			double? timesBusted = null)
 		{
 			var filteredPapers = papers
 				.Where(x => x.Lottery == description
@@ -70,13 +71,15 @@ namespace LaLlamaDelBosque.Services.Scrapers
 					Order = order,
 					Description = description,
 					Number = number,
+					TimesBusted = timesBusted ?? 200,
 					IsBusted = isBusted
 				};
 
 			var amount = filteredPapers.Sum(x => x.Numbers.Sum(n => n.Value == number ? n.Amount : 0));
 			var busted = filteredPapers.Sum(x => x.Numbers.Sum(n => n.Value == number ? n.Busted : 0));
+			var effectiveTimesBusted = timesBusted ?? 200;
 
-			var award = isBusted ? (85 * amount) + (200 * busted) : 85 * amount;
+			var award = isBusted ? (85 * amount) + (effectiveTimesBusted * busted) : 85 * amount;
 
 			return new AwardLine
 			{
@@ -85,6 +88,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				Number = number,
 				Amount = amount,
 				Busted = busted,
+				TimesBusted = effectiveTimesBusted,
 				Award = award,
 				IsBusted = isBusted
 			};
