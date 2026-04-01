@@ -2,9 +2,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Lora&display=swap');
 :root {
-    --background: #b2ebf2;
+    --background: #e2e8f0;
     --danger: #FF4136;
-    --dark: #0B2239;
+    --layout: #EEF2FF;
     --light: #FFFFFF;
     --primary: #3B82F6;
     --secondary: #2DCDDF;
@@ -35,27 +35,11 @@ body {
 }
 
 .navbar {
-    background: var(--dark);
-}
-
-.nav-link {
-    color: var(--background);
-}
-
-.nav-link:hover {
-    color: var(--light);
-}
-
-.nav-link:focus {
-    color: var(--light);
-}
-
-.navbar-text {
-    color: var(--light);
+    background: var(--layout);
 }
 
 .footer {
-    background-color: var(--dark);
+    background-color: var(--layout);
 }
 
 h1, h2 {
@@ -81,7 +65,6 @@ h1, h2 {
 
 .btn {
     border-radius: .45rem;
-    width: 96px;
 }
 
 .btn-icon {
@@ -100,7 +83,7 @@ span.material-icons.icon {
 }
 
 span.material-icons.star {
-    color: var(--dark);
+    color: var(--secondary);
     font-size: 60px;
 }
 
@@ -125,7 +108,7 @@ span.text-bg-danger {
 }
 
 .icon-dark {
-    color: var(--dark);
+    color: var(--secondary);
 }
 
 .icon-primary {

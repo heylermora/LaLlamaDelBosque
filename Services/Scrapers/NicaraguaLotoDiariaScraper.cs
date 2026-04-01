@@ -74,6 +74,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 				string? multiX = null;
 				var isBusted = false;
+				double? timesBusted = null;
 
 				var multiXH3 = section.SelectSingleNode(".//h3[contains(.,'(Multi X)')]");
 				if(multiXH3 != null)
@@ -82,11 +83,13 @@ namespace LaLlamaDelBosque.Services.Scrapers
 					if(mt.Success)
 					{
 						multiX = mt.Groups[1].Value.ToUpperInvariant(); // "JG", "2X", "3X", "XX", etc.
-						isBusted = Constants.BustedList.Contains(multiX);
+						isBusted = Constants.BustedList.Contains(multiX) || Constants.NicaBustedMultipliers.ContainsKey(multiX);
+						if(Constants.NicaBustedMultipliers.TryGetValue(multiX, out var mappedTimesBusted))
+							timesBusted = mappedTimesBusted;
 					}
 				}
 
-				var line = CreateAwardLine(order, description, numberText, isBusted, papers);
+				var line = CreateAwardLine(order, description, numberText, isBusted, papers, timesBusted);
 				if(line != null) awardLines.Add(line);
 			}
 

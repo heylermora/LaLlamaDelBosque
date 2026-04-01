@@ -2,141 +2,242 @@
 
 @using LaLlamaDelBosque.Utils;
 @{
-	ViewData["Title"] = "Listado de Ventas";
-	var searchModel = ViewData["LotterySearchModel"] as LotterySearchModel;
-	var numberAward = ViewBag.Number;
-	var total = 0d;
-	var totales = 0d;
-	var value = 0;
+    ViewData["Title"] = "Listado de Ventas";
+    var searchModel = ViewData["LotterySearchModel"] as LotterySearchModel;
+    var numberAward = ViewBag.Number?.ToString();
+    var total = 0d;
+    var totales = 0d;
+    var totalMonto = Model?.Sum(x => x.Numbers.Sum(n => n.Amount)) ?? 0d;
+    var totalReventado = Model?.Sum(x => x.Numbers.Sum(n => n.Busted)) ?? 0d;
+    var totalPapelitos = Model?.Count() ?? 0;
+    var value = 0;
 }
 
-<h1 class="display-4">@ViewData["Title"]</h1>
+<h2 class="fw-bold mb-4">@ViewData["Title"]</h2>
 
-<hr />
-
-<partial name="_Search" model="@searchModel" />
-    
-<hr />
-
-@if(numberAward != null){
-	<div class="card text-center">
-		<div class="card-header bg-primary text-white">
-			<h5 class="card-title">Número Ganador</h5>
-		</div>
-		<div class="card-body">
-			<h2 class="card-text" id="numero-ganador">@numberAward</h2>
-		</div>
-	</div>
-	<hr />
-}
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <partial name="_Search" model="@searchModel" />
+    </div>
+</div>
 
 @if (Model != null && Model.Any())
 {
-	<div class="row justify-content-center">
-		@for (var i = 0; i < 5; i++)
-		{
-			<div class="col-2 table-responsive">
-				<table class="table table-striped-columns">
-					<thead>
-						<tr>
-							<td>#</td>
-							<td>Monto</td>
-							<td>Rtado</td>
-						</tr>
-					</thead>
-					<tbody>
-						@for (var j = 0; j < 20; j++)
-						{
-							value = 20 * i + j;
-							var awardStyle = value.ToString("D2") == numberAward ? "background-color: var(--danger); font-weight: bold;" : "";
-							var sumAmount = Model.Sum(m => m.Numbers.Where(n => n.Value == value.ToString("D2")).Sum(n => n.Amount));
-							var sumBusted = Model.Sum(m => m.Numbers.Where(n => n.Value == value.ToString("D2")).Sum(n => n.Busted));
-							<tr>
-								<td style="@awardStyle">@value.ToString("D2")</td>
-								<td style="@awardStyle">@(sumAmount > 0 ? $"₡ {sumAmount}" : "")</td>
-								<td style="@awardStyle">@(sumBusted > 0 ? $"₡ {sumBusted}" : "")</td>
-							</tr>
-						}
-					</tbody>
-				</table>
-			</div>
-		}
-	</div>
+    <div class="p-2 bg-white rounded-3 shadow-sm d-inline-block mb-4">
+        <ul class="nav nav-pills gap-4" id="ventasTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active"
+                        data-bs-toggle="tab"
+                        data-bs-target="#resumen-pane"
+                        type="button">
+                    Resumen
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link"
+                        data-bs-toggle="tab"
+                        data-bs-target="#papelitos-pane"
+                        type="button">
+                    Papelitos
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link"
+                        data-bs-toggle="tab"
+                        data-bs-target="#numeros-pane"
+                        type="button">
+                    Números
+                </button>
+            </li>
+        </ul>
+    </div>
+    <div class="tab-content" id="ventasTabsContent">
+        <div class="tab-pane fade show active" id="resumen-pane" role="tabpanel" aria-labelledby="resumen-tab" tabindex="0">
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-0 h-100 text-center">
+                        <div class="card-body">
+                            <div class="text-muted text-uppercase small mb-2">Número ganador</div>
+                            <div class="display-4 fw-bold text-primary">@(string.IsNullOrWhiteSpace(numberAward) ? "--" : numberAward)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="row g-3">
+                        <div class="col-sm-4">
+                            <div class="card shadow-sm border-0 h-100">
+                                <div class="card-body text-center">
+                                    <div class="text-muted small">Papelitos</div>
+                                    <div class="h4 fw-bold mb-0">@totalPapelitos</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="card shadow-sm border-0 h-100">
+                                <div class="card-body text-center">
+                                    <div class="text-muted small">Monto vendido</div>
+                                    <div class="h4 fw-bold mb-0">₡ @totalMonto.ToString("N0")</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="card shadow-sm border-0 h-100">
+                                <div class="card-body text-center">
+                                    <div class="text-muted small">Reventado</div>
+                                    <div class="h4 fw-bold mb-0">₡ @totalReventado.ToString("N0")</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-	<div class="row justify-content-center">
-		<div class="col-10">
-			<div class="table-responsive">
-				<table class="table table-striped">
-					<thead>
-						<tr>
-							<th>Papelito</th>
-							<th>Sorteo</th>
-							<th>Fecha de creación</th>
-							<th>Fecha de sorteo</th>
-							<th>Monto</th>
-							<th>Reventado</th>
-							<th>Total</th>
-							<th>Opciones</th>
-						</tr>
-					</thead>
-					<tbody>	
-						@foreach(var item in Model){
-							<tr>
-								<td>@item.Id</td>		
-								<td>@item.Lottery</td>
-								<td>@item.CreationDate.ToString("g")</td>
-								<td>@item.DrawDate.ToString("g")</td>
-								<td>₡ @item.Numbers.Sum(n=>n.Amount)</td>
-								<td>₡ @item.Numbers.Sum(n=>n.Busted)</td>
-								<td>₡ @{
-										total = item.Numbers.Sum(n => n.Amount) + item.Numbers.Sum(n => n.Busted); totales += total;
-									}@total</td>
-								<td>
-									<div class="btn-group mx-auto col-2" role="group">
-										<!-- Details -->
-										<button type="button" class="btn" onclick="location.href='@Url.Action("Print", "Lottery", new{id=item.Id})'">
-											<span class="material-icons icon-success">visibility</span>
-										</button>
-										@if(item.DrawDate > DateTime.Now)
-										{
-											<!-- Delete -->
-											<button type="button" class="btn btn-delete" data-id="@item.Id">
-												<span class="material-icons icon-danger">delete</span>
-											</button>
-										}
-									</div>
-								</td>
-							</tr>
-							<tr id="delete-partial-@item.Id" style="display: none;">
-								<td colspan="7">
-									@{searchModel.Id = item.Id;}
-									<partial name="_Delete" model="searchModel" />
-								</td>
-							</tr>
-						}
-					</tbody>
-					<tfoot>
-						<tr>
-							<td colspan="4"></td>
-							<td>TOTAL</td>
-							<td><strong>₡ @totales</strong></td>
-							<td></td>
-						</tr>
-					</tfoot>
-				</table>
-			</div>
-		</div>
-	</div>
+                    <div class="card shadow-sm border-0 mt-3">
+                        <div class="card-body text-center">
+                            <div class="text-muted small">Total general vendido</div>
+                            <div class="h3 fw-bold mb-0">₡ @( (totalMonto + totalReventado).ToString("N0") )</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="papelitos-pane" role="tabpanel" aria-labelledby="papelitos-tab" tabindex="0">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Papelito</th>
+                                    <th>Sorteo</th>
+                                    <th>Fecha de creación</th>
+                                    <th>Fecha de sorteo</th>
+                                    <th class="text-end">Monto</th>
+                                    <th class="text-end">Reventado</th>
+                                    <th class="text-end">Total</th>
+                                    <th class="text-center">Opciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model)
+                                {
+                                    var monto = item.Numbers.Sum(n => n.Amount);
+                                    var reventado = item.Numbers.Sum(n => n.Busted);
+                                    total = monto + reventado;
+                                    totales += total;
+
+                                    <tr>
+                                        <td class="fw-semibold">#@item.Id</td>
+                                        <td><span class="badge bg-secondary">@item.Lottery</span></td>
+                                        <td>@item.CreationDate.ToString("g")</td>
+                                        <td>@item.DrawDate.ToString("g")</td>
+                                        <td class="text-end">₡ @monto.ToString("N0")</td>
+                                        <td class="text-end">₡ @reventado.ToString("N0")</td>
+                                        <td class="text-end fw-bold">₡ @total.ToString("N0")</td>
+                                        <td class="text-center">
+                                            <div class="btn-group" role="group">
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-primary"
+                                                        title="Ver"
+                                                        onclick="location.href='@Url.Action("Print", "Lottery", new { id = item.Id })'">
+                                                    <span class="material-icons" style="font-size:20px;">visibility</span>
+                                                </button>
+
+                                                @if (item.DrawDate > DateTime.Now)
+                                                {
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-danger btn-delete"
+                                                            data-id="@item.Id"
+                                                            title="Eliminar">
+                                                        <span class="material-icons" style="font-size:20px;">delete</span>
+                                                    </button>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <tr id="delete-partial-@item.Id" style="display:none;">
+                                        <td colspan="8" class="bg-light">
+                                            @{
+                                                searchModel.Id = item.Id;
+                                            }
+                                            <partial name="_Delete" model="searchModel" />
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="6" class="text-end fw-bold">TOTAL</td>
+                                    <td class="text-end fw-bold">₡ @totales.ToString("N0")</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="numeros-pane" role="tabpanel" aria-labelledby="numeros-tab" tabindex="0">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="row g-3 justify-content-center">
+                        @for (var i = 0; i < 5; i++)
+                        {
+                            <div class="col-12 col-md-6 col-xl">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered align-middle text-center mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Monto</th>
+                                                <th>Rtado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @for (var j = 0; j < 20; j++)
+                                            {
+                                                value = 20 * i + j;
+                                                var currentNumber = value.ToString("D2");
+                                                var isWinner = currentNumber == numberAward;
+                                                var rowClass = isWinner ? "table-warning fw-bold" : "";
+                                                var sumAmount = Model.Sum(m => m.Numbers.Where(n => n.Value == currentNumber).Sum(n => n.Amount));
+                                                var sumBusted = Model.Sum(m => m.Numbers.Where(n => n.Value == currentNumber).Sum(n => n.Busted));
+
+                                                <tr class="@rowClass">
+                                                    <td>@currentNumber</td>
+                                                    <td>@(sumAmount > 0 ? $"₡ {sumAmount:N0}" : "-")</td>
+                                                    <td>@(sumBusted > 0 ? $"₡ {sumBusted:N0}" : "-")</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-light border text-center shadow-sm">
+        No hay ventas para mostrar.
+    </div>
 }
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
     <script type="text/javascript">
-		$(function () {
-			$(".btn-delete").click(function () {
-				var id = $(this).data("id");
-				$("#delete-partial-" + id).show();
-			});
-		});
+        $(function() {
+            $(".btn-delete").click(function() {
+                var id = $(this).data("id");
+                $("#delete-partial-" + id).toggle();
+            });
+        });
     </script>
 }
