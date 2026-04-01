@@ -90,10 +90,15 @@ namespace LaLlamaDelBosque.Controllers
 			// Actualizar datos del papelito (cliente, loterías, fecha)
 			UpdatePaper(paper, string.Join(", ", selectedList), clientId, date);
 
-			// Preparar datos para la vista
-			ViewData["Names"] = _lotteries;
+            // Preparar datos para la vista
+            var lotteries = (paper.Lottery ?? "")
+				.Split(',', StringSplitOptions.RemoveEmptyEntries)
+				.Select(x => x.Trim()).ToList();
+
+            ViewData["Names"] = _lotteries;
 			ViewData["Clients"] = _credits.Select(c => c.Client).ToList();
-			ViewData["busted"] = _lotteries.FirstOrDefault(l => l.Name == paper.Lottery)?.Busted ?? false;
+            ViewData["busted"] = _lotteries
+                .Any(l => lotteries.Contains(l.Name, StringComparer.OrdinalIgnoreCase) && (l.Busted ?? false));
 
 			// Guardar temporalmente el estado del papelito
 			TempData.Put("Paper", paper);

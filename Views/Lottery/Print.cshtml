@@ -9,80 +9,102 @@
 }
 
 <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>@ViewData["Title"] - La Llama Del Bosque</title>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - La Llama Del Bosque</title>
            
-        <link rel="stylesheet" href="~/LaLlamaDelBosque.styles.css" asp-append-version="true" />
-        <link rel="stylesheet" href="~/css/print.css" asp-append-version="true" />
-    </head>
-    <body>
-        <div id="numbersTable" class="container">
-            <div class="row justify-content-md-center">
-                <div class="col-lg-3">
+    <link rel="stylesheet" href="~/LaLlamaDelBosque.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/print.css" asp-append-version="true" />
+</head>
+<body>
+    <div id="numbersTable" class="container">
+        <div class="row justify-content-md-center">
 
-                    <h1>TIEMPOS</h1>
-                    <h2>La Llama del Bosque</h2>
-                    <div>
-                        <p>
-                            <strong>FECHA: </strong> @Model.CreationDate.ToShortDateString()
-                            <strong>HORA: </strong> @Model.CreationDate.ToShortTimeString()
-                        </p>
-                        <p><strong>SORTEO: </strong> @Model.Lottery</p>
-                        <p>
-                            <strong>FECHA: </strong> @Model.DrawDate.ToShortDateString()
-                            <strong>HORA: </strong> @Model.DrawDate.ToShortTimeString()
-                        </p>
-                        <p class="text-truncate">
-                            @if (ViewData["Client"] != null)
+            <div class="col-lg-3">
+
+                <h1>TIEMPOS</h1>
+                <h2>La Llama del Bosque</h2>
+                <div>
+                    <p>
+                        <strong>FECHA: </strong> @Model.CreationDate.ToShortDateString()
+                        <strong>HORA: </strong> @Model.CreationDate.ToShortTimeString()
+                    </p>
+                    <p><strong>SORTEO: </strong> @Model.Lottery</p>
+                    <p>
+                        <strong>FECHA: </strong> @Model.DrawDate.ToShortDateString()
+                        <strong>HORA: </strong> @Model.DrawDate.ToShortTimeString()
+                    </p>
+                    <p class="text-truncate">
+                        @if (ViewData["Client"] != null)
+                        {
+                            <strong>CLIENTE:</strong> 
+                            @ViewData["Client"]
+                        }
+                        <strong>PAPELITO:</strong> @ViewData["Ids"]
+                    </p>
+                </div>
+
+                <div class="container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 40%;">#</th>
+                                <th>Monto</th>
+                                <th>Rtado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Numbers.GroupBy(n => new { n.Amount, n.Busted }).OrderBy(n => n.Key.Amount).ThenBy(y => y.Key.Busted).Select(g => new { amount = g.Key.Amount, busted = g.Key.Busted, values = g.Select(y => y.Value) }))
                             {
-                                <strong>CLIENTE:</strong> @ViewData["Client"]
-                            }
-                            <strong>PAPELITO:</strong> @ViewData["Ids"]
-                        </p>
-                    </div>
-
-                    <div class="container">
-                        <table>
-                            <thead>
+                                string values = string.Join(" x ", item.values);
                                 <tr>
-                                    <th style="width: 40%;">#</th>
-                                    <th>Monto</th>
-                                    <th>Rtado</th>
+                                    <td>@values</td>
+                                    <td>₡‎ @item.amount</td>
+                                    <td>₡‎ @item.busted</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @foreach(var item in Model.Numbers.GroupBy(n => new { n.Amount, n.Busted }).OrderBy(n => n.Key.Amount).ThenBy(y => y.Key.Busted).Select(g => new { amount = g.Key.Amount, busted = g.Key.Busted, values = g.Select(y => y.Value) }))
-                                {
-                                    string values = string.Join(" x ", item.values);
-                                    <tr>
-                                        <td>@values</td>
-                                        <td>₡‎ @item.amount</td>
-                                        <td>₡‎ @item.busted</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                        <div class="total-section">
-                            <h3>TOTAL ₡ @total.ToString("N", CultureInfo.InvariantCulture)</h3>
-                        </div>
+                            }
+                        </tbody>
+                    </table>
+                    <div class="total-section">
+                        <h3>TOTAL ₡ @total.ToString("N", CultureInfo.InvariantCulture)</h3>
                     </div>
+                </div>
 
-                    <p>
-                        <strong>
-                        ◉ Pagamos al 85. <br />
-                        ◉ Sin tiquete no se paga. <br />
-                        ◉ Revise su tiquete. <br />
-                        </strong>
-                        (montos, números, hora, fecha y sorteo)
-                    </p>
+                <div class="rules">
+                    ◉ Pagamos al <strong>85</strong>. <br />
 
-                    <p>
-                        Gracias por su compra.
-                        <strong>¡Mucha Suerte!</strong>
-                    </p>
+                    @if (Model.Lottery?.ToLower().Contains("nica") == true)
+                    {
+                        <div class="mb-1">
+                            ◉ Reventado Nica:
+                            <ul class="rules-sub">
+                                <li><strong>3X</strong> → x100</li>
+                                <li><strong>5X</strong> → x150</li>
+                                <li><strong>7X</strong> → x200</li>
+                            </ul>
+                        </div>
+                    }
+
+                    @if (Model.Lottery?.ToLower().Contains("tica") == true)
+                    {
+                        <text>◉ Reventado Tica: <strong>x200</strong>. <br /></text>
+                    }
+
+                    ◉ <strong>Sin tiquete</strong> no se paga. <br />
+                    ◉ Tiene <strong>7 días</strong> desde el sorteo para <strong>retirar su premio</strong>. <br />
+                    ◉ <strong>No se hacen cambios</strong> una vez iniciado el sorteo. <br />
+                    ◉ Revise su tiquete, <strong>los datos</strong> registrados <strong>son responsabilidad del comprador</strong>. <br />
+                    
+                    <div class="rules-note">
+                        (Verifique montos, números, hora, fecha y sorteo)
+                    </div>
+                </div>
+
+                <div class="thanks">
+                    Gracias por su compra. <strong>¡Mucha suerte!</strong>
+                </div>
 
                 </div>
             </div>

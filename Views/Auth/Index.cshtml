@@ -37,60 +37,107 @@
 <style>
     .login-dark {
         min-height: 100vh;
-        background: linear-gradient( rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5) ), url("https://static.vecteezy.com/system/resources/previews/023/434/296/large_2x/day-of-the-dead-dia-de-los-muertos-illustration-ai-generative-free-photo.jpg");
-        background-position: center center; /* centra mejor */
-        background-size: 100% auto;
-        background-repeat: no-repeat; /* no se repite */
-        background-attachment: fixed; /* efecto parallax */
-
-        position: relative;
+        padding: 24px;
+        background: linear-gradient(rgba(16, 32, 46, 0.45), rgba(10, 18, 28, 0.72)), url("https://images.unsplash.com/photo-1473186578172-c141e6798cf4?q=80&w=1973&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
+        background-position: center;
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
         display: flex;
         align-items: center;
         justify-content: center;
     }
 
+        .login-dark form {
+            width: 100%;
+            max-width: 420px;
+            padding: 36px 32px;
+            border-radius: 18px;
+            background: rgba(21, 38, 52, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
 
-    .login-dark form {
-        max-width: 480px;
-        width: 90%;
-        background-color: rgba(30, 40, 51, 0.7);
-        padding: 30px;
-        border-radius: 4px;
-        transform: translate(-50%, -50%);
-        position: absolute;
-        top: 35%;
-        left: 50%;
-        box-shadow: 3px 3px 4px rgba(0,0,0,0.2);
-    }
+        .login-dark .illustration {
+            text-align: center;
+            font-size: 64px;
+            line-height: 1;
+            margin-bottom: 24px;
+            color: #8fbfd1;
+        }
 
-    .login-dark .illustration {
-        text-align: center;
-        font-size: 100px;
-        color: #2980ef;
-    }
+        .login-dark .form-group {
+            margin-bottom: 16px;
+        }
 
-    .form-control {
-        background: none;
-        border: none;
-        border-bottom: 1px solid #434a52;
-        box-shadow: none;
-        outline: none;
-        color: #6f7a85;
-    }
+        .login-dark .form-control {
+            height: 48px;
+            border-radius: 12px;
+            border: 1px solid rgba(143, 191, 209, 0.35);
+            background: rgba(255, 255, 255, 0.08);
+            color: #f4f7fa;
+            box-shadow: none;
+            transition: all 0.2s ease;
+        }
 
-    .login-dark form .btn-primary {
-        background: #214a80;
-        border: none;
-        border-radius: 4px;
-        padding: 11px;
-        box-shadow: none;
-        margin-top: 26px;
-        text-shadow: none;
-        outline: none;
-    }
+            .login-dark .form-control::placeholder {
+                color: rgba(244, 247, 250, 0.65);
+            }
 
-    .login-dark form .btn-primary:hover, .login-dark form .btn-primary:active {
-        background: #214a80;
-        outline: none;
+            .login-dark .form-control:focus {
+                border-color: #8fbfd1;
+                background: rgba(255, 255, 255, 0.12);
+                box-shadow: 0 0 0 0.2rem rgba(143, 191, 209, 0.18);
+                color: #fff;
+            }
+
+        .login-dark form .btn-primary {
+            height: 48px;
+            border: none;
+            border-radius: 12px;
+            margin-top: 8px;
+            background: linear-gradient(135deg, #3e6f82, #5fa6b8);
+            color: #fff;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            box-shadow: 0 10px 20px rgba(62, 111, 130, 0.28);
+            transition: all 0.2s ease;
+        }
+
+            .login-dark form .btn-primary:hover,
+            .login-dark form .btn-primary:focus {
+                background: linear-gradient(135deg, #355f70, #4f95a6);
+                transform: translateY(-1px);
+                box-shadow: 0 14px 24px rgba(62, 111, 130, 0.34);
+            }
+
+            .login-dark form .btn-primary:active {
+                transform: translateY(0);
+                box-shadow: 0 8px 16px rgba(62, 111, 130, 0.25);
+            }
+
+        .login-dark .alert {
+            margin-top: 16px;
+            border-radius: 12px;
+            border: none;
+        }
+
+    @@media (max-width: 576px) {
+        .login-dark {
+            padding: 16px;
+            background-attachment: scroll;
+        }
+
+            .login-dark form {
+                padding: 28px 20px;
+                border-radius: 16px;
+            }
+
+            .login-dark .illustration {
+                font-size: 52px;
+                margin-bottom: 20px;
+            }
     }
 </style>

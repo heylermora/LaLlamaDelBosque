@@ -7,14 +7,6 @@ namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class NicaraguaLotoDiariaScraper: BaseScraper
 	{
-		private static readonly Dictionary<string, double> NicaBustedMultipliers = new(StringComparer.OrdinalIgnoreCase)
-		{
-			{ "JG", 0 },
-			{ "3X", 100 },
-			{ "5X", 150 },
-			{ "7X", 200 }
-		};
-
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
 		private static readonly Regex SorteoHour = new(@"SORTEO\s+(\d{1,2})\s*([AP]M)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		private static readonly Regex MultiXRegex =	new(@"\(Multi\s*X\)\s*=\s*([A-Za-z0-9]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -91,8 +83,8 @@ namespace LaLlamaDelBosque.Services.Scrapers
 					if(mt.Success)
 					{
 						multiX = mt.Groups[1].Value.ToUpperInvariant(); // "JG", "2X", "3X", "XX", etc.
-						isBusted = Constants.BustedList.Contains(multiX) || NicaBustedMultipliers.ContainsKey(multiX);
-						if(NicaBustedMultipliers.TryGetValue(multiX, out var mappedTimesBusted))
+						isBusted = Constants.BustedList.Contains(multiX) || Constants.NicaBustedMultipliers.ContainsKey(multiX);
+						if(Constants.NicaBustedMultipliers.TryGetValue(multiX, out var mappedTimesBusted))
 							timesBusted = mappedTimesBusted;
 					}
 				}

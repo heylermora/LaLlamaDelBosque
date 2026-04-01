@@ -10,6 +10,14 @@
 			{ 4, "Límite excedido" }
 		};
 
-		public static readonly List<string> BustedList = new() { "R", "JG", "3X", "5X", "7X" };
-	}
+		public static readonly List<string> BustedList = new() { "R", "3X", "5X", "7X" };
+
+        public static readonly Dictionary<string, double> NicaBustedMultipliers = new(StringComparer.OrdinalIgnoreCase)
+		{
+			{ "R", 200 },
+            { "3X", 100 },
+            { "5X", 150 },
+            { "7X", 200 },
+        };
+    }
 }

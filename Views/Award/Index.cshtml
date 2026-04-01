@@ -1,8 +1,7 @@
-﻿<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+﻿<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 <link rel="stylesheet" href="~/LaLlamaDelBosque.styles.css" asp-append-version="true" />
-
 
 @model IEnumerable<Award>
 
@@ -13,258 +12,323 @@
     ViewData["Title"] = "Premios";
 }
 
-<h1 class="display-4">@ViewData["Title"]</h1>
-<div class="alert alert-light border rounded-3 shadow-sm py-2 px-3" role="alert">
-    <div class="d-flex flex-wrap align-items-center gap-2">
-        <h5 class="text-uppercase mb-0 me-2">FUENTES OFICIALES:</h5>
-        <div class="d-flex flex-wrap gap-2">
-            <a href="https://www.jpsloteria.com/loteria-resultados" target="_blank"
-               class="btn btn-outline-dark btn-sm py-1 rounded-pill px-2 text-uppercase text-nowrap"
-               style="width: auto; text-align: center;">
-                Tica
-            </a>
-            <a href="https://nicatiempos.com/" target="_blank"
-               class="btn btn-outline-dark btn-sm py-1 rounded-pill px-2 text-uppercase text-nowrap"
-               style="width: auto; text-align: center;">
-                Nica
-            </a>
-            <a href="https://www.yelu.hn/lottery/results/la-diaria" target="_blank"
-               class="btn btn-outline-dark btn-sm py-1 rounded-pill px-2 text-uppercase text-nowrap"
-               style="width: auto; text-align: center;">
-                Hondureña
-            </a>
-            <a href="https://www.yelu.do/leidsa/results/la-primera" target="_blank"
-               class="btn btn-outline-dark btn-sm py-1 rounded-pill px-2 text-uppercase text-nowrap"
-               style="width: auto; text-align: center;">
-                La Primera
-            </a>
-        </div>
-    </div>
-</div>
+<div class="container py-4 py-lg-5">
 
-<div class="btn-group mx-auto" role="group">
-    <!-- Update -->
-    <button type="button" class="btn"
-            data-bs-toggle="tooltip"
-            data-bs-placement="top"
-            data-tooltip-class="custom-tooltip"
-            title="Actualizar tabla"
-            onclick="location.href='@Url.Action("Create", "Award")'">
-        <span class="material-icons icon icon-primary">update</span>
-    </button>
-    <button type="button" class="btn"
-            data-bs-toggle="modal"
-            data-bs-target="#deleteAllModal"
-            title="Eliminar todas las tablas">
-        <span class="material-icons icon icon-danger">delete</span>
-    </button>
-</div>
+    <div class="row align-items-center g-3 mb-4">
+        <div class="col-12 col-lg">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-4 bg-primary bg-opacity-10 d-flex align-items-center justify-content-center shadow-sm"
+                     style="width: 56px; height: 56px;">
+                    <span class="material-icons text-primary">emoji_events</span>
+                </div>
 
-<div class="modal fade" id="deleteAllModal" tabindex="-1" aria-labelledby="deleteModalAllLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Premios</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div>
+                    <h1 class="h3 fw-bold mb-1">@ViewData["Title"]</h1>
+                    <p class="text-muted mb-0">Consulta y administra los premios registrados por fecha.</p>
+                </div>
             </div>
-            <div class="modal-body">
-                <partial name="_DeleteAll"></partial>
+        </div>
+
+        <div class="col-12 col-lg-auto">
+            <!-- Toolbar -->
+            <div class="btn-toolbar" role="toolbar">
+                <div class="btn-group shadow-sm" role="group">
+
+                    <button type="button"
+                            class="btn btn-primary d-flex align-items-center gap-2 px-3"
+                            onclick="location.href='@Url.Action("Create", "Award")'">
+                        <span class="material-icons fs-5">sync</span>
+                        <span class="d-none d-sm-inline">Actualizar</span>
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-outline-danger d-flex align-items-center gap-2 px-3"
+                            data-bs-toggle="modal"
+                            data-bs-target="#deleteAllModal">
+                        <span class="material-icons fs-5">delete</span>
+                        <span class="d-none d-sm-inline">Eliminar</span>
+                    </button>
+
+                </div>
             </div>
         </div>
     </div>
-</div>
-<div class="container">
-    <div class="row justify-content-md-center">
-        <div class="col-xl-10">
-            <div class="accordion" id="accordionFlushExample">
-                @foreach (var item in Model)
-                {
-                    <div class="accordion-item p-1 mb-2" id="elementId">
-                        <h2 class="accordion-header" id="flush-headingOne">
-                            <button class="accordion-button collapsed p-2" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-@item.Id" aria-expanded="false" aria-controls="flush-collapse-@item.Id" on>
-                                <div class="d-flex align-items-start">
-                                    <span class="material-icons star">
-                                        workspace_premium
-                                    </span>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-3 p-md-4">
+            <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+                <div>
+                    <div class="small text-uppercase fw-semibold text-secondary mb-1">Fuentes oficiales</div>
+                    <p class="text-muted mb-0 small">Consulta resultados desde los sitios oficiales o de referencia.</p>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="https://www.jpsloteria.com/loteria-resultados"
+                           target="_blank"
+                           class="btn btn-sm btn-outline-dark rounded-pill px-3">
+                        Tica
+                    </a>
+                    <a href="https://nicatiempos.com/"
+                           target="_blank"
+                           class="btn btn-sm btn-outline-dark rounded-pill px-3">
+                        Nica
+                    </a>
+                    <a href="https://www.yelu.hn/lottery/results/la-diaria"
+                           target="_blank"
+                           class="btn btn-sm btn-outline-dark rounded-pill px-3">
+                        Hondureña
+                    </a>
+                    <a href="https://www.yelu.do/leidsa/results/la-primera"
+                           target="_blank"
+                           class="btn btn-sm btn-outline-dark rounded-pill px-3">
+                        La Primera
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="deleteAllModal" tabindex="-1" aria-labelledby="deleteModalAllLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-semibold" id="deleteModalAllLabel">Eliminar registros</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-3">
+                    <partial name="_DeleteAll"></partial>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion" id="awardsAccordion">
+            @foreach (var item in Model)
+            {
+                var collapseId = $"flush-collapse-{item.Id}";
+                var headingId = $"flush-heading-{item.Id}";
+                var cardId = $"award-card-{item.Id}";
+
+                <div class="accordion-item border-0 rounded-4 shadow-sm mb-3 overflow-hidden" id="@cardId">
+                    <h2 class="accordion-header" id="@headingId">
+                        <button class="accordion-button collapsed bg-white px-3 px-md-4 py-3 shadow-none"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#@collapseId"
+                                aria-expanded="false"
+                                aria-controls="@collapseId">
+                            <div class="d-flex align-items-center gap-3 w-100">
+                                <div class="rounded-circle bg-warning bg-opacity-25 d-flex align-items-center justify-content-center flex-shrink-0"
+                                     style="width: 48px; height: 48px;">
+                                    <span class="material-icons text-warning">workspace_premium</span>
                                 </div>
-                                <div class="d-flex align-items-start flex-column">
-                                    <div class="p-1">
-                                        <b style="font-size: 24px">@item.Date.ToLongDateString()</b>
+
+                                <div class="flex-grow-1 text-start">
+                                    <div class="fw-bold text-dark">@item.Date.ToLongDateString()</div>
+                                    <div class="small text-muted">@item.AwardLines.Count() premios registrados</div>
+                                </div>
+                            </div>
+                        </button>
+                    </h2>
+
+                    <div id="@collapseId"
+                         class="accordion-collapse collapse"
+                         aria-labelledby="@headingId"
+                         data-bs-parent="#awardsAccordion">
+                        <div class="accordion-body bg-body-tertiary p-3 p-md-4">
+
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
+                                        onclick="copyToClipboard('@item.Id', '@cardId')">
+                                    <span class="material-icons" style="font-size:18px;">content_copy</span>
+                                    Copiar
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1"
+                                        onclick="showPartial('addPartial-@item.Id')">
+                                    <span class="material-icons" style="font-size:18px;">add_circle</span>
+                                    Agregar
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1"
+                                        onclick="showPartial('deletePartial-@item.Id')">
+                                    <span class="material-icons" style="font-size:18px;">delete</span>
+                                    Eliminar
+                                </button>
+                            </div>
+
+                            <div id="deletePartial-@item.Id" class="mb-3" style="display:none;">
+                                <div class="card border-0 shadow-sm rounded-4">
+                                    <div class="card-body">
+                                        <partial name="_Delete" model="item"></partial>
+                                        </div>
                                     </div>
                                 </div>
-                            </button>
-                        </h2>
-                        <div id="flush-collapse-@item.Id" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
-                            <div class="accordion-body table-responsive">
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th colspan="2">
-                                                <!-- Copy -->
-                                                <button type="button" class="btn" onclick="copyToClipboard('@item.Id')">
-                                                    <span class="material-icons icon icon-success">content_copy</span>
-                                                </button>
-                                                <!-- Add -->
-                                                <button type="button" class="btn"
-                                                    onclick="showPartial('addPartial-@item.Id')">
-                                                    <span class="material-icons icon icon-primary">add_circle</span>
-                                                </button>
-                                                <!-- Delete -->
-                                                <button type="button" class="btn"
-                                                    onclick="showPartial('deletePartial-@item.Id')">
-                                                    <span class="material-icons icon icon-danger">delete</span>
-                                                </button>
-                                            </th>
-                                        </tr>
-                                        <tr id="deletePartial-@item.Id">
-                                            <th>
-                                                <partial name="_Delete" model="item"></partial>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                </table>
-                                <div class="modal fade" id="copySuccessModal-@item.Id" tabindex="-1" aria-labelledby="copySuccessModalLabel" aria-hidden="true">
-                                    <div class="modal-dialog modal-sm">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="copySuccessModalLabel">¡Copiado!</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
+                                <div class="modal fade" id="copySuccessModal-@item.Id" tabindex="-1" aria-labelledby="copySuccessModalLabel-@item.Id" aria-hidden="true">
+                                    <div class="modal-dialog modal-sm modal-dialog-centered">
+                                        <div class="modal-content border-0 shadow rounded-4">
+                                            <div class="modal-body text-center py-4">
+                                                <div class="mb-2">
+                                                    <span class="material-icons text-success" style="font-size: 32px;">check_circle</span>
+                                                </div>
+                                                <h6 class="mb-1 fw-semibold" id="copySuccessModalLabel-@item.Id">¡Copiado!</h6>
+                                                <p class="text-muted small mb-0">La imagen se copió al portapapeles.</p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <table class="table">
-                                    <thead>  
-                                        <tr>
-                                            <th>Id</th>
-                                            <th>Descripción</th>
-                                            <th></th>
-                                            <th>Número</th>
-                                            <th>Monto</th>
-                                            <th>Reventado</th>
-                                            <th># Monto</th>
-                                            <th># Reventado</th>
-                                            <th>Premio</th>
-                                            <th></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var line in item.AwardLines)
-                                        {
-                                            <tr id="editPartial-@item.Id-@line.Order">
-                                                <td colspan="9">
-                                                    <partial name="_Edit" model="@new AwardConnectionModel() { AwardId = item.Id, AwardLine = line }" />
-                                                </td>
-                                            </tr>
+
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle bg-white rounded-4 overflow-hidden shadow-sm mb-0">
+                                        <thead class="table-light">
                                             <tr>
-                                                <td>@line.Order</td>
-                                                <td>@line.Description</td>
-                                                <td>@if(line.IsBusted)
-                                                    {
-                                                        <div class="circle">R</div>
-                                                    }
-                                                </td>
-                                                <td>@line.Number</td>
-                                                <td>₡ @line.Amount</td>
-                                                <td>₡ @line.Busted</td>
-                                                <td>@line.TimesAmount</td>
-                                                <td>@line.TimesBusted</td>
-                                                <td class="table-active">₡ @line.Award</td>
-                                                <td style="text-align:center">
-                                                    <div class="btn-group mx-auto" role="group">
-                                                        <!-- Edit -->
-                                                        <button type="button" class="btn" onclick="showPartial('editPartial-@item.Id-@line.Order')">
-                                                            <span class="material-icons icon icon-dark">mode_edit</span>
-                                                        </button>
-                                                    </div>
-                                                </td>
+                                                <th>ID</th>
+                                                <th>Descripción</th>
+                                                <th class="text-center">R</th>
+                                                <th>Número</th>
+                                                <th>Monto</th>
+                                                <th>Reventado</th>
+                                                <th># Monto</th>
+                                                <th># Reventado</th>
+                                                <th>Premio</th>
+                                                <th class="text-center">Acción</th>
                                             </tr>
-                                        }
-                                        <tr id="addPartial-@item.Id">
-                                            <td colspan="9">
-                                                @{
-                                                    var maxOrder = item.AwardLines.Any() ? item.AwardLines.Max(al => al.Order) : 0;
-                                                    var awardConnectionModel = new AwardConnectionModel() { AwardId = item.Id, AwardLine = new AwardLine() { Order = maxOrder + 1 } };
-                                                }
-                                                <partial name="_Add" model="@awardConnectionModel">
-                                                </partial>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <td colspan="6"></td>
-                                            <td>Total</td>
-                                            <td>₡ @item.AwardLines.Sum(x => x.Award)</td>
-                                            <td></td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var line in item.AwardLines)
+                                            {
+                                                <tr id="editPartial-@item.Id-@line.Order" style="display:none;">
+                                                    <td colspan="10" class="bg-light">
+                                                        <partial name="_Edit" model="@new AwardConnectionModel() { AwardId = item.Id, AwardLine = line }" />
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <td class="fw-semibold">@line.Order</td>
+                                                    <td>@line.Description</td>
+                                                    <td class="text-center">
+                                                        @if (line.IsBusted)
+                                                        {
+                                                            <span class="badge rounded-pill text-bg-danger px-2">R</span>
+                                                        }
+                                                    </td>
+                                                    <td>@line.Number</td>
+                                                    <td>₡ @line.Amount</td>
+                                                    <td>₡ @line.Busted</td>
+                                                    <td>@line.TimesAmount</td>
+                                                    <td>@line.TimesBusted</td>
+                                                    <td>
+                                                        <span class="badge text-bg-success px-3 py-2 rounded-pill">
+                                                            ₡ @line.Award
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-outline-dark d-inline-flex align-items-center justify-content-center"
+                                                                onclick="showPartial('editPartial-@item.Id-@line.Order')">
+                                                            <span class="material-icons" style="font-size:18px;">edit</span>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            }
+
+                                            <tr id="addPartial-@item.Id" style="display:none;">
+                                                <td colspan="10" class="bg-light">
+                                                    @{
+                                                        var maxOrder = item.AwardLines.Any() ? item.AwardLines.Max(al => al.Order) : 0;
+                                                        var awardConnectionModel = new AwardConnectionModel()
+                                                        {
+                                                            AwardId = item.Id,
+                                                            AwardLine = new AwardLine() { Order = maxOrder + 1 }
+                                                        };
+                                                    }
+                                                    <partial name="_Add" model="@awardConnectionModel"></partial>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                            <tfoot class="table-light">
+                                                <tr>
+                                                    <td colspan="7" class="text-end fw-bold">Total</td>
+                                                    <td colspan="2" class="fw-bold text-success">₡ @item.AwardLines.Sum(x => x.Award)</td>
+                                                    <td></td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+
+                                </div>
                             </div>
                         </div>
-                    </div>
-                }
+                    }
+                </div>
             </div>
-        </div>
-    </div>
-</div>
 
-@section scripts{
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <script type="text/javascript">
-        function scrollToItem(id) {
-            const element = document.getElementById('flush-collapse-'.concat(id));
-            element.scrollIntoView();
-        }
+            @section scripts {
+                @{
+                    await Html.RenderPartialAsync("_ValidationScriptsPartial");
+                }
 
-        function copyToClipboard(id) {
-            var table = document.getElementById("elementId");
-            html2canvas(table).then(function (canvas) {
-                canvas.toBlob(function (blob) {
+                <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+                <script type="text/javascript">
+                    function scrollToItem(id) {
+                    const element = document.getElementById('flush-collapse-' + id);
+                    if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                    }
+
+                    function copyToClipboard(id, elementId) {
+                    var table = document.getElementById(elementId);
+                    if (!table) return;
+
+                    html2canvas(table).then(function(canvas) {
+                    canvas.toBlob(function(blob) {
                     var imageBlob = new Blob([blob], { type: "image/png" });
 
-                    // Copiar imagen al portapapeles
                     if (navigator.clipboard && navigator.clipboard.write) {
-                        navigator.clipboard.write([
-                            new ClipboardItem({
-                                "image/png": imageBlob
-                            })
-                        ]).then(function () {
-                            console.log('Image copied to clipboard successfully.');
-                            $('#copySuccessModal-'.concat(id)).modal('show');
-                            setTimeout(function () {
-                                $('#copySuccessModal-'.concat(id)).modal('hide');
-                            }, 3000);
-                        }).catch(function (error) {
-                            console.error('Error al copiar la imagen al portapapeles:', error);
-                        });
+                    navigator.clipboard.write([
+                    new ClipboardItem({
+                    "image/png": imageBlob
+                    })
+                    ]).then(function() {
+                    var modal = new bootstrap.Modal(document.getElementById('copySuccessModal-' + id));
+                    modal.show();
+
+                    setTimeout(function() {
+                    modal.hide();
+                    }, 1800);
+                    }).catch(function(error) {
+                    console.error('Error al copiar la imagen al portapapeles:', error);
+                    });
                     } else {
-                        console.warn('La API Clipboard no está soportada en este navegador.');
+                    console.warn('La API Clipboard no está soportada en este navegador.');
                     }
-                });
-            });
-        }
+                    });
+                    });
+                    }
 
-        function showPartial(id) {
-            var partialDivs = document.querySelectorAll('[id*="Partial"]');
-            partialDivs.forEach(function (partialDiv) {
-                if (partialDiv.id !== id) {
+                    function showPartial(id) {
+                    var partialDivs = document.querySelectorAll('[id*="Partial"]');
+
+                    partialDivs.forEach(function(partialDiv) {
+                    if (partialDiv.id !== id) {
                     partialDiv.style.display = "none";
-                }
-            });
+                    }
+                    });
 
-            var element = document.getElementById(id);
+                    var element = document.getElementById(id);
+                    if (!element) return;
 
-            if (element.style.display === "none") {
-                if (element.tagName === "DIV") {
-                    element.style.display = "block";
-                } else if (element.tagName === "TR") {
-                    element.style.display = "table-row";
-                }
-            } else {
-                element.style.display = "none";
+                    if (element.style.display === "none" || element.style.display === "") {
+                    element.style.display = element.tagName === "TR" ? "table-row" : "block";
+                    } else {
+                    element.style.display = "none";
+                    }
+                    }
+                </script>
             }
-        }
-    </script>
-}
