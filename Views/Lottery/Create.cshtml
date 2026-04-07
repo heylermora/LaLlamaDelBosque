@@ -9,81 +9,88 @@
     var sum = subsum * cant;
 }
 
-<h2 class="fw-bold mb-4">@ViewData["Title"]</h2>
-
-<hr />
-
-<form asp-action="Copy">
-    <div class="form-group col-md-4">
-        <div class="input-group mb-3">
-            <input type="text" class="form-control col-md-2" placeholder="Papelito" name="id">
-            <input type="submit" class="btn btn-success" value="Copiar">
-        </div>
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">@ViewData["Title"]</h2>
+        <p class="text-muted mb-0">Configura sorteo, cliente y números para generar el papelito de venta.</p>
     </div>
-</form>
+    <form asp-action="Copy" class="w-100 w-lg-auto">
+        <div class="input-group shadow-sm">
+            <span class="input-group-text bg-white border-end-0">
+                <span class="material-icons" style="font-size:18px;">content_copy</span>
+            </span>
+            <input type="text" class="form-control border-start-0" placeholder="Copiar desde papelito #" name="id">
+            <input type="submit" class="btn btn-success px-3" value="Copiar">
+        </div>
+    </form>
+</div>
 
 <form asp-action="Save">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-    <div class="row g-2">
-        <div class="form-group col-md-2">
-            <label asp-for="Id" class="control-label">Papelito</label>
-            <input asp-for="Id" class="form-control" disabled readonly />
-        </div>
-        <div class="form-group col-md-2">
-            <label asp-for="DrawDate" class="control-label">Fecha</label>
-            <input asp-for="DrawDate" onchange="redirectToCreate('dateString', 'DrawDate')" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" class="form-control" />
-        </div>
-        <div class="form-group col-md-4">
-            <label asp-for="SelectedLotteries" class="control-label">Sorteos</label>
-            <div class="position-relative">
-                <div id="customSelect" class="form-select" onclick="toggleDropdown()">
-                    <span id="selectedLotteriesText">Seleccione uno o varios</span>
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="form-group col-md-2">
+                    <label asp-for="Id" class="control-label fw-semibold">Papelito</label>
+                    <input asp-for="Id" class="form-control bg-light" disabled readonly />
                 </div>
+                <div class="form-group col-md-3">
+                    <label asp-for="DrawDate" class="control-label fw-semibold">Fecha de sorteo</label>
+                    <input asp-for="DrawDate" onchange="redirectToCreate('dateString', 'DrawDate')" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+                <div class="form-group col-md-4">
+                    <label asp-for="SelectedLotteries" class="control-label fw-semibold">Sorteos</label>
+                    <div class="position-relative">
+                        <div id="customSelect" class="form-select" onclick="toggleDropdown()">
+                            <span id="selectedLotteriesText">Seleccione uno o varios</span>
+                        </div>
 
 
-                <!-- UL con checkboxes (se muestra al hacer clic) -->
-                <ul id="customDropdown"
-                    class="list-group position-absolute w-100"
-                    style="z-index: 1000; display: none; max-height: 400px; overflow-y: auto; background: white; border: 1px solid #ced4da; border-top: none;">
-                    @if(ViewData["Names"] is IList<Lottery> lotteries)
-                    {
-                        <li class="list-group-item bg-light">
-                            <input type="checkbox"
-                                   class="form-check-input me-2"
-                                   id="selectAll"
-                                   onchange="toggleSelectAll(this)"
-                                    @(Model.SelectedLotteries.Count() == lotteries.Count() ? "checked" : "indeterminate") />
-                            <label class="form-check-label fw-bold" for="selectAll">Seleccionar todos</label>
-                        </li>
-                        foreach(var item in lotteries)
+                        <!-- UL con checkboxes (se muestra al hacer clic) -->
+                        <ul id="customDropdown"
+                            class="list-group position-absolute w-100 shadow-sm"
+                            style="z-index: 1000; display: none; max-height: 320px; overflow-y: auto; background: white; border: 1px solid #ced4da; border-top: none;">
+                            @if(ViewData["Names"] is IList<Lottery> lotteries)
+                            {
+                                <li class="list-group-item bg-light">
+                                    <input type="checkbox"
+                                           class="form-check-input me-2"
+                                           id="selectAll"
+                                           onchange="toggleSelectAll(this)"
+                                            @(Model.SelectedLotteries.Count() == lotteries.Count() ? "checked" : "indeterminate") />
+                                    <label class="form-check-label fw-bold" for="selectAll">Seleccionar todos</label>
+                                </li>
+                                foreach(var item in lotteries)
+                                {
+                                    <li class="list-group-item">
+                                        <input type="checkbox"
+                                               class="form-check-input child-checkbox me-2"
+                                               name="SelectedLotteries"
+                                               value="@item.Name"
+                                               id="lottery_@item.Order"
+                                               onchange="updateSelected()"
+                                               @(Model.SelectedLotteries.Contains(item.Name) ? "checked" : "") />
+                                        <label class="form-check-label" for="lottery_@item.Order">@item.Name</label>
+                                    </li>
+                                }
+                            }
+                        </ul>
+                    </div>
+                </div>       
+                <div class="form-group col-md-3">
+                    <label asp-for="ClientId" class="control-label fw-semibold">Cliente</label>
+                    <select asp-for="ClientId" class="form-control form-select" onchange="redirectToCreate('clientId', 'ClientId', )">
+                        <option value="-1" selected>Seleccione un nombre</option>
+                        @if(ViewData["Clients"] is not null)
                         {
-                            <li class="list-group-item">
-                                <input type="checkbox"
-                                       class="form-check-input child-checkbox me-2"
-                                       name="SelectedLotteries"
-                                       value="@item.Name"
-                                       id="lottery_@item.Order"
-                                       onchange="updateSelected()"
-                                       @(Model.SelectedLotteries.Contains(item.Name) ? "checked" : "") />
-                                <label class="form-check-label" for="lottery_@item.Order">@item.Name</label>
-                            </li>
+                            @foreach(var item in ViewData["Clients"] as IList<Client> ?? new List<Client>())
+                            {
+                                <option value="@item.Id">@item.Name</option>
+                            }
                         }
-                    }
-                </ul>
+                    </select>
+                </div>
             </div>
-        </div>       
-        <div class="form-group col-md-4">
-            <label asp-for="ClientId" class="control-label">Cliente</label>
-            <select asp-for="ClientId" class="form-control form-select" onchange="redirectToCreate('clientId', 'ClientId', )">
-                <option value="-1" selected>Seleccione un nombre</option>
-                @if(ViewData["Clients"] is not null)
-                {
-                    @foreach(var item in ViewData["Clients"] as IList<Client> ?? new List<Client>())
-                    {
-                        <option value="@item.Id">@item.Name</option>
-                    }
-                }
-            </select>
         </div>
     </div>
     <div class="d-flex justify-content-end">
@@ -97,7 +104,7 @@
 
 @if(Model?.SelectedLotteries.Any() ?? false)
 {
-    <div class="alert alert-info d-flex align-items-start gap-2 flex-wrap mt-1">
+    <div class="alert alert-info d-flex align-items-start gap-2 flex-wrap mt-1 shadow-sm">
         <span class="fw-bold">
             <i class="bi bi-check-circle-fill me-1"></i> Sorteos seleccionados:
         </span>
@@ -116,9 +123,15 @@
     <div class="container-fluid mb-2">
         <div class="row">
             <div class="col-lg-8">
-                <div class="table-responsive container overflow-auto">
-                    <table class="table">
-                        <thead>
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="mb-0 fw-bold">Números cargados</h5>
+                            <span class="badge text-bg-light border">Total líneas: @Model.Numbers.Count()</span>
+                        </div>
+                        <div class="table-responsive container overflow-auto">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
                             <tr>
                                 <th></th>
                                 <th>Numero</th>
@@ -127,42 +140,44 @@
                                 <th></th>
                                 <th></th>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @foreach(var item in Model.Numbers)
-                            {
-                                <tr>
-                                    <td></td>
-                                    <td>@item.Value</td>
-                                    <td>@item.Amount</td>
-                                    <td>@item.Busted</td>
-                                    <td>
-                                        <!-- Remove -->
-                                        <button type="button" class="btn" onclick="showPartial('removePartial-@Model.Id-@item.Id')">
-                                            <span class="material-icons icon icon-danger">delete</span>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr id="removePartial-@Model.Id-@item.Id">
-                                    <td colspan="6">
-                                        <partial name="_Remove" model="new LotteryConnectionModel{PaperId= Model.Id, LineId= item.Id??1}" />
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+                                </thead>
+                                <tbody>
+                                    @foreach(var item in Model.Numbers)
+                                    {
+                                        <tr>
+                                            <td></td>
+                                            <td class="fw-semibold">@item.Value</td>
+                                            <td>₡ @item.Amount.ToString("N0")</td>
+                                            <td>₡ @item.Busted.ToString("N0")</td>
+                                            <td>
+                                                <!-- Remove -->
+                                                <button type="button" class="btn" onclick="showPartial('removePartial-@Model.Id-@item.Id')">
+                                                    <span class="material-icons icon icon-danger">delete</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr id="removePartial-@Model.Id-@item.Id" style="display:none;">
+                                            <td colspan="6">
+                                                <partial name="_Remove" model="new LotteryConnectionModel{PaperId= Model.Id, LineId= item.Id??1}" />
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
             </div>
             <div class="col-lg-4">
-                <div class="card" style="background: linear-gradient(135deg, #3B82F6, #64b5f6);">
+                <div class="card text-white border-0 shadow-sm" style="background: linear-gradient(135deg, #3B82F6, #64b5f6);">
                     <div class="card-body">
                         <h2 class="card-title">Resumen</h2>
-                        <p class="card-text">Monto Total: @Model.Numbers.Sum(x => x.Amount)</p>
-                        <p class="card-text">Reventado Total: @Model.Numbers.Sum(x => x.Busted)</p>
+                        <p class="card-text mb-1">Monto Total: ₡ @Model.Numbers.Sum(x => x.Amount).ToString("N0")</p>
+                        <p class="card-text">Reventado Total: ₡ @Model.Numbers.Sum(x => x.Busted).ToString("N0")</p>
                         <hr>
-                        <p class="card-text" style="font-weight: bold; font-size: 1rem;">Total Papelito: @subsum</p>
-                        <p class="card-text" style="font-weight: bold; font-size: 1.2rem;">Total General: @sum</p>
+                        <p class="card-text mb-1" style="font-weight: bold; font-size: 1rem;">Total Papelito: ₡ @subsum.ToString("N0")</p>
+                        <p class="card-text mb-0" style="font-weight: bold; font-size: 1.2rem;">Total General: ₡ @sum.ToString("N0")</p>
                     </div>
                 </div>
 
@@ -254,10 +269,15 @@
 
         function updateSelected() {
             const dropdown = document.getElementById('customDropdown');
+            if (!dropdown) return;
             const checkboxes = dropdown.querySelectorAll('input[name="SelectedLotteries"]');
             const checked = dropdown.querySelectorAll('input[name="SelectedLotteries"]:checked');
             const selectAll = dropdown.querySelector('#selectAll');
             const values = Array.from(checked).map(cb => cb.value);
+            const selectedLabel = document.getElementById('selectedLotteriesText');
+            if (selectedLabel) {
+                selectedLabel.textContent = values.length ? values.join(', ') : 'Seleccione uno o varios';
+            }
 
             // Crear input temporal con valores
             const tempInput = document.createElement('input');
@@ -272,6 +292,7 @@
 
         function toggleSelectAll(masterCheckbox) {
             const dropdown = document.getElementById('customDropdown');
+            if (!dropdown) return;
             const checkboxes = dropdown.querySelectorAll('input[name="SelectedLotteries"]');
 
             checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
@@ -292,9 +313,15 @@
             const checkboxes = document.querySelectorAll('.child-checkbox');
             const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
             const selectAll = document.getElementById('selectAll');
-
-            selectAll.checked = checkedCount === checkboxes.length;
-            selectAll.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+            const selectedLabel = document.getElementById('selectedLotteriesText');
+            const selectedValues = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+            if (selectAll) {
+                selectAll.checked = checkedCount === checkboxes.length && checkboxes.length > 0;
+                selectAll.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+            }
+            if (selectedLabel) {
+                selectedLabel.textContent = selectedValues.length ? selectedValues.join(', ') : 'Seleccione uno o varios';
+            }
 
             // Mostrar el dropdown si viene keepSelection=true en la URL
             const urlParams = new URLSearchParams(window.location.search);
