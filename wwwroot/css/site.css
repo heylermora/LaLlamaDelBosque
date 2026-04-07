@@ -190,11 +190,25 @@ a:hover {
 .btn {
     border-radius: .65rem;
     font-weight: 600;
+    padding: .5rem .9rem;
+    border: 1px solid transparent;
     transition: all .2s ease;
 }
 
 .btn:hover {
     transform: translateY(-1px);
+}
+
+/* Botón base para botones que solo usan class="btn" */
+.btn:not(.btn-primary):not(.btn-secondary):not(.btn-success):not(.btn-danger):not(.btn-warning):not(.btn-info):not(.btn-light):not(.btn-dark):not(.btn-link):not(.btn-close):not(.btn-outline-primary):not(.btn-outline-secondary):not(.btn-outline-success):not(.btn-outline-danger):not(.btn-outline-warning):not(.btn-outline-info):not(.btn-outline-light):not(.btn-outline-dark) {
+    background-color: var(--surface);
+    border-color: var(--border-color);
+    color: var(--text-main);
+}
+
+.btn:not(.btn-primary):not(.btn-secondary):not(.btn-success):not(.btn-danger):not(.btn-warning):not(.btn-info):not(.btn-light):not(.btn-dark):not(.btn-link):not(.btn-close):not(.btn-outline-primary):not(.btn-outline-secondary):not(.btn-outline-success):not(.btn-outline-danger):not(.btn-outline-warning):not(.btn-outline-info):not(.btn-outline-light):not(.btn-outline-dark):hover {
+    border-color: color-mix(in srgb, var(--primary) 35%, #ffffff);
+    color: var(--primary-strong);
 }
 
 .btn-primary {
@@ -219,6 +233,22 @@ a:hover {
     background-color: var(--success);
     border-color: var(--success);
     color: #fff;
+}
+
+.btn-secondary {
+    background-color: #475569;
+    border-color: #475569;
+    color: #fff;
+}
+
+.btn-outline-primary,
+.btn-outline-secondary,
+.btn-outline-success,
+.btn-outline-danger,
+.btn-outline-warning,
+.btn-outline-info,
+.btn-outline-dark {
+    background-color: transparent;
 }
 
 .nav-pills .nav-link.active,

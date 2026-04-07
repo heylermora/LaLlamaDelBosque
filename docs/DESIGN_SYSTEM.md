@@ -32,3 +32,11 @@ Al crear o editar vistas:
 2. Priorizar Bootstrap + clases del sistema (`ds-*`) antes de crear estilos inline.
 3. Mantener tokens (`var(--*)`) para colores/radios/sombras.
 4. Evitar colores hardcodeados salvo casos excepcionales.
+
+## Guía de botones (estándar único)
+- `btn-primary`: acción principal.
+- `btn-secondary`: acción secundaria/cancelar.
+- `btn-danger`: acciones destructivas.
+- `btn-success`: acciones de confirmación puntual.
+- `btn-outline-*`: acciones complementarias.
+- `btn` sin variante se renderiza como botón neutro del sistema (fondo claro + borde suave), para mantener coherencia en botones heredados.
