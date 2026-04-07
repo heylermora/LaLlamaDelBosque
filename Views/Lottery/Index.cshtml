@@ -103,14 +103,37 @@
         <div class="tab-pane fade" id="papelitos-pane" role="tabpanel" aria-labelledby="papelitos-tab" tabindex="0">
             <div class="card shadow-sm border-0">
                 <div class="card-body">
+                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-3">
+                        <div>
+                            <h5 class="mb-1 fw-bold">Ventas por papelito</h5>
+                            <p class="text-muted mb-0">Revisa montos, reventados y estado de sorteo en un solo lugar.</p>
+                        </div>
+                        <div class="d-flex flex-column flex-sm-row gap-2 w-100 w-lg-auto">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-white"><span class="material-icons" style="font-size:18px;">search</span></span>
+                                <input id="papelitoFilter" type="text" class="form-control" placeholder="Buscar por papelito o sorteo" />
+                            </div>
+                            <div class="form-check form-switch d-flex align-items-center m-0 px-2 border rounded">
+                                <input class="form-check-input me-2" type="checkbox" id="pendingOnly">
+                                <label class="form-check-label small text-nowrap" for="pendingOnly">Solo pendientes</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <span class="badge rounded-pill text-bg-light border">Papelitos: @totalPapelitos</span>
+                        <span class="badge rounded-pill text-bg-light border">Monto: ₡ @totalMonto.ToString("N0")</span>
+                        <span class="badge rounded-pill text-bg-light border">Reventado: ₡ @totalReventado.ToString("N0")</span>
+                    </div>
+
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle">
+                        <table class="table table-hover align-middle" id="papelitosTable">
                             <thead class="table-light">
                                 <tr>
                                     <th>Papelito</th>
+                                    <th>Sorteos</th>
+                                    <th>Creación</th>
                                     <th>Sorteo</th>
-                                    <th>Fecha de creación</th>
-                                    <th>Fecha de sorteo</th>
                                     <th class="text-end">Monto</th>
                                     <th class="text-end">Reventado</th>
                                     <th class="text-end">Total</th>
@@ -125,11 +148,32 @@
                                     total = monto + reventado;
                                     totales += total;
 
-                                    <tr>
+                                    <tr data-paper-id="@item.Id" data-pending="@(item.DrawDate > DateTime.Now)">
                                         <td class="fw-semibold">#@item.Id</td>
-                                        <td><span class="badge bg-secondary">@item.Lottery</span></td>
-                                        <td>@item.CreationDate.ToString("g")</td>
-                                        <td>@item.DrawDate.ToString("g")</td>
+                                        <td>
+                                            <div class="d-flex flex-wrap gap-1">
+                                                @foreach (var lot in (item.Lottery ?? string.Empty).Split(",", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                                                {
+                                                    <span class="badge text-bg-secondary-subtle border">@lot</span>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="small fw-semibold">@item.CreationDate.ToString("dd/MM/yyyy")</div>
+                                            <div class="text-muted small">@item.CreationDate.ToString("hh:mm tt")</div>
+                                        </td>
+                                        <td>
+                                            <div class="small fw-semibold">@item.DrawDate.ToString("dd/MM/yyyy")</div>
+                                            <div class="text-muted small">@item.DrawDate.ToString("hh:mm tt")</div>
+                                            @if (item.DrawDate > DateTime.Now)
+                                            {
+                                                <span class="badge rounded-pill text-bg-warning-subtle border mt-1">Pendiente</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge rounded-pill text-bg-success-subtle border mt-1">Jugado</span>
+                                            }
+                                        </td>
                                         <td class="text-end">₡ @monto.ToString("N0")</td>
                                         <td class="text-end">₡ @reventado.ToString("N0")</td>
                                         <td class="text-end fw-bold">₡ @total.ToString("N0")</td>
@@ -173,6 +217,9 @@
                                 </tr>
                             </tfoot>
                         </table>
+                    </div>
+                    <div id="papelitosNoResults" class="alert alert-light border text-center mt-3 d-none mb-0">
+                        No hay resultados para el filtro aplicado.
                     </div>
                 </div>
             </div>
@@ -238,6 +285,48 @@ else
                 var id = $(this).data("id");
                 $("#delete-partial-" + id).toggle();
             });
+
+            function filterPapelitos() {
+                var query = ($("#papelitoFilter").val() || "").toLowerCase().trim();
+                var onlyPending = $("#pendingOnly").is(":checked");
+                var visibleRows = 0;
+
+                $("#papelitosTable tbody tr").not("[id^='delete-partial-']").each(function() {
+                    var row = $(this);
+                    var rowText = row.text().toLowerCase();
+                    var isPending = (row.data("pending") === true || row.data("pending") === "True");
+                    var matchQuery = !query || rowText.indexOf(query) >= 0;
+                    var matchPending = !onlyPending || isPending;
+                    var show = matchQuery && matchPending;
+
+                    row.toggle(show);
+                    var deleteRow = $("#delete-partial-" + row.data("paper-id"));
+                    if (!show) {
+                        deleteRow.hide();
+                    }
+
+                    if (show) {
+                        visibleRows++;
+                    }
+                });
+
+                $("#papelitosNoResults").toggleClass("d-none", visibleRows > 0);
+            }
+
+            $("#papelitoFilter").on("input", filterPapelitos);
+            $("#pendingOnly").on("change", filterPapelitos);
         });
     </script>
 }
+
+<style>
+    #papelitos-pane .table thead th {
+        white-space: nowrap;
+    }
+
+    #papelitos-pane .badge.text-bg-secondary-subtle,
+    #papelitos-pane .badge.text-bg-warning-subtle,
+    #papelitos-pane .badge.text-bg-success-subtle {
+        color: #212529;
+    }
+</style>
