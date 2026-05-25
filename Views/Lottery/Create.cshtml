@@ -206,6 +206,7 @@
             const container = document.getElementById("selectedNumbersContainer");
             const feedback = document.getElementById("numberFeedback");
             const submitButton = document.getElementById("addNumberSubmit");
+            const placeholder = document.getElementById("numberPlaceholder");
             if (!hiddenInput || !container) return;
 
             hiddenInput.value = selectedNumbers.join("+");
@@ -225,6 +226,9 @@
             });
 
             const hasSelection = selectedNumbers.length > 0;
+            if (placeholder) {
+                placeholder.style.display = hasSelection ? "none" : "inline";
+            }
             if (feedback) feedback.textContent = hasSelection ? "" : "Selecciona al menos un número.";
             if (submitButton) submitButton.disabled = !hasSelection;
         }
@@ -253,6 +257,78 @@
             selectedNumbers = [];
             syncNumberPalette();
             renderSelectedNumbers();
+        }
+
+        function addUniqueValues(values) {
+            const union = new Set(selectedNumbers);
+            values.forEach(v => union.add(v));
+            selectedNumbers = Array.from(union).sort();
+            syncNumberPalette();
+            renderSelectedNumbers();
+        }
+
+        function selectRange() {
+            const startInput = document.getElementById("rangeStart");
+            const endInput = document.getElementById("rangeEnd");
+            const feedback = document.getElementById("numberFeedback");
+            if (!startInput || !endInput) return;
+
+            const start = parseInt(startInput.value, 10);
+            const end = parseInt(endInput.value, 10);
+
+            if (Number.isNaN(start) || Number.isNaN(end) || start < 0 || end > 99 || start > end) {
+                if (feedback) feedback.textContent = "Rango inválido. Usa valores entre 0 y 99, con inicio <= fin.";
+                return;
+            }
+
+            const values = [];
+            for (let i = start; i <= end; i++) values.push(padNumber(i));
+            addUniqueValues(values);
+        }
+
+        function isPrime(number) {
+            if (number < 2) return false;
+            for (let i = 2; i <= Math.sqrt(number); i++) {
+                if (number % i === 0) return false;
+            }
+            return true;
+        }
+
+        function selectByRule(rule, digit = null) {
+            const values = [];
+            for (let i = 0; i < 100; i++) {
+                const value = padNumber(i);
+                if (rule === "even" && i % 2 === 0) values.push(value);
+                if (rule === "odd" && i % 2 !== 0) values.push(value);
+                if (rule === "prime" && isPrime(i)) values.push(value);
+                if (rule === "startsWith" && value.startsWith(String(digit))) values.push(value);
+                if (rule === "endsWith" && value.endsWith(String(digit))) values.push(value);
+            }
+            addUniqueValues(values);
+        }
+
+        function applyStartsWithDigit() {
+            const input = document.getElementById("startsWithDigit");
+            const feedback = document.getElementById("numberFeedback");
+            if (!input) return;
+            const digit = parseInt(input.value, 10);
+            if (Number.isNaN(digit) || digit < 0 || digit > 9) {
+                if (feedback) feedback.textContent = "Para 'Inician en', usa un dígito de 0 a 9.";
+                return;
+            }
+            selectByRule("startsWith", digit);
+        }
+
+        function applyEndsWithDigit() {
+            const input = document.getElementById("endsWithDigit");
+            const feedback = document.getElementById("numberFeedback");
+            if (!input) return;
+            const digit = parseInt(input.value, 10);
+            if (Number.isNaN(digit) || digit < 0 || digit > 9) {
+                if (feedback) feedback.textContent = "Para 'Terminan en', usa un dígito de 0 a 9.";
+                return;
+            }
+            selectByRule("endsWith", digit);
         }
 
         function toggleNumberPalette() {

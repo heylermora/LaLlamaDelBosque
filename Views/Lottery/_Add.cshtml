@@ -26,8 +26,11 @@
         <div class="form-group col-md-6">
             <label asp-for="Value" class="control-label">Números</label>
             <input asp-for="Value" id="number" type="hidden" />
-            <div class="d-flex flex-wrap gap-1 mb-2" id="selectedNumbersContainer"></div>
-            <small class="form-text text-muted d-block mb-2">Selecciona números tocando los botones. No hay escritura manual para evitar errores.</small>
+            <div class="border rounded bg-white p-2 mb-2 shadow-sm" id="selectedNumbersInputLike">
+                <div class="d-flex flex-wrap gap-1" id="selectedNumbersContainer"></div>
+                <small id="numberPlaceholder" class="text-muted">Aún no has seleccionado números</small>
+            </div>
+            <small class="form-text text-muted d-block mb-2">Selecciona números tocando los botones o aplica reglas rápidas.</small>
             <div class="d-flex align-items-center gap-2 mb-2">
                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleNumberPalette()">
                     Mostrar/Ocultar selector
@@ -36,7 +39,46 @@
                     Limpiar selección
                 </button>
             </div>
-            <div id="numberPalette" class="border rounded p-2" style="max-height: 240px; overflow-y: auto;">
+            <div class="border rounded bg-white p-2 mb-2 shadow-sm">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label mb-1">Rango consecutivo</label>
+                        <div class="input-group input-group-sm">
+                            <input type="number" id="rangeStart" class="form-control" min="0" max="99" placeholder="00" />
+                            <span class="input-group-text">a</span>
+                            <input type="number" id="rangeEnd" class="form-control" min="0" max="99" placeholder="10" />
+                            <button type="button" class="btn btn-outline-primary" onclick="selectRange()">Aplicar</button>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label mb-1">Reglas rápidas</label>
+                        <div class="d-flex flex-wrap gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectByRule('even')">Pares</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectByRule('odd')">Impares</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectByRule('prime')">Primos</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectByRule('startsWith', 0)">Inician en 0</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectByRule('endsWith', 0)">Terminan en 0</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-2 mt-1">
+                    <div class="col-md-6">
+                        <label class="form-label mb-1">Inician en</label>
+                        <div class="input-group input-group-sm">
+                            <input type="number" id="startsWithDigit" class="form-control" min="0" max="9" placeholder="0-9" />
+                            <button type="button" class="btn btn-outline-secondary" onclick="applyStartsWithDigit()">Aplicar</button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label mb-1">Terminan en</label>
+                        <div class="input-group input-group-sm">
+                            <input type="number" id="endsWithDigit" class="form-control" min="0" max="9" placeholder="0-9" />
+                            <button type="button" class="btn btn-outline-secondary" onclick="applyEndsWithDigit()">Aplicar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="numberPalette" class="border rounded bg-white p-2 shadow-sm" style="max-height: 240px; overflow-y: auto;">
                 <div id="numberGrid" class="d-flex flex-wrap gap-1"></div>
             </div>
             <small id="numberFeedback" class="form-text text-danger"></small>
