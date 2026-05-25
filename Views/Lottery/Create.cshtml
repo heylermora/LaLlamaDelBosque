@@ -195,83 +195,104 @@
             window.location.href = url;
         }
 
-        function splitNumberTokens(rawValue) {
-            return (rawValue || "")
-                .split(/[+,\s]+/)
-                .map(token => token.trim())
-                .filter(token => token.length > 0);
+        let selectedNumbers = [];
+
+        function padNumber(value) {
+            return value.toString().padStart(2, "0");
         }
 
-        function normalizeNumberToken(token) {
-            if (/^\d$/.test(token)) {
-                return [token.padStart(2, '0')];
-            }
+        function renderSelectedNumbers() {
+            const hiddenInput = document.getElementById("number");
+            const container = document.getElementById("selectedNumbersContainer");
+            const feedback = document.getElementById("numberFeedback");
+            const submitButton = document.getElementById("addNumberSubmit");
+            if (!hiddenInput || !container) return;
 
-            if (/^\d{3,}$/.test(token) && token.length % 2 === 0) {
-                return token.match(/.{1,2}/g) || [token];
-            }
+            hiddenInput.value = selectedNumbers.join("+");
+            container.innerHTML = "";
 
-            return [token];
+            selectedNumbers.forEach(number => {
+                const chip = document.createElement("button");
+                chip.type = "button";
+                chip.className = "btn btn-sm btn-primary";
+                chip.textContent = `${number} ×`;
+                chip.onclick = function () {
+                    selectedNumbers = selectedNumbers.filter(x => x !== number);
+                    syncNumberPalette();
+                    renderSelectedNumbers();
+                };
+                container.appendChild(chip);
+            });
+
+            const hasSelection = selectedNumbers.length > 0;
+            if (feedback) feedback.textContent = hasSelection ? "" : "Selecciona al menos un número.";
+            if (submitButton) submitButton.disabled = !hasSelection;
         }
 
-        function validateNumberTokens(tokens) {
-            const invalidTokens = tokens.filter(token => !/^\d{1,2}$/.test(token));
-            return {
-                isValid: invalidTokens.length === 0,
-                invalidTokens: invalidTokens
-            };
+        function syncNumberPalette() {
+            const buttons = document.querySelectorAll(".number-cell");
+            buttons.forEach(btn => {
+                const value = btn.dataset.value;
+                btn.classList.toggle("btn-success", selectedNumbers.includes(value));
+                btn.classList.toggle("btn-outline-secondary", !selectedNumbers.includes(value));
+            });
         }
 
-        function updateNumberInputUI(input, tokens, validation) {
-            const preview = document.getElementById('numberPreview');
-            const feedback = document.getElementById('numberFeedback');
-            const submitButton = document.getElementById('addNumberSubmit');
-
-            if (preview) {
-                preview.textContent = tokens.length > 0 ? `Se guardará como: ${tokens.join('+')}` : '';
+        function toggleNumberSelection(value) {
+            if (selectedNumbers.includes(value)) {
+                selectedNumbers = selectedNumbers.filter(x => x !== value);
+            } else {
+                selectedNumbers.push(value);
+                selectedNumbers.sort();
             }
-
-            if (feedback) {
-                feedback.textContent = validation.isValid
-                    ? ''
-                    : `Formato inválido en: ${validation.invalidTokens.join(', ')}. Solo se permiten números de 1 o 2 dígitos.`;
-            }
-
-            if (submitButton) {
-                submitButton.disabled = !validation.isValid || tokens.length === 0;
-            }
+            syncNumberPalette();
+            renderSelectedNumbers();
         }
 
-        function formatNumberInput(input) {
-            const tokens = splitNumberTokens(input.value)
-                .flatMap(normalizeNumberToken);
-            const validation = validateNumberTokens(tokens);
-
-            input.value = tokens.join('+');
-            updateNumberInputUI(input, tokens, validation);
+        function clearSelectedNumbers() {
+            selectedNumbers = [];
+            syncNumberPalette();
+            renderSelectedNumbers();
         }
 
-        function normalizeNumberInput(input) {
-            formatNumberInput(input);
+        function toggleNumberPalette() {
+            const palette = document.getElementById("numberPalette");
+            if (!palette) return;
+            palette.style.display = palette.style.display === "none" ? "block" : "none";
+        }
+
+        function buildNumberGrid() {
+            const grid = document.getElementById("numberGrid");
+            if (!grid) return;
+            grid.innerHTML = "";
+            for (let i = 0; i < 100; i++) {
+                const value = padNumber(i);
+                const button = document.createElement("button");
+                button.type = "button";
+                button.dataset.value = value;
+                button.className = "btn btn-sm btn-outline-secondary number-cell";
+                button.textContent = value;
+                button.style.minWidth = "48px";
+                button.onclick = function () { toggleNumberSelection(value); };
+                grid.appendChild(button);
+            }
         }
 
         $(document).ready(function () {
             const numberInput = document.getElementById('number');
             if (numberInput) {
-                formatNumberInput(numberInput);
+                buildNumberGrid();
+                renderSelectedNumbers();
             }
 
             $('form').submit(function (e) {
                 var amount = parseFloat($('#Amount').val());
                 var busted = parseFloat($('#Busted').val());
 
-                if (numberInput) {
-                    formatNumberInput(numberInput);
-                    if (document.getElementById('addNumberSubmit')?.disabled) {
-                        numberInput.focus();
-                        e.preventDefault();
-                        return;
-                    }
+                if (numberInput && document.getElementById('addNumberSubmit')?.disabled) {
+                    document.getElementById("numberPalette")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    e.preventDefault();
+                    return;
                 }
 
                 if (busted > amount) {

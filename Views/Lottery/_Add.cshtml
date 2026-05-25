@@ -25,9 +25,20 @@
         }
         <div class="form-group col-md-6">
             <label asp-for="Value" class="control-label">Números</label>
-            <input asp-for="Value" id="number" class="form-control" oninput="formatNumberInput(this)" onblur="normalizeNumberInput(this)" placeholder="Ej: 11+00, 11,0 o 1100" autocomplete="off" inputmode="numeric" />
-            <small class="form-text text-muted">Puede separar con <strong>+</strong>, coma o espacio. Si escribe <strong>1100</strong>, se separa como <strong>11+00</strong>. Los números de 1 dígito se convierten a 2 dígitos (ej: 0 → 00).</small>
-            <small id="numberPreview" class="form-text text-primary fw-bold"></small>
+            <input asp-for="Value" id="number" type="hidden" />
+            <div class="d-flex flex-wrap gap-1 mb-2" id="selectedNumbersContainer"></div>
+            <small class="form-text text-muted d-block mb-2">Selecciona números tocando los botones. No hay escritura manual para evitar errores.</small>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleNumberPalette()">
+                    Mostrar/Ocultar selector
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearSelectedNumbers()">
+                    Limpiar selección
+                </button>
+            </div>
+            <div id="numberPalette" class="border rounded p-2" style="max-height: 240px; overflow-y: auto;">
+                <div id="numberGrid" class="d-flex flex-wrap gap-1"></div>
+            </div>
             <small id="numberFeedback" class="form-text text-danger"></small>
             <span asp-validation-for="Value" class="text-danger"></span>
         </div>
