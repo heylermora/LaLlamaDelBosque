@@ -1,6 +1,7 @@
 ﻿using LaLlamaDelBosque.Models;
 using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.RegularExpressions;
 
 namespace LaLlamaDelBosque.Controllers
 {
@@ -237,7 +238,20 @@ namespace LaLlamaDelBosque.Controllers
 				var amountParsed = double.TryParse(collection["amount"], out amount);
 				var bustedParsed = double.TryParse(collection["busted"], out busted);
 
-				var numberList = collection["value"].ToString().TrimEnd('+').Split('+');
+				var numberList = Regex.Split(collection["value"].ToString(), @"[+,\s]+")
+					.Select(number => number.Trim())
+					.Where(number => !string.IsNullOrWhiteSpace(number))
+					.SelectMany(number =>
+					{
+						if(Regex.IsMatch(number, @"^\d{3,}$") && number.Length % 2 == 0)
+						{
+							return Enumerable.Range(0, number.Length / 2)
+								.Select(index => number.Substring(index * 2, 2));
+						}
+
+						return new[] { number.Length == 1 ? number.PadLeft(2, '0') : number };
+					})
+					.ToList();
 
 				var paper = TempData.Get<Paper>("Paper") ?? new Paper();
 				var count = paper.Numbers.Max(p => p.Id) ?? 0;
