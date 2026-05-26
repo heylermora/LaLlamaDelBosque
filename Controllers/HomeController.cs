@@ -90,8 +90,8 @@ namespace LaLlamaDelBosque.Controllers
 
         private SummaryModel GetAmounts(SummaryModel summary)
         {
-            summary.Credit.Receivable = _credits.Credits.Sum(c => c.CreditSummary.Total).ToString("N", CultureInfo.InvariantCulture);
-            summary.Credit.Received = Math.Abs(_credits.Credits.Sum(c => c.CreditLines.Where(cl => cl.Amount < 0 && cl.CreatedDate.ToShortDateString() == DateTime.Today.ToShortDateString()).Sum(cl => cl.Amount))).ToString("N", CultureInfo.InvariantCulture);
+            summary.Credit.Receivable = _credits.Credits.Sum(c => c.CreditSummary.Total);
+            summary.Credit.Received = Math.Abs(_credits.Credits.Sum(c => c.CreditLines.Where(cl => cl.Amount < 0 && cl.CreatedDate.ToShortDateString() == DateTime.Today.ToShortDateString()).Sum(cl => cl.Amount)));
             return summary;
         }
 
@@ -104,9 +104,9 @@ namespace LaLlamaDelBosque.Controllers
             var majorDebts = _credits.Credits.OrderByDescending(c => c.CreditSummary.Total).Take(top).ToList();
             var minorDebts = _credits.Credits.OrderBy(c => c.CreditSummary.Total).Take(top).ToList();
 
-            inactiveClients.ForEach(ic => summary.Credit.InactiveClients.Add(new SummaryClient() { Name = ic.Client.Name, Amount = ic.CreditSummary.Total.ToString("N", CultureInfo.InvariantCulture) }));
-            majorDebts.ForEach(md => summary.Credit.MajorDebts.Add(new SummaryClient() { Name = md.Client.Name, Amount = md.CreditSummary.Total.ToString("N", CultureInfo.InvariantCulture) }));
-            minorDebts.ForEach(md => summary.Credit.MinorDebts.Add(new SummaryClient() { Name = md.Client.Name, Amount = md.CreditSummary.Total.ToString("N", CultureInfo.InvariantCulture) }));
+            inactiveClients.ForEach(ic => summary.Credit.InactiveClients.Add(new SummaryClient() { Name = ic.Client.Name, Amount = ic.CreditSummary.Total }));
+            majorDebts.ForEach(md => summary.Credit.MajorDebts.Add(new SummaryClient() { Name = md.Client.Name, Amount = md.CreditSummary.Total }));
+            minorDebts.ForEach(md => summary.Credit.MinorDebts.Add(new SummaryClient() { Name = md.Client.Name, Amount = md.CreditSummary.Total }));
 
             return summary;
         }
@@ -121,9 +121,9 @@ namespace LaLlamaDelBosque.Controllers
             var total = totalAmount + totalBusted;
 
             summary.Lottery.Papers = totalPapers;
-            summary.Lottery.TotalAmount = totalAmount.ToString("N", CultureInfo.InvariantCulture);
-            summary.Lottery.TotalBusted = totalBusted.ToString("N", CultureInfo.InvariantCulture);
-            summary.Lottery.Total = total.ToString("N", CultureInfo.InvariantCulture);
+            summary.Lottery.TotalAmount = totalAmount;
+            summary.Lottery.TotalBusted = totalBusted;
+            summary.Lottery.Total = total;
             return summary;
         }
     }

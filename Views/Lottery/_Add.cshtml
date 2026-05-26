@@ -144,7 +144,7 @@
                         </h2>
                         <div id="collapseVoicePilot" class="accordion-collapse collapse" aria-labelledby="headingVoicePilot" data-bs-parent="#numbersAccordion">
                             <div class="accordion-body">
-                                <label for="voiceNumbersFile" class="form-label mb-1">Archivo de voz (WhatsApp)</label>
+                                @* <label for="voiceNumbersFile" class="form-label mb-1">Archivo de voz (WhatsApp)</label>
                                 <input id="voiceNumbersFile" type="file" class="form-control form-control-sm" accept="audio/ogg,audio/opus,audio/mpeg,audio/mp4,audio/x-m4a,.opus,.ogg,.mp3,.m4a" />
                                 <small class="text-muted d-block mt-2">Compatible con audios descargados de WhatsApp (.opus/.ogg) y formatos comunes (.mp3/.m4a).</small>
 
@@ -153,10 +153,9 @@
                                     <label class="form-check-label" for="voiceUserVerified">
                                         Verifiqué que el audio pertenece al usuario correcto.
                                     </label>
-                                </div>
+                                </div> *@
 
                                 <div class="d-flex flex-wrap gap-1 mt-2">
-                                    <button type="button" id="processVoiceNumbersButton" class="btn btn-sm btn-outline-primary" disabled onclick="processVoiceNumbersPilot()">Procesar audio</button>
                                     <button type="button" id="startMicTranscriptionButton" class="btn btn-sm btn-outline-dark" onclick="startMicrophoneTranscription()">Usar micrófono</button>
                                     <button type="button" id="applyCorrectedTranscriptButton" class="btn btn-sm btn-outline-success" onclick="applyCorrectedTranscript()">Aplicar corrección</button>
                                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearVoiceNumbersPilot()">Limpiar</button>
