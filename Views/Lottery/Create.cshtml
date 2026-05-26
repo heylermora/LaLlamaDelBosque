@@ -462,8 +462,12 @@
                 const j = Math.floor(Math.random() * (i + 1));
                 [pool[i], pool[j]] = [pool[j], pool[i]];
             }
-            addUniqueValues(pool.slice(0, count));
-            if (feedback) feedback.textContent = `Se agregaron ${count} número(s) al azar.`;
+            selectedNumbers = pool.slice(0, count).sort();
+            appliedRuleValues.clear();
+            syncRuleButtons();
+            syncNumberPalette();
+            renderSelectedNumbers();
+            if (feedback) feedback.textContent = `Se seleccionaron ${count} número(s) al azar (reemplazando la selección actual).`;
         }
 
         function toggleNumberPalette() {
