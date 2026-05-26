@@ -517,3 +517,55 @@ span.text-bg-danger {
     border-top: 1px solid var(--border-color);
     background: color-mix(in srgb, var(--surface) 92%, #f8fbff);
 }
+
+/* Home updates modal */
+.home-updates-modal {
+    border-radius: 1.1rem;
+}
+
+.home-updates-header {
+    background:
+        radial-gradient(circle at 15% 20%, rgba(37,99,235,.15), transparent 45%),
+        radial-gradient(circle at 90% 10%, rgba(14,165,164,.14), transparent 40%);
+}
+
+.home-updates-icon {
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: .9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--primary) 12%, #fff);
+    border: 1px solid color-mix(in srgb, var(--primary) 28%, #fff);
+}
+
+.home-updates-kicker {
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--primary-strong);
+    font-weight: 700;
+}
+
+.home-updates-list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: .7rem;
+}
+
+.home-updates-list li {
+    display: flex;
+    gap: .6rem;
+    align-items: flex-start;
+    padding: .62rem .68rem;
+    border-radius: .7rem;
+    background: color-mix(in srgb, var(--surface) 88%, #eef4ff);
+    border: 1px solid var(--border-color);
+}
+
+.home-updates-list .material-icons {
+    font-size: 1.1rem;
+    color: var(--primary-strong);
+}

@@ -169,17 +169,34 @@
 
 <div class="modal fade" id="homeUpdatesModal" tabindex="-1" aria-labelledby="homeUpdatesModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header">
-                <h5 class="modal-title" id="homeUpdatesModalLabel">Nuevas actualizaciones del sistema</h5>
+        <div class="modal-content border-0 shadow home-updates-modal">
+            <div class="modal-header home-updates-header">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="home-updates-icon" aria-hidden="true">
+                        <svg viewBox="0 0 64 64" width="28" height="28" role="img" focusable="false">
+                            <defs>
+                                <linearGradient id="sparkGrad" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0%" stop-color="#2563eb" />
+                                    <stop offset="100%" stop-color="#0ea5a4" />
+                                </linearGradient>
+                            </defs>
+                            <circle cx="32" cy="32" r="30" fill="url(#sparkGrad)" opacity="0.18"/>
+                            <path d="M34 10 21 35h10l-1 19 14-27H34z" fill="url(#sparkGrad)"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="home-updates-kicker mb-1">Novedades</p>
+                        <h5 class="modal-title mb-0" id="homeUpdatesModalLabel">Nuevas actualizaciones del sistema</h5>
+                    </div>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <ul class="mb-0">
-                    <li>Nuevo dashboard más moderno con mejor jerarquía visual.</li>
-                    <li>Alerta en Home cuando faltan premios del día.</li>
-                    <li>Recordatorios estratégicos de cobro en quincena.</li>
-                    <li>Alerta inmediata cuando un cliente empieza a exceder su límite.</li>
+                <ul class="home-updates-list mb-0">
+                    <li><span class="material-icons">dashboard_customize</span> Nuevo dashboard más moderno con mejor jerarquía visual.</li>
+                    <li><span class="material-icons">emoji_events</span> Alerta en Home cuando faltan premios del día.</li>
+                    <li><span class="material-icons">event_repeat</span> Recordatorios estratégicos de cobro en quincena.</li>
+                    <li><span class="material-icons">warning_amber</span> Alerta inmediata cuando un cliente empieza a exceder su límite.</li>
                 </ul>
             </div>
         </div>
