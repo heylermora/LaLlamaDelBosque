@@ -1,12 +1,15 @@
 ﻿using LaLlamaDelBosque.Models;
 using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Mvc;
+using System.Net.Http.Headers;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace LaLlamaDelBosque.Controllers
 {
 	public class LotteryController: Controller
 	{
+		private static readonly HttpClient HttpClient = new();
 		private static readonly Regex NumberTokenPattern = new(@"^\d{1,2}$", RegexOptions.Compiled);
 		private static readonly Regex CompactNumberPattern = new(@"^\d{3,}$", RegexOptions.Compiled);
 		private static readonly Regex NumberSplitPattern = new(@"[+,\s]+", RegexOptions.Compiled);
@@ -347,6 +350,47 @@ namespace LaLlamaDelBosque.Controllers
 		}
 
 		#endregion
+
+		[HttpPost]
+		public async Task<IActionResult> TranscribeVoice(IFormFile? audioFile, bool userVerified)
+		{
+			if(!userVerified) return BadRequest(new { error = "Debes verificar al usuario antes de transcribir." });
+			if(audioFile == null || audioFile.Length == 0) return BadRequest(new { error = "Debes adjuntar un archivo de audio." });
+
+			var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+			if(string.IsNullOrWhiteSpace(apiKey)) return StatusCode(500, new { error = "OPENAI_API_KEY no está configurada en el servidor." });
+
+			using var form = new MultipartFormDataContent();
+			await using var stream = audioFile.OpenReadStream();
+			using var streamContent = new StreamContent(stream);
+			streamContent.Headers.ContentType = new MediaTypeHeaderValue(audioFile.ContentType ?? "application/octet-stream");
+			form.Add(streamContent, "file", audioFile.FileName);
+			form.Add(new StringContent("gpt-4o-mini-transcribe"), "model");
+			form.Add(new StringContent("es"), "language");
+
+			using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/audio/transcriptions");
+			request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+			request.Content = form;
+
+			using var response = await HttpClient.SendAsync(request);
+			var responseBody = await response.Content.ReadAsStringAsync();
+			if(!response.IsSuccessStatusCode)
+			{
+				return StatusCode((int)response.StatusCode, new { error = "No fue posible transcribir el audio.", detail = responseBody });
+			}
+
+			using var doc = JsonDocument.Parse(responseBody);
+			var transcript = doc.RootElement.TryGetProperty("text", out var textProp) ? (textProp.GetString() ?? string.Empty) : string.Empty;
+			var validNumbers = ParseNumberTokens(transcript);
+
+			return Ok(new
+			{
+				transcript,
+				validNumbers,
+				normalized = string.Join("+", validNumbers),
+				isValid = validNumbers.Any()
+			});
+		}
 
 		private static List<Lottery> GetLotteries()
 		{

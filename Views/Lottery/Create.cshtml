@@ -463,10 +463,49 @@
         }
 
         function processVoiceNumbersPilot() {
+            const verified = document.getElementById("voiceUserVerified");
+            const fileInput = document.getElementById("voiceNumbersFile");
             const feedback = document.getElementById("voicePilotFeedback");
-            if (feedback) {
-                feedback.textContent = "Plan Piloto: archivo validado. Pronto habilitaremos transcripción automática para cargar números desde voz.";
+            const bulkInput = document.getElementById("bulkNumbersInput");
+            if (!verified || !fileInput || !feedback) return;
+            if (!(verified.checked && fileInput.files && fileInput.files.length > 0)) {
+                feedback.textContent = "Debes seleccionar un audio y verificar al usuario antes de procesar.";
+                return;
             }
+
+            const formData = new FormData();
+            formData.append("audioFile", fileInput.files[0]);
+            formData.append("userVerified", verified.checked ? "true" : "false");
+
+            feedback.textContent = "Transcribiendo audio...";
+            fetch('@Url.Action("TranscribeVoice", "Lottery")', {
+                method: "POST",
+                body: formData
+            })
+                .then(async response => {
+                    const data = await response.json();
+                    if (!response.ok) {
+                        throw new Error(data?.error || "No se pudo transcribir el audio.");
+                    }
+                    return data;
+                })
+                .then(data => {
+                    const normalized = (data?.normalized || "").trim();
+                    if (!normalized) {
+                        feedback.textContent = "No se detectaron números válidos (00-99) en la transcripción.";
+                        return;
+                    }
+
+                    if (bulkInput) {
+                        bulkInput.value = normalized;
+                    }
+
+                    applyPastedNumbers(false);
+                    feedback.textContent = `Transcripción OK. Números validados: ${normalized}.`;
+                })
+                .catch(error => {
+                    feedback.textContent = `Error de transcripción: ${error.message}`;
+                });
         }
 
         function syncAdvancedButtons() {
