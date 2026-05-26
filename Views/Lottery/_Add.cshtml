@@ -7,6 +7,11 @@
 
 <hr />
 
+<style>
+    .number-grid { display:grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap:.25rem; }
+    .number-grid .number-cell { width:100%; min-width:0 !important; }
+</style>
+
 <form asp-action="Add" id="addNumberForm">
     <div class="row g-3">
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
@@ -76,8 +81,18 @@
                     </div>
                 </div>
             </div>
+
+            <div class="border rounded bg-white p-2 mb-2 shadow-sm">
+                <label class="form-label mb-1">Pegar lista de números</label>
+                <textarea id="bulkNumbersInput" class="form-control form-control-sm" rows="2" placeholder='Ej: "00 01 78", "00+01+78", "0, 1, 78"'></textarea>
+                <div class="d-flex flex-wrap gap-1 mt-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="applyPastedNumbers(false)">Agregar desde texto</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="applyPastedNumbers(true)">Reemplazar con texto</button>
+                </div>
+                <small class="text-muted">Soporta espacios, comas, +, guiones y saltos de línea. Siempre se normaliza a 2 dígitos (00-99).</small>
+            </div>
             <div id="numberPalette" class="border rounded bg-white p-2 shadow-sm" style="max-height: 240px; overflow-y: auto;">
-                <div id="numberGrid" class="d-flex flex-wrap gap-1"></div>
+                <div id="numberGrid" class="number-grid"></div>
             </div>
             <small id="numberFeedback" class="form-text text-danger"></small>
             <span asp-validation-for="Value" class="text-danger"></span>

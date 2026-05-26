@@ -282,6 +282,43 @@
             renderSelectedNumbers();
         }
 
+        function parseNumbersFromText(raw) {
+            if (!raw) return [];
+            const sanitized = raw.replace(/[\[\]\(\)"'“”‘’]/g, " ");
+            const chunks = sanitized.split(/[^0-9]+/).filter(Boolean);
+            const unique = new Set();
+
+            chunks.forEach(chunk => {
+                const number = parseInt(chunk, 10);
+                if (Number.isNaN(number) || number < 0 || number > 99) return;
+                unique.add(padNumber(number));
+            });
+
+            return Array.from(unique).sort();
+        }
+
+        function applyPastedNumbers(replaceSelection) {
+            const input = document.getElementById("bulkNumbersInput");
+            const feedback = document.getElementById("numberFeedback");
+            if (!input) return;
+
+            const values = parseNumbersFromText(input.value);
+            if (!values.length) {
+                if (feedback) feedback.textContent = "No se encontraron números válidos. Usa valores de 0 a 99.";
+                return;
+            }
+
+            if (replaceSelection) {
+                selectedNumbers = values;
+                syncNumberPalette();
+                renderSelectedNumbers();
+            } else {
+                addUniqueValues(values);
+            }
+
+            if (feedback) feedback.textContent = `${values.length} número(s) procesado(s) desde texto.`;
+        }
+
         function selectRange() {
             const startInput = document.getElementById("rangeStart");
             const endInput = document.getElementById("rangeEnd");
@@ -363,7 +400,6 @@
                 button.dataset.value = value;
                 button.className = "btn btn-sm btn-outline-secondary number-cell";
                 button.textContent = value;
-                button.style.minWidth = "48px";
                 button.onclick = function () { toggleNumberSelection(value); };
                 grid.appendChild(button);
             }
