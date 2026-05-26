@@ -229,7 +229,7 @@
             const submitButton = document.getElementById("addNumberSubmit");
             const placeholder = document.getElementById("numberPlaceholder");
             const outsidePlaceholder = document.getElementById("numberPlaceholderOutside");
-            if (!hiddenInput || !container) return;
+            if (!hiddenInput) return;
 
             const expanded = [];
             selectedNumbers.forEach(number => {
@@ -237,7 +237,7 @@
                 for (let i = 0; i < count; i++) expanded.push(number);
             });
             hiddenInput.value = expanded.join("+");
-            container.innerHTML = "";
+            if (container) container.innerHTML = "";
             if (outsideContainer) outsideContainer.innerHTML = "";
 
             selectedNumbers.forEach(number => {
@@ -257,7 +257,7 @@
                     syncNumberPalette();
                     renderSelectedNumbers();
                 };
-                container.appendChild(chip);
+                if (container) container.appendChild(chip);
                 if (outsideContainer) {
                     const outsideChip = chip.cloneNode(true);
                     outsideChip.onclick = chip.onclick;
