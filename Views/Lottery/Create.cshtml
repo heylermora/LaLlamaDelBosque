@@ -147,8 +147,8 @@
                                         <tr>
                                             <td></td>
                                             <td class="fw-semibold">@item.Value</td>
-                                            <td>₡ @item.Amount.ToString("N0")</td>
-                                            <td>₡ @item.Busted.ToString("N0")</td>
+                                            <td>@item.Amount.ToCRC()</td>
+                                            <td>@item.Busted.ToCRC()</td>
                                             <td>
                                                 <!-- Remove -->
                                                 <button type="button" class="btn" onclick="showPartial('removePartial-@Model.Id-@item.Id')">
@@ -173,11 +173,11 @@
                 <div class="card text-white border-0 shadow-sm" style="background: linear-gradient(135deg, #3B82F6, #64b5f6);">
                     <div class="card-body">
                         <h2 class="card-title">Resumen</h2>
-                        <p class="card-text mb-1">Monto Total: ₡ @Model.Numbers.Sum(x => x.Amount).ToString("N0")</p>
-                        <p class="card-text">Reventado Total: ₡ @Model.Numbers.Sum(x => x.Busted).ToString("N0")</p>
+                        <p class="card-text mb-1">Monto Total: @Model.Numbers.Sum(x => x.Amount).ToCRC()</p>
+                        <p class="card-text">Reventado Total: @Model.Numbers.Sum(x => x.Busted).ToCRC()</p>
                         <hr>
-                        <p class="card-text mb-1" style="font-weight: bold; font-size: 1rem;">Total Papelito: ₡ @subsum.ToString("N0")</p>
-                        <p class="card-text mb-0" style="font-weight: bold; font-size: 1.2rem;">Total General: ₡ @sum.ToString("N0")</p>
+                        <p class="card-text mb-1" style="font-weight: bold; font-size: 1rem;">Total Papelito: @subsum.ToCRC()</p>
+                        <p class="card-text mb-0" style="font-weight: bold; font-size: 1.2rem;">Total General: @sum.ToCRC()</p>
                     </div>
                 </div>
 

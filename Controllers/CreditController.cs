@@ -180,9 +180,7 @@ namespace LaLlamaDelBosque.Controllers
                             && previousTotal <= credit.Client.Limit.Value
                             && credit.CreditSummary.Total > credit.Client.Limit.Value)
                         {
-                            TempData["LimitExceededClientName"] = credit.Client.Name;
-                            TempData["LimitExceededClientTotal"] = credit.CreditSummary.Total.ToString("N0");
-                            TempData["LimitExceededClientLimit"] = credit.Client.Limit.Value.ToString("N0");
+                            SetLimitExceededTempData(credit);
                         }
                     }
 
@@ -252,9 +250,7 @@ namespace LaLlamaDelBosque.Controllers
                     && previousTotal <= credit.Client.Limit.Value
                     && credit.CreditSummary.Total > credit.Client.Limit.Value)
                 {
-                    TempData["LimitExceededClientName"] = credit.Client.Name;
-                    TempData["LimitExceededClientTotal"] = credit.CreditSummary.Total.ToString("N0");
-                    TempData["LimitExceededClientLimit"] = credit.Client.Limit.Value.ToString("N0");
+                    SetLimitExceededTempData(credit);
                 }
 
                 SetCredits(_credits);
@@ -343,6 +339,13 @@ namespace LaLlamaDelBosque.Controllers
                 text += $"✅ {credit.Client.Name.ToUpper()}: *₡ {credit.CreditSummary.Total}*. ";
             }
             return text;
+        }
+
+        private void SetLimitExceededTempData(Credit credit)
+        {
+            TempData["LimitExceededClientName"] = credit.Client.Name;
+            TempData["LimitExceededClientTotal"] = credit.CreditSummary.Total.ToCRC();
+            TempData["LimitExceededClientLimit"] = credit.Client.Limit?.ToCRC();
         }
     }
 }
