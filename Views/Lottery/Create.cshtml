@@ -644,12 +644,13 @@
             if (bulkInput) {
                 bulkInput.addEventListener("input", function () {
                     const digits = (bulkInput.value.match(/\d/g) || []).join("");
-                    const normalized = digits.length % 2 === 0 ? digits : `0${digits}`;
                     const groups = [];
-                    for (let i = 0; i < normalized.length; i += 2) {
-                        groups.push(normalized.slice(i, i + 2));
+                    const pairLimit = Math.floor(digits.length / 2) * 2;
+                    for (let i = 0; i < pairLimit; i += 2) {
+                        groups.push(digits.slice(i, i + 2));
                     }
-                    bulkInput.value = groups.join("+");
+                    const remainder = digits.slice(pairLimit);
+                    bulkInput.value = remainder ? `${groups.join("+")}${groups.length ? "+" : ""}${remainder}` : groups.join("+");
                 });
             }
 
