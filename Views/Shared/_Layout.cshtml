@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,9 +9,9 @@
     <link rel="stylesheet" href="~/LaLlamaDelBosque.styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons&display=block">
 </head>
-<body>
+<body class="app-body">
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm border-bottom box-shadow mb-4 app-navbar">
             <div class="container-fluid">
                 <a class="navbar-brand nav-link" asp-area="" asp-controller="Home" asp-action="Index">La Llama Del Bosque</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
@@ -57,13 +57,13 @@
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+    <div class="container app-shell">
+        <main role="main" class="pb-3 app-main">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
+    <footer class="border-top footer text-muted app-footer">
         <div class="container navbar-text">
             &copy; @DateTime.Today.Year - La Llama Del Bosque
         </div>
