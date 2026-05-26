@@ -650,7 +650,10 @@
                         groups.push(digits.slice(i, i + 2));
                     }
                     const remainder = digits.slice(pairLimit);
-                    bulkInput.value = remainder ? `${groups.join("+")}${groups.length ? "+" : ""}${remainder}` : groups.join("+");
+                    if (remainder.length === 1) {
+                        groups.push(`0${remainder}`);
+                    }
+                    bulkInput.value = groups.join("+");
                 });
             }
 
