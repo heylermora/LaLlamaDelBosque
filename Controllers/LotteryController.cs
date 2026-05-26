@@ -43,7 +43,7 @@ namespace LaLlamaDelBosque.Controllers
 					(id == null && lottery != null && p.Lottery == lottery) ||
 					(id != null && lottery != null && p.Id == id && p.Lottery == lottery) ||
 					(lottery == "TODOS")) &&
-					(p.DrawDate.Date >= fromDate && p.DrawDate.Date <= toDate)
+					(p.DrawDate.Date >= searchModel.FromDate.Value.Date && p.DrawDate.Date <= searchModel.ToDate.Value.Date)
 				).ToList();
 
 				if((papers.All(p => p.DrawDate.Date == searchModel.FromDate.Value.Date &&
@@ -76,7 +76,9 @@ namespace LaLlamaDelBosque.Controllers
 			var paper = TempData.Get<Paper>("Paper") ?? new Paper { CreationDate = DateTime.Now };
 
 			// Parsear la fecha o usar la de creación
-			var date = string.IsNullOrEmpty(dateString) ? paper.CreationDate : DateTime.Parse(dateString);
+			var date = !string.IsNullOrWhiteSpace(dateString) && DateTime.TryParse(dateString, out var parsedDate)
+				? parsedDate
+				: paper.CreationDate;
 
 			// Actualizar sorteos disponibles en esa fecha
 			UpdateLotteries(date);
@@ -217,13 +219,15 @@ namespace LaLlamaDelBosque.Controllers
 		[ValidateAntiForgeryToken]
 		public ActionResult Delete(int id, string lottery, string fromDate, string toDate)
 		{
-			Console.WriteLine("Id: " + id);
 			try
 			{
 				var paper = _papers.First(x => x.Id == id);
 				_papers.Remove(paper);
 				SetPapers(_papers);
-				return RedirectToAction(nameof(Index), new { lottery, fromDate = DateTime.Parse(fromDate), toDate = DateTime.Parse(toDate) });
+				DateTime? parsedFromDate = DateTime.TryParse(fromDate, out var tempFromDate) ? tempFromDate : null;
+				DateTime? parsedToDate = DateTime.TryParse(toDate, out var tempToDate) ? tempToDate : null;
+
+				return RedirectToAction(nameof(Index), new { lottery, fromDate = parsedFromDate, toDate = parsedToDate });
 			}
 			catch(Exception ex)
 			{

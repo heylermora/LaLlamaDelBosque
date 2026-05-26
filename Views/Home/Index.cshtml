@@ -1,55 +1,67 @@
-﻿@model LaLlamaDelBosque.Models.SummaryModel
+@model LaLlamaDelBosque.Models.SummaryModel
 
 @{
-    ViewData["TitleC"] = "Resumen de Créditos";
-    ViewData["TitleL"] = "Resumen de Sorteos";
+    ViewData["Title"] = "Inicio";
+    var today = DateTime.Today.ToString("dddd, dd 'de' MMMM yyyy", new System.Globalization.CultureInfo("es-CR"));
 }
 
-<h2 class="fw-bold mb-4">@ViewData["TitleC"]</h2>
+<section class="dashboard-hero p-4 p-lg-5 mb-4">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+        <div>
+            <p class="text-uppercase small fw-semibold mb-2 text-primary">Panel principal</p>
+            <h1 class="mb-2">Bienvenido a La Llama Del Bosque</h1>
+            <p class="text-muted mb-0">@today · Resumen rápido de clientes, cobros y ventas del día.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-primary" asp-controller="Lottery" asp-action="Create">Nuevo papelito</a>
+            <a class="btn btn-outline-primary" asp-controller="Credit" asp-action="Index">Ver créditos</a>
+        </div>
+    </div>
+</section>
 
-<div class="container">
+<section class="mb-4">
+    <h4 class="fw-bold mb-3">Indicadores de crédito</h4>
     <div class="row g-3">
-
-        <!-- Cards resumen -->
-        <div class="col-md-4">
-            <div class="card shadow-sm text-center h-100">
+        <div class="col-12 col-md-4">
+            <div class="card h-100 dashboard-kpi-card">
                 <div class="card-body">
-                    <small class="text-muted">Clientes</small>
-                    <h2 class="fw-bold">@Model.Credit.Clients</h2>
-                    <p class="text-muted small mb-0">@Model.Credit.ClientsDescription</p>
+                    <small class="text-muted">Clientes activos</small>
+                    <h2 class="fw-bold mb-1">@Model.Credit.Clients</h2>
+                    <p class="text-muted small mb-0">@Model.Credit.ClientsDescription registradas</p>
                 </div>
             </div>
         </div>
-
-        <div class="col-md-4">
-            <div class="card shadow-sm text-center h-100">
+        <div class="col-12 col-md-4">
+            <div class="card h-100 dashboard-kpi-card">
                 <div class="card-body">
-                    <small class="text-muted">Por cobrar</small>
-                    <h2 class="fw-bold">₡ @Model.Credit.Receivable</h2>
-                    <p class="text-muted small mb-0">Pendientes</p>
+                    <small class="text-muted">Total por cobrar</small>
+                    <h2 class="fw-bold mb-1">₡ @Model.Credit.Receivable</h2>
+                    <p class="text-muted small mb-0">Saldo pendiente acumulado</p>
                 </div>
             </div>
         </div>
-
-        <div class="col-md-4">
-            <div class="card shadow-sm text-center h-100">
+        <div class="col-12 col-md-4">
+            <div class="card h-100 dashboard-kpi-card">
                 <div class="card-body">
-                    <small class="text-muted">Abonos hoy</small>
-                    <h2 class="fw-bold">₡ @Model.Credit.Received</h2>
-                    <p class="text-muted small mb-0">Pagados</p>
+                    <small class="text-muted">Abonos del día</small>
+                    <h2 class="fw-bold mb-1">₡ @Model.Credit.Received</h2>
+                    <p class="text-muted small mb-0">Pagos recibidos hoy</p>
                 </div>
             </div>
         </div>
+    </div>
+</section>
 
-        <!-- Listas -->
-        <div class="col-md-4">
-            <div class="card shadow-sm h-100">
+<section class="mb-5">
+    <div class="row g-3">
+        <div class="col-12 col-lg-4">
+            <div class="card h-100">
                 <div class="card-body">
                     <h6 class="fw-semibold mb-3">Mayor deuda</h6>
                     <ul class="list-group list-group-flush">
-                        @foreach (var item in Model.Credit.MajorDebts)
+                        @foreach(var item in Model.Credit.MajorDebts)
                         {
-                            <li class="list-group-item d-flex justify-content-between">
+                            <li class="list-group-item d-flex justify-content-between px-0">
                                 <span>@item.Name</span>
                                 <strong>₡ @item.Amount</strong>
                             </li>
@@ -58,15 +70,14 @@
                 </div>
             </div>
         </div>
-
-        <div class="col-md-4">
-            <div class="card shadow-sm h-100">
+        <div class="col-12 col-lg-4">
+            <div class="card h-100">
                 <div class="card-body">
                     <h6 class="fw-semibold mb-3">Menor deuda</h6>
                     <ul class="list-group list-group-flush">
-                        @foreach (var item in Model.Credit.MinorDebts)
+                        @foreach(var item in Model.Credit.MinorDebts)
                         {
-                            <li class="list-group-item d-flex justify-content-between">
+                            <li class="list-group-item d-flex justify-content-between px-0">
                                 <span>@item.Name</span>
                                 <strong>₡ @item.Amount</strong>
                             </li>
@@ -75,15 +86,14 @@
                 </div>
             </div>
         </div>
-
-        <div class="col-md-4">
-            <div class="card shadow-sm h-100">
+        <div class="col-12 col-lg-4">
+            <div class="card h-100">
                 <div class="card-body">
-                    <h6 class="fw-semibold mb-3">Inactivos</h6>
+                    <h6 class="fw-semibold mb-3">Clientes inactivos</h6>
                     <ul class="list-group list-group-flush">
-                        @foreach (var item in Model.Credit.InactiveClients)
+                        @foreach(var item in Model.Credit.InactiveClients)
                         {
-                            <li class="list-group-item d-flex justify-content-between">
+                            <li class="list-group-item d-flex justify-content-between px-0">
                                 <span>@item.Name</span>
                                 <strong>₡ @item.Amount</strong>
                             </li>
@@ -92,56 +102,47 @@
                 </div>
             </div>
         </div>
-
     </div>
-</div>
+</section>
 
-<hr class="my-5" />
-
-<h2 class="fw-bold mb-4">@ViewData["TitleL"]</h2>
-
-<div class="container mb-2">
+<section>
+    <h4 class="fw-bold mb-3">Ventas por sorteo (hoy)</h4>
     <div class="row g-3">
-
-        <div class="col-md-3">
-            <div class="card shadow-sm text-center h-100">
+        <div class="col-6 col-lg-3">
+            <div class="card h-100 text-center dashboard-kpi-card">
                 <div class="card-body">
                     <small class="text-muted">Papelitos</small>
                     <h3 class="fw-bold">@Model.Lottery.Papers</h3>
-                    <p class="text-muted small mb-0">Facturados</p>
+                    <p class="text-muted small mb-0">Emitidos hoy</p>
                 </div>
             </div>
         </div>
-
-        <div class="col-md-3">
-            <div class="card shadow-sm text-center h-100">
+        <div class="col-6 col-lg-3">
+            <div class="card h-100 text-center dashboard-kpi-card">
                 <div class="card-body">
-                    <small class="text-muted">Monto total</small>
+                    <small class="text-muted">Monto</small>
                     <h3 class="fw-bold">₡ @Model.Lottery.TotalAmount</h3>
-                    <p class="text-muted small mb-0">Pagados</p>
+                    <p class="text-muted small mb-0">Apuestas base</p>
                 </div>
             </div>
         </div>
-
-        <div class="col-md-3">
-            <div class="card shadow-sm text-center h-100">
+        <div class="col-6 col-lg-3">
+            <div class="card h-100 text-center dashboard-kpi-card">
                 <div class="card-body">
                     <small class="text-muted">Reventado</small>
                     <h3 class="fw-bold">₡ @Model.Lottery.TotalBusted</h3>
-                    <p class="text-muted small mb-0">Pagados</p>
+                    <p class="text-muted small mb-0">Adicional</p>
                 </div>
             </div>
         </div>
-
-        <div class="col-md-3">
-            <div class="card shadow-sm text-center h-100">
+        <div class="col-6 col-lg-3">
+            <div class="card h-100 text-center dashboard-kpi-card border-primary-subtle">
                 <div class="card-body">
                     <small class="text-muted">Venta total</small>
-                    <h3 class="fw-bold">₡ @Model.Lottery.Total</h3>
-                    <p class="text-muted small mb-0">Pagados</p>
+                    <h3 class="fw-bold text-primary">₡ @Model.Lottery.Total</h3>
+                    <p class="text-muted small mb-0">Consolidado del día</p>
                 </div>
             </div>
         </div>
-
     </div>
-</div>
+</section>

@@ -78,6 +78,7 @@ h6 {
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-soft);
     padding: 1.25rem;
+    margin-top: .5rem;
 }
 
 @media (min-width: 992px) {
@@ -90,6 +91,13 @@ h6 {
 .app-navbar {
     background: color-mix(in srgb, var(--layout) 90%, #ffffff);
     backdrop-filter: blur(8px);
+    position: sticky;
+    top: 0;
+    z-index: 1100;
+}
+
+.app-navbar .dropdown-menu {
+    z-index: 1200;
 }
 
 a.navbar-brand {
@@ -379,4 +387,21 @@ span.text-bg-danger {
 
 .circle:hover {
     transform: rotate(360deg);
+}
+
+/* Home dashboard */
+.dashboard-hero {
+    background: linear-gradient(135deg, rgba(37,99,235,.12), rgba(14,165,164,.1));
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+}
+
+.dashboard-kpi-card {
+    border: 1px solid var(--border-color);
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.dashboard-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
 }
