@@ -210,24 +210,84 @@
             window.location.href = url;
         }
 
-        function setFormat(id, key) {
-            if (document.getElementById(id).value != "") {
-                if (key !== 8) {
-                    document.getElementById(id).addEventListener('input', function (e) {
-                        e.target.value = e.target.value.replace(/[^\dA-Z]/g, '').replace(/(.{2})/g, '$1+').trim();
-                    });
-                }
-                else {
-                    newText = document.getElementById(id).value.substring(0, document.getElementById(id).value.length - 1);
-                    document.getElementById(id).value = newText;
-                }
+        function splitNumberTokens(rawValue) {
+            return (rawValue || "")
+                .split(/[+,\s]+/)
+                .map(token => token.trim())
+                .filter(token => token.length > 0);
+        }
+
+        function normalizeNumberToken(token) {
+            if (/^\d$/.test(token)) {
+                return [token.padStart(2, '0')];
+            }
+
+            if (/^\d{3,}$/.test(token) && token.length % 2 === 0) {
+                return token.match(/.{1,2}/g) || [token];
+            }
+
+            return [token];
+        }
+
+        function validateNumberTokens(tokens) {
+            const invalidTokens = tokens.filter(token => !/^\d{1,2}$/.test(token));
+            return {
+                isValid: invalidTokens.length === 0,
+                invalidTokens: invalidTokens
+            };
+        }
+
+        function updateNumberInputUI(input, tokens, validation) {
+            const preview = document.getElementById('numberPreview');
+            const feedback = document.getElementById('numberFeedback');
+            const submitButton = document.getElementById('addNumberSubmit');
+
+            if (preview) {
+                preview.textContent = tokens.length > 0 ? `Se guardará como: ${tokens.join('+')}` : '';
+            }
+
+            if (feedback) {
+                feedback.textContent = validation.isValid
+                    ? ''
+                    : `Formato inválido en: ${validation.invalidTokens.join(', ')}. Solo se permiten números de 1 o 2 dígitos.`;
+            }
+
+            if (submitButton) {
+                submitButton.disabled = !validation.isValid || tokens.length === 0;
             }
         }
 
+        function formatNumberInput(input) {
+            const tokens = splitNumberTokens(input.value)
+                .flatMap(normalizeNumberToken);
+            const validation = validateNumberTokens(tokens);
+
+            input.value = tokens.join('+');
+            updateNumberInputUI(input, tokens, validation);
+        }
+
+        function normalizeNumberInput(input) {
+            formatNumberInput(input);
+        }
+
         $(document).ready(function () {
+            const numberInput = document.getElementById('number');
+            if (numberInput) {
+                formatNumberInput(numberInput);
+            }
+
             $('form').submit(function (e) {
                 var amount = parseFloat($('#Amount').val());
                 var busted = parseFloat($('#Busted').val());
+
+                if (numberInput) {
+                    formatNumberInput(numberInput);
+                    if (document.getElementById('addNumberSubmit')?.disabled) {
+                        numberInput.focus();
+                        e.preventDefault();
+                        return;
+                    }
+                }
 
                 if (busted > amount) {
                     $('#Busted').siblings('.text-danger').text('El campo no puede ser mayor que el Monto.');
