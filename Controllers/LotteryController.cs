@@ -61,7 +61,7 @@ namespace LaLlamaDelBosque.Controllers
 			}
 			catch(Exception ex)
 			{
-				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message, errorStack = ex.StackTrace });
 			}
 		}
 
@@ -134,6 +134,7 @@ namespace LaLlamaDelBosque.Controllers
 							Id = id,
 							Numbers = paper.Numbers.Select(n => new Number
 							{
+								Id = n.Id,
 								Amount = n.Amount,
 								Busted = n.Busted,
 								Value = n.Value
@@ -207,7 +208,7 @@ namespace LaLlamaDelBosque.Controllers
 			}
 			catch(Exception ex)
 			{
-				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message, errorStack = ex.StackTrace });
 			}
 		}
 
@@ -226,7 +227,7 @@ namespace LaLlamaDelBosque.Controllers
 			}
 			catch(Exception ex)
 			{
-				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message, errorStack = ex.StackTrace });
 			}
 		}
 
@@ -277,7 +278,7 @@ namespace LaLlamaDelBosque.Controllers
 			}
 			catch(Exception ex)
 			{
-				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message, errorStack = ex.StackTrace });
 			}
 		}
 
@@ -319,11 +320,11 @@ namespace LaLlamaDelBosque.Controllers
 				var line = paper.Numbers.First(l => l.Id == int.Parse(lineId));
 				paper.Numbers.Remove(line);
 				TempData.Put("Paper", paper);
-				return RedirectToAction(nameof(Create));
+				return RedirectToAction(nameof(Create), new { cc = true });
 			}
 			catch(Exception ex)
 			{
-				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message, errorStack = ex.StackTrace });
 			}
 		}
 
@@ -337,7 +338,7 @@ namespace LaLlamaDelBosque.Controllers
 			}
 			catch(Exception ex)
 			{
-				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
+				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message, errorStack = ex.StackTrace });
 			}
 		}
 

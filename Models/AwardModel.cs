@@ -1,4 +1,6 @@
-﻿namespace LaLlamaDelBosque.Models
+﻿using System.Web.Mvc;
+
+namespace LaLlamaDelBosque.Models
 {
     public class AwardModel
     {
@@ -15,6 +17,7 @@
         public double TimesAmount { get; set; } = 85;
         public double Award { get; set; }
         public bool IsBusted { get; set; }
+        public int MatchCount { get; set; }
     }
     public class Award
     {

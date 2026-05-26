@@ -76,7 +76,7 @@
                             <div class="card shadow-sm border-0 h-100">
                                 <div class="card-body text-center">
                                     <div class="text-muted small">Monto vendido</div>
-                                    <div class="h4 fw-bold mb-0">₡ @totalMonto.ToString("N0")</div>
+                                    <div class="h4 fw-bold mb-0">@totalMonto.ToCRC()</div>
                                 </div>
                             </div>
                         </div>
@@ -84,7 +84,7 @@
                             <div class="card shadow-sm border-0 h-100">
                                 <div class="card-body text-center">
                                     <div class="text-muted small">Reventado</div>
-                                    <div class="h4 fw-bold mb-0">₡ @totalReventado.ToString("N0")</div>
+                                    <div class="h4 fw-bold mb-0">@totalReventado.ToCRC()</div>
                                 </div>
                             </div>
                         </div>
@@ -93,7 +93,7 @@
                     <div class="card shadow-sm border-0 mt-3">
                         <div class="card-body text-center">
                             <div class="text-muted small">Total general vendido</div>
-                            <div class="h3 fw-bold mb-0">₡ @( (totalMonto + totalReventado).ToString("N0") )</div>
+                            <div class="h3 fw-bold mb-0">@( (totalMonto + totalReventado).ToCRC() )</div>
                         </div>
                     </div>
                 </div>
@@ -130,25 +130,25 @@
                                         <td><span class="badge bg-secondary">@item.Lottery</span></td>
                                         <td>@item.CreationDate.ToString("g")</td>
                                         <td>@item.DrawDate.ToString("g")</td>
-                                        <td class="text-end">₡ @monto.ToString("N0")</td>
-                                        <td class="text-end">₡ @reventado.ToString("N0")</td>
-                                        <td class="text-end fw-bold">₡ @total.ToString("N0")</td>
+                                        <td class="text-end">@monto.ToCRC()</td>
+                                        <td class="text-end">@reventado.ToCRC()</td>
+                                        <td class="text-end fw-bold">@total.ToCRC()</td>
                                         <td class="text-center">
                                             <div class="btn-group" role="group">
                                                 <button type="button"
-                                                        class="btn btn-sm btn-outline-primary"
+                                                        class="btn btn-sm"
                                                         title="Ver"
                                                         onclick="location.href='@Url.Action("Print", "Lottery", new { id = item.Id })'">
-                                                    <span class="material-icons" style="font-size:20px;">visibility</span>
+                                                    <span class="material-icons icon icon-primary" style="font-size:20px;">visibility</span>
                                                 </button>
 
                                                 @if (item.DrawDate > DateTime.Now)
                                                 {
                                                     <button type="button"
-                                                            class="btn btn-sm btn-outline-danger btn-delete"
+                                                            class="btn btn-sm"
                                                             data-id="@item.Id"
                                                             title="Eliminar">
-                                                        <span class="material-icons" style="font-size:20px;">delete</span>
+                                                        <span class="material-icons icon icon-danger" style="font-size:20px;">delete</span>
                                                     </button>
                                                 }
                                             </div>
@@ -168,7 +168,7 @@
                             <tfoot class="table-light">
                                 <tr>
                                     <td colspan="6" class="text-end fw-bold">TOTAL</td>
-                                    <td class="text-end fw-bold">₡ @totales.ToString("N0")</td>
+                                    <td class="text-end fw-bold">@totales.ToCRC()</td>
                                     <td></td>
                                 </tr>
                             </tfoot>
@@ -206,8 +206,8 @@
 
                                                 <tr class="@rowClass">
                                                     <td>@currentNumber</td>
-                                                    <td>@(sumAmount > 0 ? $"₡ {sumAmount:N0}" : "-")</td>
-                                                    <td>@(sumBusted > 0 ? $"₡ {sumBusted:N0}" : "-")</td>
+                                                    <td>@(sumAmount > 0 ? $"{sumAmount.ToCRC()}" : "-")</td>
+                                                    <td>@(sumBusted > 0 ? $"{sumBusted.ToCRC()}" : "-")</td>
                                                 </tr>
                                             }
                                         </tbody>

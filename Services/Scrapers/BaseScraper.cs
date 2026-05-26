@@ -77,7 +77,9 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 			var amount = filteredPapers.Sum(x => x.Numbers.Sum(n => n.Value == number ? n.Amount : 0));
 			var busted = filteredPapers.Sum(x => x.Numbers.Sum(n => n.Value == number ? n.Busted : 0));
-			var effectiveTimesBusted = timesBusted ?? 200;
+
+            var matchCount = filteredPapers.Sum(x => x.Numbers.Count(n => n.Value == number));
+            var effectiveTimesBusted = timesBusted ?? 200;
 
 			var award = isBusted ? (85 * amount) + (effectiveTimesBusted * busted) : 85 * amount;
 
@@ -90,7 +92,8 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				Busted = busted,
 				TimesBusted = effectiveTimesBusted,
 				Award = award,
-				IsBusted = isBusted
+				IsBusted = isBusted,
+				MatchCount = matchCount,
 			};
 		}
 	}

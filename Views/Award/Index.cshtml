@@ -1,19 +1,18 @@
-﻿<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
-<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+﻿<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 <link rel="stylesheet" href="~/LaLlamaDelBosque.styles.css" asp-append-version="true" />
 
 @model IEnumerable<Award>
 
 @using System.Web;
+@using LaLlamaDelBosque.Utils
 @using Microsoft.AspNetCore.Mvc;
 
 @{
     ViewData["Title"] = "Premios";
 }
 
-<div class="container py-4 py-lg-5">
-
+<div class="container py-2">
     <div class="row align-items-center g-3 mb-4">
         <div class="col-12 col-lg">
             <div class="d-flex align-items-center gap-3">
@@ -125,7 +124,7 @@
 
                                 <div class="flex-grow-1 text-start">
                                     <div class="fw-bold text-dark">@item.Date.ToLongDateString()</div>
-                                    <div class="small text-muted">@item.AwardLines.Count() premios registrados</div>
+                                    <div class="small text-muted">@item.AwardLines.Sum(x => x.MatchCount) premios registrados</div>
                                 </div>
                             </div>
                         </button>
@@ -217,13 +216,13 @@
                                                         }
                                                     </td>
                                                     <td>@line.Number</td>
-                                                    <td>₡ @line.Amount</td>
-                                                    <td>₡ @line.Busted</td>
+                                                    <td>@line.Amount.ToCRC()</td>
+                                                    <td>@line.Busted.ToCRC()</td>
                                                     <td>@line.TimesAmount</td>
                                                     <td>@line.TimesBusted</td>
                                                     <td>
-                                                        <span class="badge text-bg-success px-3 py-2 rounded-pill">
-                                                            ₡ @line.Award
+                                                        <span class="badge px-3 py-2 rounded-pill @(line.Award > 0 ? "text-bg-danger" : "text-bg-success")">
+                                                            @line.Award.ToCRC()
                                                         </span>
                                                     </td>
                                                     <td class="text-center">
@@ -252,8 +251,8 @@
                                             </tbody>
                                             <tfoot class="table-light">
                                                 <tr>
-                                                    <td colspan="7" class="text-end fw-bold">Total</td>
-                                                    <td colspan="2" class="fw-bold text-success">₡ @item.AwardLines.Sum(x => x.Award)</td>
+                                                    <td colspan="8" class="text-end fw-bold">Total</td>
+                                                    <td colspan="2" class="fw-bold text-danger">@item.AwardLines.Sum(x => x.Award).ToCRC()</td>
                                                     <td></td>
                                                 </tr>
                                             </tfoot>
