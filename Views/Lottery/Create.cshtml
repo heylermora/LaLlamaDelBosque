@@ -643,31 +643,12 @@
             }
             if (bulkInput) {
                 bulkInput.addEventListener("input", function () {
-                    const raw = bulkInput.value.replace(/[^0-9+]/g, "");
-                    const tokens = raw.split("+");
+                    const digitsOnly = bulkInput.value.replace(/\D/g, "");
                     const groups = [];
 
-                    tokens.forEach((token, tokenIndex) => {
-                        if (!token) return;
-                        if (token.length <= 2) {
-                            const isSingleDigit = token.length === 1;
-                            const hasMultipleTokens = tokens.length > 1;
-                            const isLastToken = tokenIndex === tokens.length - 1;
-                            if (isSingleDigit && hasMultipleTokens && isLastToken) {
-                                groups.push(`0${token}`);
-                            } else {
-                                groups.push(token.length === 1 ? token : token);
-                            }
-                            return;
-                        }
-
-                        const pairLimit = Math.floor(token.length / 2) * 2;
-                        for (let i = 0; i < pairLimit; i += 2) {
-                            groups.push(token.slice(i, i + 2));
-                        }
-                        const remainder = token.slice(pairLimit);
-                        if (remainder) groups.push(`0${remainder}`);
-                    });
+                    for (let i = 0; i < digitsOnly.length; i += 2) {
+                        groups.push(digitsOnly.slice(i, i + 2));
+                    }
 
                     bulkInput.value = groups.join("+");
                 });
