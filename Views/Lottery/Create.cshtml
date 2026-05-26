@@ -211,6 +211,11 @@
         }
 
         let selectedNumbers = [];
+        const selectedNumberCounts = new Map();
+        const appliedRuleValues = new Map();
+        const appliedAdvancedValues = new Map();
+        let isDraggingNumbers = false;
+        let dragTouchedValues = new Set();
 
         function padNumber(value) {
             return value.toString().padStart(2, "0");
@@ -219,57 +224,131 @@
         function renderSelectedNumbers() {
             const hiddenInput = document.getElementById("number");
             const container = document.getElementById("selectedNumbersContainer");
+            const outsideContainer = document.getElementById("selectedNumbersContainerOutside");
             const feedback = document.getElementById("numberFeedback");
             const submitButton = document.getElementById("addNumberSubmit");
             const placeholder = document.getElementById("numberPlaceholder");
+            const outsidePlaceholder = document.getElementById("numberPlaceholderOutside");
             if (!hiddenInput || !container) return;
 
-            hiddenInput.value = selectedNumbers.join("+");
+            const expanded = [];
+            selectedNumbers.forEach(number => {
+                const count = selectedNumberCounts.get(number) ?? 1;
+                for (let i = 0; i < count; i++) expanded.push(number);
+            });
+            hiddenInput.value = expanded.join("+");
             container.innerHTML = "";
+            if (outsideContainer) outsideContainer.innerHTML = "";
 
             selectedNumbers.forEach(number => {
+                const count = selectedNumberCounts.get(number) ?? 1;
                 const chip = document.createElement("button");
                 chip.type = "button";
-                chip.className = "btn btn-sm btn-primary";
-                chip.textContent = `${number} ×`;
+                chip.className = "numbers-chip";
+                chip.innerHTML = `<span>${number}</span><span class="numbers-chip-badge">${count}</span>`;
                 chip.onclick = function () {
-                    selectedNumbers = selectedNumbers.filter(x => x !== number);
+                    const current = selectedNumberCounts.get(number) ?? 1;
+                    if (current > 1) {
+                        selectedNumberCounts.set(number, current - 1);
+                    } else {
+                        selectedNumberCounts.delete(number);
+                        selectedNumbers = selectedNumbers.filter(x => x !== number);
+                    }
                     syncNumberPalette();
                     renderSelectedNumbers();
                 };
                 container.appendChild(chip);
+                if (outsideContainer) {
+                    const outsideChip = chip.cloneNode(true);
+                    outsideChip.onclick = chip.onclick;
+                    outsideContainer.appendChild(outsideChip);
+                }
             });
 
             const hasSelection = selectedNumbers.length > 0;
             if (placeholder) {
                 placeholder.style.display = hasSelection ? "none" : "inline";
             }
+            if (outsidePlaceholder) {
+                outsidePlaceholder.style.display = hasSelection ? "none" : "inline";
+            }
             if (feedback) feedback.textContent = hasSelection ? "" : "Selecciona al menos un número.";
             if (submitButton) submitButton.disabled = !hasSelection;
+        }
+
+        function addOrIncrementSelection(value) {
+            if (!selectedNumbers.includes(value)) {
+                selectedNumbers.push(value);
+                selectedNumbers.sort();
+            }
+            selectedNumberCounts.set(value, (selectedNumberCounts.get(value) ?? 0) + 1);
         }
 
         function syncNumberPalette() {
             const buttons = document.querySelectorAll(".number-cell");
             buttons.forEach(btn => {
                 const value = btn.dataset.value;
+                const count = selectedNumberCounts.get(value) ?? 0;
                 btn.classList.toggle("btn-success", selectedNumbers.includes(value));
                 btn.classList.toggle("btn-outline-secondary", !selectedNumbers.includes(value));
+                let badge = btn.querySelector(".number-cell-badge");
+                if (count > 0) {
+                    if (!badge) {
+                        badge = document.createElement("span");
+                        badge.className = "number-cell-badge";
+                        btn.appendChild(badge);
+                    }
+                    badge.textContent = String(count);
+                } else if (badge) {
+                    badge.remove();
+                }
             });
         }
 
         function toggleNumberSelection(value) {
-            if (selectedNumbers.includes(value)) {
-                selectedNumbers = selectedNumbers.filter(x => x !== value);
-            } else {
-                selectedNumbers.push(value);
-                selectedNumbers.sort();
-            }
+            addOrIncrementSelection(value);
             syncNumberPalette();
             renderSelectedNumbers();
         }
 
+        function applyNumberSelection(value) {
+            if (dragTouchedValues.has(value)) return;
+            dragTouchedValues.add(value);
+            addOrIncrementSelection(value);
+            syncNumberPalette();
+            renderSelectedNumbers();
+        }
+
+        function bindGridDragSelection() {
+            const grid = document.getElementById("numberGrid");
+            if (!grid) return;
+            grid.addEventListener("mousedown", function (e) {
+                const cell = e.target.closest(".number-cell");
+                if (!cell) return;
+                e.preventDefault();
+                isDraggingNumbers = true;
+                dragTouchedValues = new Set();
+                applyNumberSelection(cell.dataset.value);
+            });
+            grid.addEventListener("mouseover", function (e) {
+                if (!isDraggingNumbers) return;
+                const cell = e.target.closest(".number-cell");
+                if (!cell) return;
+                applyNumberSelection(cell.dataset.value);
+            });
+            document.addEventListener("mouseup", function () {
+                isDraggingNumbers = false;
+                dragTouchedValues = new Set();
+            });
+        }
+
         function clearSelectedNumbers() {
             selectedNumbers = [];
+            selectedNumberCounts.clear();
+            appliedRuleValues.clear();
+            appliedAdvancedValues.clear();
+            syncRuleButtons();
+            syncAdvancedButtons();
             syncNumberPalette();
             renderSelectedNumbers();
         }
@@ -278,11 +357,127 @@
             const union = new Set(selectedNumbers);
             values.forEach(v => union.add(v));
             selectedNumbers = Array.from(union).sort();
+            values.forEach(v => selectedNumberCounts.set(v, (selectedNumberCounts.get(v) ?? 0) + 1));
             syncNumberPalette();
             renderSelectedNumbers();
         }
 
-        function selectRange() {
+        function removeValues(values) {
+            values.forEach(value => {
+                const current = selectedNumberCounts.get(value) ?? 0;
+                if (current > 1) {
+                    selectedNumberCounts.set(value, current - 1);
+                } else {
+                    selectedNumberCounts.delete(value);
+                    selectedNumbers = selectedNumbers.filter(v => v !== value);
+                }
+            });
+            syncNumberPalette();
+            renderSelectedNumbers();
+        }
+
+        function explodeDigitChunk(chunk) {
+            if (!chunk) return [];
+
+            if (chunk.length <= 2) {
+                const value = parseInt(chunk, 10);
+                return Number.isNaN(value) || value < 0 || value > 99 ? [] : [padNumber(value)];
+            }
+
+            const normalized = chunk.length % 2 === 0 ? chunk : `0${chunk}`;
+            const values = [];
+            for (let i = 0; i < normalized.length; i += 2) {
+                const pair = normalized.slice(i, i + 2);
+                const value = parseInt(pair, 10);
+                if (!Number.isNaN(value) && value >= 0 && value <= 99) {
+                    values.push(padNumber(value));
+                }
+            }
+            return values;
+        }
+
+        function parseNumbersFromText(raw) {
+            if (!raw) return { unique: [], expanded: [] };
+            const chunks = raw.split("+").map(x => x.trim()).filter(Boolean);
+            const unique = new Set();
+            const expanded = [];
+
+            chunks.forEach(chunk => {
+                explodeDigitChunk(chunk).forEach(value => {
+                    unique.add(value);
+                    expanded.push(value);
+                });
+            });
+
+            return { unique: Array.from(unique).sort(), expanded };
+        }
+
+        function applyPastedNumbers(replaceSelection) {
+            const input = document.getElementById("bulkNumbersInput");
+            const feedback = document.getElementById("numberFeedback");
+            if (!input) return;
+
+            const parsed = parseNumbersFromText(input.value);
+            if (!parsed.unique.length) {
+                if (feedback) feedback.textContent = "No se encontraron números válidos. Usa valores de 0 a 99.";
+                return;
+            }
+
+            if (replaceSelection) {
+                selectedNumbers = parsed.unique;
+                selectedNumberCounts.clear();
+                parsed.expanded.forEach(v => selectedNumberCounts.set(v, (selectedNumberCounts.get(v) ?? 0) + 1));
+                syncNumberPalette();
+                renderSelectedNumbers();
+            } else {
+                addUniqueValues(parsed.expanded);
+            }
+
+            if (feedback) feedback.textContent = `${parsed.expanded.length} número(s) procesado(s) desde texto.`;
+
+        }
+
+        function clearBulkNumbersInput() {
+            const input = document.getElementById("bulkNumbersInput");
+            const feedback = document.getElementById("numberFeedback");
+            if (input) input.value = "";
+            if (feedback) feedback.textContent = "";
+        }
+
+        function syncAdvancedButtons() {
+            const entries = [
+                ["range", "rangeApplyButton"],
+                ["startsWith", "startsWithApplyButton"],
+                ["endsWith", "endsWithApplyButton"]
+            ];
+            entries.forEach(([key, buttonId]) => {
+                const button = document.getElementById(buttonId);
+                if (!button) return;
+                button.textContent = appliedAdvancedValues.has(key) ? "Quitar" : "Aplicar";
+            });
+        }
+
+        function applyOrToggleAdvanced(key, valuesFactory) {
+            const feedback = document.getElementById("numberFeedback");
+            const existing = appliedAdvancedValues.get(key);
+            const nextValues = valuesFactory();
+            if (!nextValues) return false;
+
+            if (existing && existing.signature === nextValues.signature) {
+                removeValues(existing.values);
+                appliedAdvancedValues.delete(key);
+                if (feedback) feedback.textContent = "Se quitó la selección aplicada.";
+            } else {
+                if (existing) removeValues(existing.values);
+                addUniqueValues(nextValues.values);
+                appliedAdvancedValues.set(key, nextValues);
+                if (feedback) feedback.textContent = "Selección aplicada.";
+            }
+            syncAdvancedButtons();
+            return true;
+        }
+
+        function applyOrToggleRange() {
             const startInput = document.getElementById("rangeStart");
             const endInput = document.getElementById("rangeEnd");
             const feedback = document.getElementById("numberFeedback");
@@ -298,7 +493,10 @@
 
             const values = [];
             for (let i = start; i <= end; i++) values.push(padNumber(i));
-            addUniqueValues(values);
+            applyOrToggleAdvanced("range", () => ({
+                signature: `${start}-${end}`,
+                values
+            }));
         }
 
         function isPrime(number) {
@@ -309,20 +507,43 @@
             return true;
         }
 
-        function selectByRule(rule, digit = null) {
+        function getValuesByRule(rule, digit = null) {
             const values = [];
             for (let i = 0; i < 100; i++) {
                 const value = padNumber(i);
                 if (rule === "even" && i % 2 === 0) values.push(value);
                 if (rule === "odd" && i % 2 !== 0) values.push(value);
                 if (rule === "prime" && isPrime(i)) values.push(value);
+                if (rule === "m5" && i % 5 === 0) values.push(value);
                 if (rule === "startsWith" && value.startsWith(String(digit))) values.push(value);
                 if (rule === "endsWith" && value.endsWith(String(digit))) values.push(value);
             }
-            addUniqueValues(values);
+            return values;
         }
 
-        function applyStartsWithDigit() {
+        function syncRuleButtons() {
+            ["even", "odd", "prime", "m5"].forEach(rule => {
+                const button = document.getElementById(`rule-${rule}`);
+                if (!button) return;
+                const isActive = appliedRuleValues.has(rule);
+                button.classList.toggle("btn-primary", isActive);
+                button.classList.toggle("btn-outline-primary", !isActive);
+            });
+        }
+
+        function toggleRuleSelection(rule) {
+            if (appliedRuleValues.has(rule)) {
+                removeValues(appliedRuleValues.get(rule));
+                appliedRuleValues.delete(rule);
+            } else {
+                const values = getValuesByRule(rule);
+                addUniqueValues(values);
+                appliedRuleValues.set(rule, values);
+            }
+            syncRuleButtons();
+        }
+
+        function applyOrToggleStartsWithDigit() {
             const input = document.getElementById("startsWithDigit");
             const feedback = document.getElementById("numberFeedback");
             if (!input) return;
@@ -331,10 +552,13 @@
                 if (feedback) feedback.textContent = "Para 'Inician en', usa un dígito de 0 a 9.";
                 return;
             }
-            selectByRule("startsWith", digit);
+            applyOrToggleAdvanced("startsWith", () => ({
+                signature: String(digit),
+                values: getValuesByRule("startsWith", digit)
+            }));
         }
 
-        function applyEndsWithDigit() {
+        function applyOrToggleEndsWithDigit() {
             const input = document.getElementById("endsWithDigit");
             const feedback = document.getElementById("numberFeedback");
             if (!input) return;
@@ -343,7 +567,46 @@
                 if (feedback) feedback.textContent = "Para 'Terminan en', usa un dígito de 0 a 9.";
                 return;
             }
-            selectByRule("endsWith", digit);
+            applyOrToggleAdvanced("endsWith", () => ({
+                signature: String(digit),
+                values: getValuesByRule("endsWith", digit)
+            }));
+        }
+
+        function pickRandomNumbers() {
+            const countInput = document.getElementById("randomCount");
+            const feedback = document.getElementById("numberFeedback");
+            const count = parseInt(countInput?.value || "", 10);
+
+            if (Number.isNaN(count) || count < 1 || count > 100) {
+                if (feedback) feedback.textContent = "Para A Gallo Tapado usa una cantidad entre 1 y 100.";
+                return;
+            }
+
+            const pool = [];
+            for (let i = 0; i < 100; i++) pool.push(padNumber(i));
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+            selectedNumbers = pool.slice(0, count).sort();
+            selectedNumberCounts.clear();
+            selectedNumbers.forEach(v => selectedNumberCounts.set(v, 1));
+            appliedRuleValues.clear();
+            appliedAdvancedValues.clear();
+            syncRuleButtons();
+            syncAdvancedButtons();
+            syncNumberPalette();
+            renderSelectedNumbers();
+            if (feedback) feedback.textContent = `Se seleccionaron ${count} número(s) al azar (reemplazando la selección actual).`;
+        }
+
+        function clearRandomCount() {
+            const countInput = document.getElementById("randomCount");
+            const feedback = document.getElementById("numberFeedback");
+            if (countInput) countInput.value = "";
+            clearSelectedNumbers();
+            if (feedback) feedback.textContent = "";
         }
 
         function toggleNumberPalette() {
@@ -363,7 +626,6 @@
                 button.dataset.value = value;
                 button.className = "btn btn-sm btn-outline-secondary number-cell";
                 button.textContent = value;
-                button.style.minWidth = "48px";
                 button.onclick = function () { toggleNumberSelection(value); };
                 grid.appendChild(button);
             }
@@ -371,9 +633,28 @@
 
         $(document).ready(function () {
             const numberInput = document.getElementById('number');
+            const bulkInput = document.getElementById('bulkNumbersInput');
             if (numberInput) {
                 buildNumberGrid();
+                bindGridDragSelection();
                 renderSelectedNumbers();
+                syncRuleButtons();
+                syncAdvancedButtons();
+            }
+            if (bulkInput) {
+                bulkInput.addEventListener("input", function () {
+                    const digits = (bulkInput.value.match(/\d/g) || []).join("");
+                    const groups = [];
+                    const pairLimit = Math.floor(digits.length / 2) * 2;
+                    for (let i = 0; i < pairLimit; i += 2) {
+                        groups.push(digits.slice(i, i + 2));
+                    }
+                    const remainder = digits.slice(pairLimit);
+                    if (remainder.length === 1) {
+                        groups.push(`0${remainder}`);
+                    }
+                    bulkInput.value = groups.join("+");
+                });
             }
 
             $('#addNumberForm').submit(function (e) {
