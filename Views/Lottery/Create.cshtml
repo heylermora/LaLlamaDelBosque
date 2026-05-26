@@ -211,6 +211,7 @@
         }
 
         let selectedNumbers = [];
+        const selectedNumberCounts = new Map();
         const appliedRuleValues = new Map();
         const appliedAdvancedValues = new Map();
 
@@ -226,16 +227,28 @@
             const placeholder = document.getElementById("numberPlaceholder");
             if (!hiddenInput || !container) return;
 
-            hiddenInput.value = selectedNumbers.join("+");
+            const expanded = [];
+            selectedNumbers.forEach(number => {
+                const count = selectedNumberCounts.get(number) ?? 1;
+                for (let i = 0; i < count; i++) expanded.push(number);
+            });
+            hiddenInput.value = expanded.join("+");
             container.innerHTML = "";
 
             selectedNumbers.forEach(number => {
+                const count = selectedNumberCounts.get(number) ?? 1;
                 const chip = document.createElement("button");
                 chip.type = "button";
                 chip.className = "btn btn-sm btn-primary";
-                chip.textContent = `${number} ×`;
+                chip.textContent = count > 1 ? `${number} x${count} ×` : `${number} ×`;
                 chip.onclick = function () {
-                    selectedNumbers = selectedNumbers.filter(x => x !== number);
+                    const current = selectedNumberCounts.get(number) ?? 1;
+                    if (current > 1) {
+                        selectedNumberCounts.set(number, current - 1);
+                    } else {
+                        selectedNumberCounts.delete(number);
+                        selectedNumbers = selectedNumbers.filter(x => x !== number);
+                    }
                     syncNumberPalette();
                     renderSelectedNumbers();
                 };
@@ -260,18 +273,18 @@
         }
 
         function toggleNumberSelection(value) {
-            if (selectedNumbers.includes(value)) {
-                selectedNumbers = selectedNumbers.filter(x => x !== value);
-            } else {
+            if (!selectedNumbers.includes(value)) {
                 selectedNumbers.push(value);
                 selectedNumbers.sort();
             }
+            selectedNumberCounts.set(value, (selectedNumberCounts.get(value) ?? 0) + 1);
             syncNumberPalette();
             renderSelectedNumbers();
         }
 
         function clearSelectedNumbers() {
             selectedNumbers = [];
+            selectedNumberCounts.clear();
             appliedRuleValues.clear();
             appliedAdvancedValues.clear();
             syncRuleButtons();
@@ -284,13 +297,21 @@
             const union = new Set(selectedNumbers);
             values.forEach(v => union.add(v));
             selectedNumbers = Array.from(union).sort();
+            values.forEach(v => selectedNumberCounts.set(v, (selectedNumberCounts.get(v) ?? 0) + 1));
             syncNumberPalette();
             renderSelectedNumbers();
         }
 
         function removeValues(values) {
-            const toRemove = new Set(values);
-            selectedNumbers = selectedNumbers.filter(v => !toRemove.has(v));
+            values.forEach(value => {
+                const current = selectedNumberCounts.get(value) ?? 0;
+                if (current > 1) {
+                    selectedNumberCounts.set(value, current - 1);
+                } else {
+                    selectedNumberCounts.delete(value);
+                    selectedNumbers = selectedNumbers.filter(v => v !== value);
+                }
+            });
             syncNumberPalette();
             renderSelectedNumbers();
         }
@@ -320,12 +341,16 @@
             const sanitized = raw.replace(/[\[\]\(\)"'“”‘’]/g, " ");
             const chunks = sanitized.split(/[^0-9]+/).filter(Boolean);
             const unique = new Set();
+            const expanded = [];
 
             chunks.forEach(chunk => {
-                explodeDigitChunk(chunk).forEach(value => unique.add(value));
+                explodeDigitChunk(chunk).forEach(value => {
+                    unique.add(value);
+                    expanded.push(value);
+                });
             });
 
-            return Array.from(unique).sort();
+            return { unique: Array.from(unique).sort(), expanded };
         }
 
         function applyPastedNumbers(replaceSelection) {
@@ -333,21 +358,23 @@
             const feedback = document.getElementById("numberFeedback");
             if (!input) return;
 
-            const values = parseNumbersFromText(input.value);
-            if (!values.length) {
+            const parsed = parseNumbersFromText(input.value);
+            if (!parsed.unique.length) {
                 if (feedback) feedback.textContent = "No se encontraron números válidos. Usa valores de 0 a 99.";
                 return;
             }
 
             if (replaceSelection) {
-                selectedNumbers = values;
+                selectedNumbers = parsed.unique;
+                selectedNumberCounts.clear();
+                parsed.expanded.forEach(v => selectedNumberCounts.set(v, (selectedNumberCounts.get(v) ?? 0) + 1));
                 syncNumberPalette();
                 renderSelectedNumbers();
             } else {
-                addUniqueValues(values);
+                addUniqueValues(parsed.expanded);
             }
 
-            if (feedback) feedback.textContent = `${values.length} número(s) procesado(s) desde texto.`;
+            if (feedback) feedback.textContent = `${parsed.expanded.length} número(s) procesado(s) desde texto.`;
 
             const modalElement = document.getElementById("numbersModal");
             if (modalElement && window.bootstrap?.Modal) {
@@ -508,6 +535,8 @@
                 [pool[i], pool[j]] = [pool[j], pool[i]];
             }
             selectedNumbers = pool.slice(0, count).sort();
+            selectedNumberCounts.clear();
+            selectedNumbers.forEach(v => selectedNumberCounts.set(v, 1));
             appliedRuleValues.clear();
             appliedAdvancedValues.clear();
             syncRuleButtons();
@@ -521,6 +550,7 @@
             const countInput = document.getElementById("randomCount");
             const feedback = document.getElementById("numberFeedback");
             if (countInput) countInput.value = "";
+            clearSelectedNumbers();
             if (feedback) feedback.textContent = "";
         }
 

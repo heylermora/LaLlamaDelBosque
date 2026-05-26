@@ -11,6 +11,7 @@
     .number-grid { display:grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap:.25rem; }
     .number-grid .number-cell { width:100%; min-width:0 !important; padding: .2rem .1rem; font-size: .72rem; line-height: 1.1; }
     .numbers-summary { min-height: 44px; }
+    .numbers-modal-trigger { white-space: nowrap; }
 </style>
 
 <form asp-action="Add" id="addNumberForm">
@@ -37,10 +38,10 @@
                 <small id="numberPlaceholder" class="text-muted">Aún no has seleccionado números</small>
             </div>
             <div class="d-flex align-items-center gap-2 mb-2">
-                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#numbersModal">
-                    Números
+                <button type="button" class="btn btn-sm btn-outline-primary numbers-modal-trigger" data-bs-toggle="modal" data-bs-target="#numbersModal" title="Abrir selector de números">
+                    <span class="material-icons" style="font-size:16px;vertical-align:text-bottom;">grid_view</span>
+                    Selector
                 </button>
-                <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearSelectedNumbers()">Limpiar</button>
                 <small class="text-muted">Abre el modal para seleccionar, reglas rápidas o pegar lista.</small>
             </div>
             <small id="numberFeedback" class="form-text text-danger"></small>
@@ -57,7 +58,7 @@
 <hr />
 
 <div class="modal fade" id="numbersModal" tabindex="-1" aria-labelledby="numbersModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl">
+  <div class="modal-dialog modal-fullscreen-lg-down modal-xl">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="numbersModalLabel">Gestión de números</h5>
@@ -113,6 +114,9 @@
                                 <button type="button" class="btn btn-outline-dark" onclick="pickRandomNumbers()">Elegir al azar</button>
                                 <button type="button" class="btn btn-outline-secondary" onclick="clearRandomCount()">Limpiar</button>
                             </div>
+                        </div>
+                        <div class="col-12">
+                            <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="clearSelectedNumbers()">Limpiar selección del grid</button>
                         </div>
                     </div>
                 </div>
