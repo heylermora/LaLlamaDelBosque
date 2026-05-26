@@ -7,6 +7,10 @@ namespace LaLlamaDelBosque.Controllers
 {
 	public class LotteryController: Controller
 	{
+		private static readonly Regex NumberTokenPattern = new(@"^\d{1,2}$", RegexOptions.Compiled);
+		private static readonly Regex CompactNumberPattern = new(@"^\d{3,}$", RegexOptions.Compiled);
+		private static readonly Regex NumberSplitPattern = new(@"[+,\s]+", RegexOptions.Compiled);
+
 		private List<Lottery> _lotteries;
 		private readonly List<Paper> _papers;
 		private readonly List<Credit> _credits;
@@ -238,20 +242,11 @@ namespace LaLlamaDelBosque.Controllers
 				var amountParsed = double.TryParse(collection["amount"], out amount);
 				var bustedParsed = double.TryParse(collection["busted"], out busted);
 
-				var numberList = Regex.Split(collection["value"].ToString(), @"[+,\s]+")
-					.Select(number => number.Trim())
-					.Where(number => !string.IsNullOrWhiteSpace(number))
-					.SelectMany(number =>
-					{
-						if(Regex.IsMatch(number, @"^\d{3,}$") && number.Length % 2 == 0)
-						{
-							return Enumerable.Range(0, number.Length / 2)
-								.Select(index => number.Substring(index * 2, 2));
-						}
-
-						return new[] { number.Length == 1 ? number.PadLeft(2, '0') : number };
-					})
-					.ToList();
+				var numberList = ParseNumberTokens(collection["value"].ToString());
+				if(!numberList.Any())
+				{
+					return RedirectToAction(nameof(Create), new { cc = true });
+				}
 
 				var paper = TempData.Get<Paper>("Paper") ?? new Paper();
 				var count = paper.Numbers.Max(p => p.Id) ?? 0;
@@ -284,6 +279,32 @@ namespace LaLlamaDelBosque.Controllers
 			{
 				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message });
 			}
+		}
+
+		private static List<string> ParseNumberTokens(string rawValue)
+		{
+			return NumberSplitPattern.Split(rawValue ?? string.Empty)
+				.Select(number => number.Trim())
+				.Where(number => !string.IsNullOrWhiteSpace(number))
+				.SelectMany(NormalizeNumberToken)
+				.Where(number => NumberTokenPattern.IsMatch(number))
+				.ToList();
+		}
+
+		private static IEnumerable<string> NormalizeNumberToken(string token)
+		{
+			if(token.Length == 1)
+			{
+				return new[] { token.PadLeft(2, '0') };
+			}
+
+			if(CompactNumberPattern.IsMatch(token) && token.Length % 2 == 0)
+			{
+				return Enumerable.Range(0, token.Length / 2)
+					.Select(index => token.Substring(index * 2, 2));
+			}
+
+			return new[] { token };
 		}
 
 		// POST: LotteryController/Remove/5
