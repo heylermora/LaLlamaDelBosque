@@ -212,6 +212,7 @@
 
         let selectedNumbers = [];
         const appliedRuleValues = new Map();
+        let speechRecognitionInstance = null;
 
         function padNumber(value) {
             return value.toString().padStart(2, "0");
@@ -358,6 +359,59 @@
             const feedback = document.getElementById("numberFeedback");
             if (input) input.value = "";
             if (feedback) feedback.textContent = "";
+        }
+
+        function setVoiceInputState(isListening) {
+            const startButton = document.getElementById("voiceInputStart");
+            const stopButton = document.getElementById("voiceInputStop");
+            if (startButton) startButton.disabled = isListening;
+            if (stopButton) stopButton.disabled = !isListening;
+        }
+
+        function toggleVoiceInput(shouldStart) {
+            const feedback = document.getElementById("numberFeedback");
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+            if (!SpeechRecognition) {
+                if (feedback) feedback.textContent = "Tu navegador no soporta dictado por voz. Puedes pegar una transcripción.";
+                return;
+            }
+
+            if (shouldStart) {
+                speechRecognitionInstance = new SpeechRecognition();
+                speechRecognitionInstance.lang = "es-ES";
+                speechRecognitionInstance.interimResults = false;
+                speechRecognitionInstance.continuous = false;
+
+                speechRecognitionInstance.onstart = function () {
+                    setVoiceInputState(true);
+                    if (feedback) feedback.textContent = "Escuchando... di los números como prefieras.";
+                };
+
+                speechRecognitionInstance.onresult = function (event) {
+                    const transcript = Array.from(event.results).map(r => r[0]?.transcript || "").join(" ").trim();
+                    const input = document.getElementById("bulkNumbersInput");
+                    if (input && transcript) {
+                        input.value = input.value ? `${input.value} ${transcript}` : transcript;
+                    }
+                    if (feedback) feedback.textContent = transcript ? "Audio transcrito. Ahora puedes Agregar o Reemplazar." : "No se detectó texto útil.";
+                };
+
+                speechRecognitionInstance.onerror = function () {
+                    if (feedback) feedback.textContent = "No se pudo transcribir el audio. Intenta de nuevo o pega texto.";
+                };
+
+                speechRecognitionInstance.onend = function () {
+                    setVoiceInputState(false);
+                };
+
+                speechRecognitionInstance.start();
+                return;
+            }
+
+            if (speechRecognitionInstance) {
+                speechRecognitionInstance.stop();
+            }
         }
 
         function selectRange() {
