@@ -211,6 +211,7 @@
         }
 
         let selectedNumbers = [];
+        const appliedRuleValues = new Map();
 
         function padNumber(value) {
             return value.toString().padStart(2, "0");
@@ -270,6 +271,8 @@
 
         function clearSelectedNumbers() {
             selectedNumbers = [];
+            appliedRuleValues.clear();
+            syncRuleButtons();
             syncNumberPalette();
             renderSelectedNumbers();
         }
@@ -278,6 +281,13 @@
             const union = new Set(selectedNumbers);
             values.forEach(v => union.add(v));
             selectedNumbers = Array.from(union).sort();
+            syncNumberPalette();
+            renderSelectedNumbers();
+        }
+
+        function removeValues(values) {
+            const toRemove = new Set(values);
+            selectedNumbers = selectedNumbers.filter(v => !toRemove.has(v));
             syncNumberPalette();
             renderSelectedNumbers();
         }
@@ -377,7 +387,7 @@
             return true;
         }
 
-        function selectByRule(rule, digit = null) {
+        function getValuesByRule(rule, digit = null) {
             const values = [];
             for (let i = 0; i < 100; i++) {
                 const value = padNumber(i);
@@ -387,7 +397,29 @@
                 if (rule === "startsWith" && value.startsWith(String(digit))) values.push(value);
                 if (rule === "endsWith" && value.endsWith(String(digit))) values.push(value);
             }
-            addUniqueValues(values);
+            return values;
+        }
+
+        function syncRuleButtons() {
+            ["even", "odd", "prime"].forEach(rule => {
+                const button = document.getElementById(`rule-${rule}`);
+                if (!button) return;
+                const isActive = appliedRuleValues.has(rule);
+                button.classList.toggle("btn-primary", isActive);
+                button.classList.toggle("btn-outline-primary", !isActive);
+            });
+        }
+
+        function toggleRuleSelection(rule) {
+            if (appliedRuleValues.has(rule)) {
+                removeValues(appliedRuleValues.get(rule));
+                appliedRuleValues.delete(rule);
+            } else {
+                const values = getValuesByRule(rule);
+                addUniqueValues(values);
+                appliedRuleValues.set(rule, values);
+            }
+            syncRuleButtons();
         }
 
         function applyStartsWithDigit() {
@@ -399,7 +431,7 @@
                 if (feedback) feedback.textContent = "Para 'Inician en', usa un dígito de 0 a 9.";
                 return;
             }
-            selectByRule("startsWith", digit);
+            addUniqueValues(getValuesByRule("startsWith", digit));
         }
 
         function applyEndsWithDigit() {
@@ -411,7 +443,27 @@
                 if (feedback) feedback.textContent = "Para 'Terminan en', usa un dígito de 0 a 9.";
                 return;
             }
-            selectByRule("endsWith", digit);
+            addUniqueValues(getValuesByRule("endsWith", digit));
+        }
+
+        function pickRandomNumbers() {
+            const countInput = document.getElementById("randomCount");
+            const feedback = document.getElementById("numberFeedback");
+            const count = parseInt(countInput?.value || "", 10);
+
+            if (Number.isNaN(count) || count < 1 || count > 100) {
+                if (feedback) feedback.textContent = "Para A Gallo Tapado usa una cantidad entre 1 y 100.";
+                return;
+            }
+
+            const pool = [];
+            for (let i = 0; i < 100; i++) pool.push(padNumber(i));
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+            addUniqueValues(pool.slice(0, count));
+            if (feedback) feedback.textContent = `Se agregaron ${count} número(s) al azar.`;
         }
 
         function toggleNumberPalette() {
@@ -441,6 +493,7 @@
             if (numberInput) {
                 buildNumberGrid();
                 renderSelectedNumbers();
+                syncRuleButtons();
             }
 
             $('#addNumberForm').submit(function (e) {

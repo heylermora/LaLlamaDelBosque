@@ -87,9 +87,9 @@
                         <div class="col-12">
                             <label class="form-label mb-1">Reglas rápidas</label>
                             <div class="d-flex flex-wrap gap-1">
-                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectByRule('even')">Pares</button>
-                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectByRule('odd')">Impares</button>
-                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectByRule('prime')">Primos</button>
+                                <button type="button" id="rule-even" class="btn btn-sm btn-outline-primary" onclick="toggleRuleSelection('even')">Pares</button>
+                                <button type="button" id="rule-odd" class="btn btn-sm btn-outline-primary" onclick="toggleRuleSelection('odd')">Impares</button>
+                                <button type="button" id="rule-prime" class="btn btn-sm btn-outline-primary" onclick="toggleRuleSelection('prime')">Primos</button>
                             </div>
                         </div>
                         <div class="col-12 col-md-6">
@@ -104,6 +104,13 @@
                             <div class="input-group input-group-sm">
                                 <input type="number" id="endsWithDigit" class="form-control" min="0" max="9" placeholder="0-9" />
                                 <button type="button" class="btn btn-outline-secondary" onclick="applyEndsWithDigit()">Aplicar</button>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label mb-1">A Gallo Tapado</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" id="randomCount" class="form-control" min="1" max="100" placeholder="Cantidad (1-100)" />
+                                <button type="button" class="btn btn-outline-dark" onclick="pickRandomNumbers()">Elegir al azar</button>
                             </div>
                         </div>
                     </div>
