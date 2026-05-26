@@ -1,55 +1,118 @@
-﻿@model LaLlamaDelBosque.Models.SummaryModel
+@model LaLlamaDelBosque.Models.SummaryModel
 
 @{
-    ViewData["TitleC"] = "Resumen de Créditos";
-    ViewData["TitleL"] = "Resumen de Sorteos";
+    ViewData["Title"] = "Inicio";
+    var culture = new System.Globalization.CultureInfo("es-CR");
+    var today = DateTime.Today.ToString("dddd, dd 'de' MMMM yyyy", culture);
 }
 
-<h2 class="fw-bold mb-4">@ViewData["TitleC"]</h2>
 
-<div class="container">
+@if((ViewBag.MissingTodayAwards as bool?) == true)
+{
+    <div class="alert alert-warning d-flex align-items-center gap-2 mb-4" role="alert">
+        <span class="material-icons">emoji_events</span>
+        <div>
+            <strong>Premios pendientes:</strong> Aún no se han cargado los premios de hoy.
+            <a class="alert-link ms-1" asp-controller="Award" asp-action="Index">Ir a Premios</a>
+        </div>
+    </div>
+}
+
+<section class="dashboard-hero-modern mb-4 p-4 p-lg-5">
+    <div class="row g-4 align-items-center">
+        <div class="col-12 col-lg-8">
+            <span class="dashboard-pill mb-3 d-inline-flex align-items-center gap-2">
+                <span class="material-icons" style="font-size:16px;">dashboard</span>
+                Panel operativo diario
+            </span>
+            <h1 class="dashboard-title mb-2">Bienvenido a La Llama Del Bosque</h1>
+            <p class="text-muted mb-4">@today · Estado general de créditos y ventas en una sola vista.</p>
+
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-primary" asp-controller="Lottery" asp-action="Create">
+                    <span class="material-icons align-middle" style="font-size:18px;">receipt_long</span>
+                    Nuevo papelito
+                </a>
+                <a class="btn btn-outline-primary" asp-controller="Credit" asp-action="Index">
+                    <span class="material-icons align-middle" style="font-size:18px;">payments</span>
+                    Ver créditos
+                </a>
+            </div>
+        </div>
+        <div class="col-12 col-lg-4">
+            <div class="dashboard-highlight card border-0 h-100">
+                <div class="card-body">
+                    <small class="text-uppercase text-muted">Venta total hoy</small>
+                    <h2 class="fw-bold text-primary mt-2 mb-1">₡ @Model.Lottery.Total</h2>
+                    <p class="text-muted small mb-0">Incluye monto base y reventado.</p>
+                    <hr>
+                    <div class="d-flex justify-content-between small text-muted">
+                        <span>Papelitos</span>
+                        <strong class="text-dark">@Model.Lottery.Papers</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mb-4">
     <div class="row g-3">
-
-        <!-- Cards resumen -->
-        <div class="col-md-4">
-            <div class="card shadow-sm text-center h-100">
+        <div class="col-12 col-md-4">
+            <article class="card dashboard-kpi-modern h-100">
                 <div class="card-body">
-                    <small class="text-muted">Clientes</small>
-                    <h2 class="fw-bold">@Model.Credit.Clients</h2>
-                    <p class="text-muted small mb-0">@Model.Credit.ClientsDescription</p>
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <small class="text-muted">Clientes activos</small>
+                            <h3 class="fw-bold mb-1">@Model.Credit.Clients</h3>
+                            <p class="text-muted small mb-0">@Model.Credit.ClientsDescription registradas</p>
+                        </div>
+                        <span class="kpi-icon bg-primary-subtle text-primary"><span class="material-icons">groups</span></span>
+                    </div>
                 </div>
-            </div>
+            </article>
         </div>
-
-        <div class="col-md-4">
-            <div class="card shadow-sm text-center h-100">
+        <div class="col-12 col-md-4">
+            <article class="card dashboard-kpi-modern h-100">
                 <div class="card-body">
-                    <small class="text-muted">Por cobrar</small>
-                    <h2 class="fw-bold">₡ @Model.Credit.Receivable</h2>
-                    <p class="text-muted small mb-0">Pendientes</p>
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <small class="text-muted">Por cobrar</small>
+                            <h3 class="fw-bold mb-1">₡ @Model.Credit.Receivable</h3>
+                            <p class="text-muted small mb-0">Saldo pendiente acumulado</p>
+                        </div>
+                        <span class="kpi-icon bg-warning-subtle text-warning"><span class="material-icons">account_balance_wallet</span></span>
+                    </div>
                 </div>
-            </div>
+            </article>
         </div>
-
-        <div class="col-md-4">
-            <div class="card shadow-sm text-center h-100">
+        <div class="col-12 col-md-4">
+            <article class="card dashboard-kpi-modern h-100">
                 <div class="card-body">
-                    <small class="text-muted">Abonos hoy</small>
-                    <h2 class="fw-bold">₡ @Model.Credit.Received</h2>
-                    <p class="text-muted small mb-0">Pagados</p>
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <small class="text-muted">Abonos del día</small>
+                            <h3 class="fw-bold mb-1">₡ @Model.Credit.Received</h3>
+                            <p class="text-muted small mb-0">Pagos recibidos hoy</p>
+                        </div>
+                        <span class="kpi-icon bg-success-subtle text-success"><span class="material-icons">trending_up</span></span>
+                    </div>
                 </div>
-            </div>
+            </article>
         </div>
+    </div>
+</section>
 
-        <!-- Listas -->
-        <div class="col-md-4">
-            <div class="card shadow-sm h-100">
+<section class="mb-4">
+    <div class="row g-3">
+        <div class="col-12 col-lg-4">
+            <div class="card h-100 dashboard-list-card">
                 <div class="card-body">
                     <h6 class="fw-semibold mb-3">Mayor deuda</h6>
                     <ul class="list-group list-group-flush">
-                        @foreach (var item in Model.Credit.MajorDebts)
+                        @foreach(var item in Model.Credit.MajorDebts)
                         {
-                            <li class="list-group-item d-flex justify-content-between">
+                            <li class="list-group-item d-flex justify-content-between px-0">
                                 <span>@item.Name</span>
                                 <strong>₡ @item.Amount</strong>
                             </li>
@@ -58,15 +121,14 @@
                 </div>
             </div>
         </div>
-
-        <div class="col-md-4">
-            <div class="card shadow-sm h-100">
+        <div class="col-12 col-lg-4">
+            <div class="card h-100 dashboard-list-card">
                 <div class="card-body">
                     <h6 class="fw-semibold mb-3">Menor deuda</h6>
                     <ul class="list-group list-group-flush">
-                        @foreach (var item in Model.Credit.MinorDebts)
+                        @foreach(var item in Model.Credit.MinorDebts)
                         {
-                            <li class="list-group-item d-flex justify-content-between">
+                            <li class="list-group-item d-flex justify-content-between px-0">
                                 <span>@item.Name</span>
                                 <strong>₡ @item.Amount</strong>
                             </li>
@@ -75,15 +137,14 @@
                 </div>
             </div>
         </div>
-
-        <div class="col-md-4">
-            <div class="card shadow-sm h-100">
+        <div class="col-12 col-lg-4">
+            <div class="card h-100 dashboard-list-card">
                 <div class="card-body">
-                    <h6 class="fw-semibold mb-3">Inactivos</h6>
+                    <h6 class="fw-semibold mb-3">Clientes inactivos</h6>
                     <ul class="list-group list-group-flush">
-                        @foreach (var item in Model.Credit.InactiveClients)
+                        @foreach(var item in Model.Credit.InactiveClients)
                         {
-                            <li class="list-group-item d-flex justify-content-between">
+                            <li class="list-group-item d-flex justify-content-between px-0">
                                 <span>@item.Name</span>
                                 <strong>₡ @item.Amount</strong>
                             </li>
@@ -92,56 +153,72 @@
                 </div>
             </div>
         </div>
-
     </div>
-</div>
+</section>
 
-<hr class="my-5" />
-
-<h2 class="fw-bold mb-4">@ViewData["TitleL"]</h2>
-
-<div class="container mb-2">
+<section>
+    <h5 class="fw-bold mb-3">Ventas por sorteo (hoy)</h5>
     <div class="row g-3">
+        <div class="col-6 col-lg-3"><div class="card h-100 dashboard-kpi-modern text-center"><div class="card-body"><small class="text-muted">Papelitos</small><h4 class="fw-bold">@Model.Lottery.Papers</h4></div></div></div>
+        <div class="col-6 col-lg-3"><div class="card h-100 dashboard-kpi-modern text-center"><div class="card-body"><small class="text-muted">Monto</small><h4 class="fw-bold">₡ @Model.Lottery.TotalAmount</h4></div></div></div>
+        <div class="col-6 col-lg-3"><div class="card h-100 dashboard-kpi-modern text-center"><div class="card-body"><small class="text-muted">Reventado</small><h4 class="fw-bold">₡ @Model.Lottery.TotalBusted</h4></div></div></div>
+        <div class="col-6 col-lg-3"><div class="card h-100 dashboard-kpi-modern text-center border-primary-subtle"><div class="card-body"><small class="text-muted">Total</small><h4 class="fw-bold text-primary">₡ @Model.Lottery.Total</h4></div></div></div>
+    </div>
+</section>
 
-        <div class="col-md-3">
-            <div class="card shadow-sm text-center h-100">
-                <div class="card-body">
-                    <small class="text-muted">Papelitos</small>
-                    <h3 class="fw-bold">@Model.Lottery.Papers</h3>
-                    <p class="text-muted small mb-0">Facturados</p>
+
+<div class="modal fade" id="homeUpdatesModal" tabindex="-1" aria-labelledby="homeUpdatesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow home-updates-modal">
+            <div class="modal-header home-updates-header">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="home-updates-icon" aria-hidden="true">
+                        <svg viewBox="0 0 64 64" width="28" height="28" role="img" focusable="false">
+                            <defs>
+                                <linearGradient id="sparkGrad" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0%" stop-color="#2563eb" />
+                                    <stop offset="100%" stop-color="#0ea5a4" />
+                                </linearGradient>
+                            </defs>
+                            <circle cx="32" cy="32" r="30" fill="url(#sparkGrad)" opacity="0.18"/>
+                            <path d="M34 10 21 35h10l-1 19 14-27H34z" fill="url(#sparkGrad)"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="home-updates-kicker mb-1">Novedades</p>
+                        <h5 class="modal-title mb-0" id="homeUpdatesModalLabel">Nuevas actualizaciones del sistema</h5>
+                    </div>
                 </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="home-updates-list mb-0">
+                    <li><span class="material-icons">dashboard_customize</span> Nuevo dashboard más moderno con mejor jerarquía visual.</li>
+                    <li><span class="material-icons">emoji_events</span> Alerta en Home cuando faltan premios del día.</li>
+                    <li><span class="material-icons">event_repeat</span> Recordatorios estratégicos de cobro en quincena.</li>
+                    <li><span class="material-icons">warning_amber</span> Alerta inmediata cuando un cliente empieza a exceder su límite.</li>
+                    <li><span class="material-icons">pin</span> Creador de papelitos mejorado con selector inteligente de números (00–99), rangos y reglas rápidas.</li>
+                    <li><span class="material-icons">content_copy</span> Flujo más ágil para copiar papelitos y continuar edición sin perder contexto.</li>
+                </ul>
             </div>
         </div>
-
-        <div class="col-md-3">
-            <div class="card shadow-sm text-center h-100">
-                <div class="card-body">
-                    <small class="text-muted">Monto total</small>
-                    <h3 class="fw-bold">₡ @Model.Lottery.TotalAmount</h3>
-                    <p class="text-muted small mb-0">Pagados</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card shadow-sm text-center h-100">
-                <div class="card-body">
-                    <small class="text-muted">Reventado</small>
-                    <h3 class="fw-bold">₡ @Model.Lottery.TotalBusted</h3>
-                    <p class="text-muted small mb-0">Pagados</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card shadow-sm text-center h-100">
-                <div class="card-body">
-                    <small class="text-muted">Venta total</small>
-                    <h3 class="fw-bold">₡ @Model.Lottery.Total</h3>
-                    <p class="text-muted small mb-0">Pagados</p>
-                </div>
-            </div>
-        </div>
-
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const versionKey = "home_updates_modal_v1";
+            if (!localStorage.getItem(versionKey)) {
+                const updatesModalElement = document.getElementById("homeUpdatesModal");
+                if (updatesModalElement) {
+                    const modal = new bootstrap.Modal(updatesModalElement);
+                    modal.show();
+                    updatesModalElement.addEventListener("hidden.bs.modal", function () {
+                        localStorage.setItem(versionKey, "seen");
+                    }, { once: true });
+                }
+            }
+        });
+    </script>
+}

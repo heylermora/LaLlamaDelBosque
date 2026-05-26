@@ -136,7 +136,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="modal fade" id="editModal-@item.Client.Id" tabindex="-1" aria-labelledby="editModalLabel-@item.Client.Id" aria-hidden="true">>
+                        <div class="modal fade" id="editModal-@item.Client.Id" tabindex="-1" aria-labelledby="editModalLabel-@item.Client.Id" aria-hidden="true">
                             <div class="modal-dialog modal-lg">
                                 <div class="modal-content">
                                     <div class="modal-header">
@@ -221,6 +221,43 @@
         </div>
     </div>
 
+
+@if(!string.IsNullOrWhiteSpace(ViewBag.LimitExceededClientName as string))
+{
+    <div class="modal fade" id="creditLimitAlertModal" tabindex="-1" aria-labelledby="creditLimitAlertModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="creditLimitAlertModalLabel">Límite excedido</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">El cliente <strong>@ViewBag.LimitExceededClientName</strong> acaba de exceder su límite de crédito.</p>
+                    <p class="mb-0 text-muted">Saldo actual: ₡ @ViewBag.LimitExceededClientTotal · Límite: ₡ @ViewBag.LimitExceededClientLimit</p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if((ViewBag.ShowFortnightReminder as bool?) == true)
+{
+    <div class="modal fade" id="fortnightCollectionModal" tabindex="-1" aria-labelledby="fortnightCollectionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="fortnightCollectionModalLabel">Recordatorio de cobro quincenal</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">Estamos en una ventana estratégica de pago salarial (mitad o cierre de mes).</p>
+                    <p class="mb-0 text-muted">Se recomienda priorizar cobros y envío de recordatorios a clientes pendientes.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
     @section scripts{
         <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
@@ -298,6 +335,27 @@
                     element.style.display = "none";
                 }
             }
+
+
+            document.addEventListener("DOMContentLoaded", function () {
+                const showLimitExceededModal = @((!string.IsNullOrWhiteSpace(ViewBag.LimitExceededClientName as string)).ToString().ToLower());
+                const showFortnightReminder = @(((ViewBag.ShowFortnightReminder as bool?) == true).ToString().ToLower());
+
+                if (showLimitExceededModal) {
+                    const limitModalElement = document.getElementById("creditLimitAlertModal");
+                    if (limitModalElement) {
+                        new bootstrap.Modal(limitModalElement).show();
+                        return;
+                    }
+                }
+
+                if (showFortnightReminder) {
+                    const fortnightModalElement = document.getElementById("fortnightCollectionModal");
+                    if (fortnightModalElement) {
+                        new bootstrap.Modal(fortnightModalElement).show();
+                    }
+                }
+            });
 
             function redirectToIndex() {
                 var toggle = document.getElementById("saldoSwitch");
