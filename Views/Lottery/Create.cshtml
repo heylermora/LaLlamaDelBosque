@@ -376,7 +376,7 @@
                 renderSelectedNumbers();
             }
 
-            $('form').submit(function (e) {
+            $('#addNumberForm').submit(function (e) {
                 var amount = parseFloat($('#Amount').val());
                 var busted = parseFloat($('#Busted').val());
 
@@ -386,7 +386,7 @@
                     return;
                 }
 
-                if (busted > amount) {
+                if (!Number.isNaN(amount) && !Number.isNaN(busted) && busted > amount) {
                     $('#Busted').siblings('.text-danger').text('El campo no puede ser mayor que el Monto.');
                     $('#Busted').focus();
                     e.preventDefault(); 
