@@ -43,7 +43,7 @@
             <div class="dashboard-highlight card border-0 h-100">
                 <div class="card-body">
                     <small class="text-uppercase text-muted">Venta total hoy</small>
-                    <h2 class="fw-bold text-primary mt-2 mb-1">₡ @Model.Lottery.Total</h2>
+                    <h2 class="fw-bold text-primary mt-2 mb-1">@Model.Lottery.Total.ToCRC()</h2>
                     <p class="text-muted small mb-0">Incluye monto base y reventado.</p>
                     <hr>
                     <div class="d-flex justify-content-between small text-muted">
@@ -78,7 +78,7 @@
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
                             <small class="text-muted">Por cobrar</small>
-                            <h3 class="fw-bold mb-1">₡ @Model.Credit.Receivable</h3>
+                            <h3 class="fw-bold mb-1">@Model.Credit.Receivable.ToCRC()</h3>
                             <p class="text-muted small mb-0">Saldo pendiente acumulado</p>
                         </div>
                         <span class="kpi-icon bg-warning-subtle text-warning"><span class="material-icons">account_balance_wallet</span></span>
@@ -92,7 +92,7 @@
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
                             <small class="text-muted">Abonos del día</small>
-                            <h3 class="fw-bold mb-1">₡ @Model.Credit.Received</h3>
+                            <h3 class="fw-bold mb-1">@Model.Credit.Received.ToCRC()</h3>
                             <p class="text-muted small mb-0">Pagos recibidos hoy</p>
                         </div>
                         <span class="kpi-icon bg-success-subtle text-success"><span class="material-icons">trending_up</span></span>
@@ -114,7 +114,7 @@
                         {
                             <li class="list-group-item d-flex justify-content-between px-0">
                                 <span>@item.Name</span>
-                                <strong>₡ @item.Amount</strong>
+                                <strong>@item.Amount.ToCRC()</strong>
                             </li>
                         }
                     </ul>
@@ -130,7 +130,7 @@
                         {
                             <li class="list-group-item d-flex justify-content-between px-0">
                                 <span>@item.Name</span>
-                                <strong>₡ @item.Amount</strong>
+                                <strong>@item.Amount.ToCRC()</strong>
                             </li>
                         }
                     </ul>
@@ -146,7 +146,7 @@
                         {
                             <li class="list-group-item d-flex justify-content-between px-0">
                                 <span>@item.Name</span>
-                                <strong>₡ @item.Amount</strong>
+                                <strong>@item.Amount.ToCRC()</strong>
                             </li>
                         }
                     </ul>
@@ -160,9 +160,9 @@
     <h5 class="fw-bold mb-3">Ventas por sorteo (hoy)</h5>
     <div class="row g-3">
         <div class="col-6 col-lg-3"><div class="card h-100 dashboard-kpi-modern text-center"><div class="card-body"><small class="text-muted">Papelitos</small><h4 class="fw-bold">@Model.Lottery.Papers</h4></div></div></div>
-        <div class="col-6 col-lg-3"><div class="card h-100 dashboard-kpi-modern text-center"><div class="card-body"><small class="text-muted">Monto</small><h4 class="fw-bold">₡ @Model.Lottery.TotalAmount</h4></div></div></div>
-        <div class="col-6 col-lg-3"><div class="card h-100 dashboard-kpi-modern text-center"><div class="card-body"><small class="text-muted">Reventado</small><h4 class="fw-bold">₡ @Model.Lottery.TotalBusted</h4></div></div></div>
-        <div class="col-6 col-lg-3"><div class="card h-100 dashboard-kpi-modern text-center border-primary-subtle"><div class="card-body"><small class="text-muted">Total</small><h4 class="fw-bold text-primary">₡ @Model.Lottery.Total</h4></div></div></div>
+        <div class="col-6 col-lg-3"><div class="card h-100 dashboard-kpi-modern text-center"><div class="card-body"><small class="text-muted">Monto</small><h4 class="fw-bold">@Model.Lottery.TotalAmount.ToCRC()</h4></div></div></div>
+        <div class="col-6 col-lg-3"><div class="card h-100 dashboard-kpi-modern text-center"><div class="card-body"><small class="text-muted">Reventado</small><h4 class="fw-bold">@Model.Lottery.TotalBusted.ToCRC()</h4></div></div></div>
+        <div class="col-6 col-lg-3"><div class="card h-100 dashboard-kpi-modern text-center border-primary-subtle"><div class="card-body"><small class="text-muted">Total</small><h4 class="fw-bold text-primary">@Model.Lottery.Total.ToCRC()</h4></div></div></div>
     </div>
 </section>
 
