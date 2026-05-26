@@ -20,5 +20,15 @@ namespace LaLlamaDelBosque.Utils
         {
             return "₡ " + value.ToString("N0", CultureInfo.InvariantCulture);
         }
+
+        public static string ToCRC(this string value)
+        {
+            if (decimal.TryParse(value, out var amount))
+            {
+                return "₡ " + amount.ToString("N0", CultureInfo.InvariantCulture);
+            }
+
+            return "₡ 0";
+        }
     }
 }

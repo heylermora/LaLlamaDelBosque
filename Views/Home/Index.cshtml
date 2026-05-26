@@ -199,6 +199,7 @@
                     <li><span class="material-icons">warning_amber</span> Alerta inmediata cuando un cliente empieza a exceder su límite.</li>
                     <li><span class="material-icons">pin</span> Creador de papelitos mejorado con selector inteligente de números (00–99), rangos y reglas rápidas.</li>
                     <li><span class="material-icons">content_copy</span> Flujo más ágil para copiar papelitos y continuar edición sin perder contexto.</li>
+                    <li><span class="material-icons">schedule</span>Se corrigió la hora exacta del sorteo de La Primera Tarde.</li>
                 </ul>
             </div>
         </div>
@@ -208,15 +209,34 @@
 @section Scripts {
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const versionKey = "home_updates_modal_v1";
-            if (!localStorage.getItem(versionKey)) {
-                const updatesModalElement = document.getElementById("homeUpdatesModal");
+
+            const currentVersion = "v1";
+            const storageKey = "home_updates_modal_version";
+
+            const seenVersion = localStorage.getItem(storageKey);
+
+            if (seenVersion !== currentVersion) {
+
+                const updatesModalElement =
+                    document.getElementById("homeUpdatesModal");
+
                 if (updatesModalElement) {
-                    const modal = new bootstrap.Modal(updatesModalElement);
+
+                    const modal =
+                        new bootstrap.Modal(updatesModalElement);
+
                     modal.show();
-                    updatesModalElement.addEventListener("hidden.bs.modal", function () {
-                        localStorage.setItem(versionKey, "seen");
-                    }, { once: true });
+
+                    updatesModalElement.addEventListener(
+                        "hidden.bs.modal",
+                        function () {
+                            localStorage.setItem(
+                                storageKey,
+                                currentVersion
+                            );
+                        },
+                        { once: true }
+                    );
                 }
             }
         });
