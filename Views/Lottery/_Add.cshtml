@@ -137,6 +137,33 @@
                         </div>
                     </div>
                     <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingVoicePilot">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseVoicePilot" aria-expanded="false" aria-controls="collapseVoicePilot">
+                                Ingreso por voz <span class="badge bg-warning text-dark ms-2">Plan Piloto</span>
+                            </button>
+                        </h2>
+                        <div id="collapseVoicePilot" class="accordion-collapse collapse" aria-labelledby="headingVoicePilot" data-bs-parent="#numbersAccordion">
+                            <div class="accordion-body">
+                                <label for="voiceNumbersFile" class="form-label mb-1">Archivo de voz (WhatsApp)</label>
+                                <input id="voiceNumbersFile" type="file" class="form-control form-control-sm" accept="audio/ogg,audio/opus,audio/mpeg,audio/mp4,audio/x-m4a,.opus,.ogg,.mp3,.m4a" />
+                                <small class="text-muted d-block mt-2">Compatible con audios descargados de WhatsApp (.opus/.ogg) y formatos comunes (.mp3/.m4a).</small>
+
+                                <div class="form-check mt-3">
+                                    <input class="form-check-input" type="checkbox" value="" id="voiceUserVerified">
+                                    <label class="form-check-label" for="voiceUserVerified">
+                                        Verifiqué que el audio pertenece al usuario correcto.
+                                    </label>
+                                </div>
+
+                                <div class="d-flex flex-wrap gap-1 mt-2">
+                                    <button type="button" id="processVoiceNumbersButton" class="btn btn-sm btn-outline-primary" disabled onclick="processVoiceNumbersPilot()">Procesar audio</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearVoiceNumbersPilot()">Limpiar</button>
+                                </div>
+                                <small id="voicePilotFeedback" class="text-muted d-block mt-2"></small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
                         <h2 class="accordion-header" id="headingPaste">
                             <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePaste" aria-expanded="true" aria-controls="collapsePaste">
                                 Copiar / pegar números

@@ -444,6 +444,31 @@
             if (feedback) feedback.textContent = "";
         }
 
+        function updateVoicePilotState() {
+            const verified = document.getElementById("voiceUserVerified");
+            const fileInput = document.getElementById("voiceNumbersFile");
+            const processButton = document.getElementById("processVoiceNumbersButton");
+            if (!verified || !fileInput || !processButton) return;
+            processButton.disabled = !(verified.checked && fileInput.files && fileInput.files.length > 0);
+        }
+
+        function clearVoiceNumbersPilot() {
+            const verified = document.getElementById("voiceUserVerified");
+            const fileInput = document.getElementById("voiceNumbersFile");
+            const feedback = document.getElementById("voicePilotFeedback");
+            if (verified) verified.checked = false;
+            if (fileInput) fileInput.value = "";
+            if (feedback) feedback.textContent = "";
+            updateVoicePilotState();
+        }
+
+        function processVoiceNumbersPilot() {
+            const feedback = document.getElementById("voicePilotFeedback");
+            if (feedback) {
+                feedback.textContent = "Plan Piloto: archivo validado. Pronto habilitaremos transcripción automática para cargar números desde voz.";
+            }
+        }
+
         function syncAdvancedButtons() {
             const entries = [
                 ["range", "rangeApplyButton"],
@@ -653,6 +678,12 @@
                     bulkInput.value = groups.join("+");
                 });
             }
+
+            const voiceVerified = document.getElementById('voiceUserVerified');
+            const voiceFileInput = document.getElementById('voiceNumbersFile');
+            if (voiceVerified) voiceVerified.addEventListener('change', updateVoicePilotState);
+            if (voiceFileInput) voiceFileInput.addEventListener('change', updateVoicePilotState);
+            updateVoicePilotState();
 
             $('#addNumberForm').submit(function (e) {
                 var amount = parseFloat($('#Amount').val());
