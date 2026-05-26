@@ -218,15 +218,6 @@ namespace LaLlamaDelBosque.Controllers
                     {
                         credit.CreditLines.Add(creditLine);
                         credit.CreditSummary.Total = credit.CreditSummary.Total + creditLine.Amount;
-
-                        if(credit.Client.Limit.HasValue
-                            && previousTotal <= credit.Client.Limit.Value
-                            && credit.CreditSummary.Total > credit.Client.Limit.Value)
-                        {
-                            TempData["LimitExceededClientName"] = credit.Client.Name;
-                            TempData["LimitExceededClientTotal"] = credit.CreditSummary.Total.ToString("N0");
-                            TempData["LimitExceededClientLimit"] = credit.Client.Limit.Value.ToString("N0");
-                        }
                     }
 
                     SetCredits(_credits);
