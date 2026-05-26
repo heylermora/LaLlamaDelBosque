@@ -82,14 +82,11 @@
                 </div>
             </div>
 
-            <div class="border rounded bg-white p-2 mb-2 shadow-sm">
-                <label class="form-label mb-1">Pegar lista de números</label>
-                <textarea id="bulkNumbersInput" class="form-control form-control-sm" rows="2" placeholder='Ej: "00 01 78", "00+01+78", "0, 1, 78"'></textarea>
-                <div class="d-flex flex-wrap gap-1 mt-2">
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="applyPastedNumbers(false)">Agregar desde texto</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="applyPastedNumbers(true)">Reemplazar con texto</button>
-                </div>
-                <small class="text-muted">Soporta espacios, comas, +, guiones y saltos de línea. Siempre se normaliza a 2 dígitos (00-99).</small>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#pasteNumbersModal">
+                    Pegar números
+                </button>
+                <small class="text-muted">Usa este atajo si el cliente ya trae lista.</small>
             </div>
             <div id="numberPalette" class="border rounded bg-white p-2 shadow-sm" style="max-height: 240px; overflow-y: auto;">
                 <div id="numberGrid" class="number-grid"></div>
@@ -106,3 +103,25 @@
 </form>
 
 <hr />
+
+<div class="modal fade" id="pasteNumbersModal" tabindex="-1" aria-labelledby="pasteNumbersModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="pasteNumbersModalLabel">Pegar lista de números</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <textarea id="bulkNumbersInput" class="form-control" rows="4" placeholder='Ej: "00 01 78", "00+01+78", "000178", "00,01+78 9095"'></textarea>
+        <small class="text-muted d-block mt-2">Soporta espacios, comas, +, guiones y concatenados de dígitos. Siempre se normaliza a 2 dígitos (00-99).</small>
+      </div>
+      <div class="modal-footer d-flex justify-content-between">
+        <small class="text-muted">Agregar = suma a selección actual / Reemplazar = borra lo actual y usa solo lo pegado.</small>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-primary" onclick="applyPastedNumbers(false)">Agregar</button>
+          <button type="button" class="btn btn-primary" onclick="applyPastedNumbers(true)">Reemplazar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

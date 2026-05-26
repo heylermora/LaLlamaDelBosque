@@ -282,6 +282,26 @@
             renderSelectedNumbers();
         }
 
+        function explodeDigitChunk(chunk) {
+            if (!chunk) return [];
+
+            if (chunk.length <= 2) {
+                const value = parseInt(chunk, 10);
+                return Number.isNaN(value) || value < 0 || value > 99 ? [] : [padNumber(value)];
+            }
+
+            const normalized = chunk.length % 2 === 0 ? chunk : `0${chunk}`;
+            const values = [];
+            for (let i = 0; i < normalized.length; i += 2) {
+                const pair = normalized.slice(i, i + 2);
+                const value = parseInt(pair, 10);
+                if (!Number.isNaN(value) && value >= 0 && value <= 99) {
+                    values.push(padNumber(value));
+                }
+            }
+            return values;
+        }
+
         function parseNumbersFromText(raw) {
             if (!raw) return [];
             const sanitized = raw.replace(/[\[\]\(\)"'“”‘’]/g, " ");
@@ -289,9 +309,7 @@
             const unique = new Set();
 
             chunks.forEach(chunk => {
-                const number = parseInt(chunk, 10);
-                if (Number.isNaN(number) || number < 0 || number > 99) return;
-                unique.add(padNumber(number));
+                explodeDigitChunk(chunk).forEach(value => unique.add(value));
             });
 
             return Array.from(unique).sort();
@@ -317,6 +335,12 @@
             }
 
             if (feedback) feedback.textContent = `${values.length} número(s) procesado(s) desde texto.`;
+
+            const modalElement = document.getElementById("pasteNumbersModal");
+            if (modalElement && window.bootstrap?.Modal) {
+                const instance = bootstrap.Modal.getInstance(modalElement);
+                if (instance) instance.hide();
+            }
         }
 
         function selectRange() {
