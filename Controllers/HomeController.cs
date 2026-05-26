@@ -14,17 +14,19 @@ namespace LaLlamaDelBosque.Controllers
         private readonly CreditModel _credits;
         private readonly PaperModel _papers;
         private readonly SummaryModel _summary;
+        private readonly AwardModel _awards;
 
         public HomeController()
         {
             _credits = GetCredits();
             _papers = GetPapers();
             _summary = GetSummary();
+            _awards = GetAwards();
         }
 
         public IActionResult Index()
         {
-            var summary = new SummaryModel();
+            ViewBag.MissingTodayAwards = !_awards.Awards.Any(a => a.Date.Date == DateTime.Today);
             return View(_summary);
         }
 
@@ -61,6 +63,13 @@ namespace LaLlamaDelBosque.Controllers
             var papers = JsonFile.Read("Papers", new PaperModel());
             return papers;
         }
+
+        private static AwardModel GetAwards()
+        {
+            var awards = JsonFile.Read("Awards", new AwardModel());
+            return awards;
+        }
+
 
         private SummaryModel GetSummary()
         {

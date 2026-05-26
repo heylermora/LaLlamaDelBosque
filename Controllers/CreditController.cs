@@ -51,6 +51,14 @@ namespace LaLlamaDelBosque.Controllers
 
             credits = credits.Where((item, index) => index >= startIndex && index <= endIndex).ToList();
 
+            var exceededClients = credits
+                .Where(c => c.Client.Limit.HasValue && c.CreditSummary.Total > c.Client.Limit.Value)
+                .Select(c => $"{c.Client.Name} (₡ {c.CreditSummary.Total:N0} / límite ₡ {c.Client.Limit.Value:N0})")
+                .ToList();
+
+            ViewBag.ExceededClients = exceededClients;
+            ViewBag.ShowFortnightReminder = IsFortnightCollectionWindow(DateTime.Today);
+
             ViewBag.TotalPages = totalPages;
             ViewBag.CurrentPage = currentPage;
             ViewBag.ClientId = clientId;
@@ -280,6 +288,23 @@ namespace LaLlamaDelBosque.Controllers
             }
         }
         #endregion
+
+
+
+        private static bool IsFortnightCollectionWindow(DateTime date)
+        {
+            var day = date.Day;
+            var daysInMonth = DateTime.DaysInMonth(date.Year, date.Month);
+
+            var firstWindowStart = 14;
+            var firstWindowEnd = 16;
+
+            var secondWindowStart = Math.Max(daysInMonth - 2, 1);
+            var secondWindowEnd = daysInMonth;
+
+            return (day >= firstWindowStart && day <= firstWindowEnd)
+                || (day >= secondWindowStart && day <= secondWindowEnd);
+        }
 
         private CreditModel GetCredits()
         {

@@ -6,6 +6,18 @@
     var today = DateTime.Today.ToString("dddd, dd 'de' MMMM yyyy", culture);
 }
 
+
+@if((ViewBag.MissingTodayAwards as bool?) == true)
+{
+    <div class="alert alert-warning d-flex align-items-center gap-2 mb-4" role="alert">
+        <span class="material-icons">emoji_events</span>
+        <div>
+            <strong>Premios pendientes:</strong> Aún no se han cargado los premios de hoy.
+            <a class="alert-link ms-1" asp-controller="Award" asp-action="Index">Ir a Premios</a>
+        </div>
+    </div>
+}
+
 <section class="dashboard-hero-modern mb-4 p-4 p-lg-5">
     <div class="row g-4 align-items-center">
         <div class="col-12 col-lg-8">
