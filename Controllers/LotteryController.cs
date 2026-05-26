@@ -18,9 +18,11 @@ namespace LaLlamaDelBosque.Controllers
 		private readonly List<Paper> _papers;
 		private readonly List<Credit> _credits;
 		private readonly List<Award> _awards;
+		private readonly IConfiguration _configuration;
 
-		public LotteryController()
+		public LotteryController(IConfiguration configuration)
 		{
+			_configuration = configuration;
 			_lotteries = GetLotteries();
 			_papers = GetPapers();
 			_credits = GetCredits();
@@ -358,7 +360,17 @@ namespace LaLlamaDelBosque.Controllers
 			if(audioFile == null || audioFile.Length == 0) return BadRequest(new { error = "Debes adjuntar un archivo de audio." });
 
 			var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
-			if(string.IsNullOrWhiteSpace(apiKey)) return StatusCode(500, new { error = "OPENAI_API_KEY no está configurada en el servidor." });
+			if(string.IsNullOrWhiteSpace(apiKey))
+			{
+				apiKey = _configuration["OpenAI:ApiKey"];
+			}
+			if(string.IsNullOrWhiteSpace(apiKey))
+			{
+				return StatusCode(500, new
+				{
+					error = "Falta configurar la llave de OpenAI. Define OPENAI_API_KEY o OpenAI:ApiKey en configuración."
+				});
+			}
 
 			using var form = new MultipartFormDataContent();
 			await using var stream = audioFile.OpenReadStream();
