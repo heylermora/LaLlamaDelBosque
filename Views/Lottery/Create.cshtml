@@ -212,6 +212,7 @@
 
         let selectedNumbers = [];
         const appliedRuleValues = new Map();
+        const appliedAdvancedValues = new Map();
 
         function padNumber(value) {
             return value.toString().padStart(2, "0");
@@ -272,7 +273,9 @@
         function clearSelectedNumbers() {
             selectedNumbers = [];
             appliedRuleValues.clear();
+            appliedAdvancedValues.clear();
             syncRuleButtons();
+            syncAdvancedButtons();
             syncNumberPalette();
             renderSelectedNumbers();
         }
@@ -360,7 +363,40 @@
             if (feedback) feedback.textContent = "";
         }
 
-        function selectRange() {
+        function syncAdvancedButtons() {
+            const entries = [
+                ["range", "rangeApplyButton"],
+                ["startsWith", "startsWithApplyButton"],
+                ["endsWith", "endsWithApplyButton"]
+            ];
+            entries.forEach(([key, buttonId]) => {
+                const button = document.getElementById(buttonId);
+                if (!button) return;
+                button.textContent = appliedAdvancedValues.has(key) ? "Quitar" : "Aplicar";
+            });
+        }
+
+        function applyOrToggleAdvanced(key, valuesFactory) {
+            const feedback = document.getElementById("numberFeedback");
+            const existing = appliedAdvancedValues.get(key);
+            const nextValues = valuesFactory();
+            if (!nextValues) return false;
+
+            if (existing && existing.signature === nextValues.signature) {
+                removeValues(existing.values);
+                appliedAdvancedValues.delete(key);
+                if (feedback) feedback.textContent = "Se quitó la selección aplicada.";
+            } else {
+                if (existing) removeValues(existing.values);
+                addUniqueValues(nextValues.values);
+                appliedAdvancedValues.set(key, nextValues);
+                if (feedback) feedback.textContent = "Selección aplicada.";
+            }
+            syncAdvancedButtons();
+            return true;
+        }
+
+        function applyOrToggleRange() {
             const startInput = document.getElementById("rangeStart");
             const endInput = document.getElementById("rangeEnd");
             const feedback = document.getElementById("numberFeedback");
@@ -376,7 +412,10 @@
 
             const values = [];
             for (let i = start; i <= end; i++) values.push(padNumber(i));
-            addUniqueValues(values);
+            applyOrToggleAdvanced("range", () => ({
+                signature: `${start}-${end}`,
+                values
+            }));
         }
 
         function isPrime(number) {
@@ -422,7 +461,7 @@
             syncRuleButtons();
         }
 
-        function applyStartsWithDigit() {
+        function applyOrToggleStartsWithDigit() {
             const input = document.getElementById("startsWithDigit");
             const feedback = document.getElementById("numberFeedback");
             if (!input) return;
@@ -431,10 +470,13 @@
                 if (feedback) feedback.textContent = "Para 'Inician en', usa un dígito de 0 a 9.";
                 return;
             }
-            addUniqueValues(getValuesByRule("startsWith", digit));
+            applyOrToggleAdvanced("startsWith", () => ({
+                signature: String(digit),
+                values: getValuesByRule("startsWith", digit)
+            }));
         }
 
-        function applyEndsWithDigit() {
+        function applyOrToggleEndsWithDigit() {
             const input = document.getElementById("endsWithDigit");
             const feedback = document.getElementById("numberFeedback");
             if (!input) return;
@@ -443,7 +485,10 @@
                 if (feedback) feedback.textContent = "Para 'Terminan en', usa un dígito de 0 a 9.";
                 return;
             }
-            addUniqueValues(getValuesByRule("endsWith", digit));
+            applyOrToggleAdvanced("endsWith", () => ({
+                signature: String(digit),
+                values: getValuesByRule("endsWith", digit)
+            }));
         }
 
         function pickRandomNumbers() {
@@ -464,10 +509,19 @@
             }
             selectedNumbers = pool.slice(0, count).sort();
             appliedRuleValues.clear();
+            appliedAdvancedValues.clear();
             syncRuleButtons();
+            syncAdvancedButtons();
             syncNumberPalette();
             renderSelectedNumbers();
             if (feedback) feedback.textContent = `Se seleccionaron ${count} número(s) al azar (reemplazando la selección actual).`;
+        }
+
+        function clearRandomCount() {
+            const countInput = document.getElementById("randomCount");
+            const feedback = document.getElementById("numberFeedback");
+            if (countInput) countInput.value = "";
+            if (feedback) feedback.textContent = "";
         }
 
         function toggleNumberPalette() {
@@ -498,6 +552,7 @@
                 buildNumberGrid();
                 renderSelectedNumbers();
                 syncRuleButtons();
+                syncAdvancedButtons();
             }
 
             $('#addNumberForm').submit(function (e) {

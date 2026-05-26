@@ -57,7 +57,7 @@
 <hr />
 
 <div class="modal fade" id="numbersModal" tabindex="-1" aria-labelledby="numbersModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+  <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="numbersModalLabel">Gestión de números</h5>
@@ -81,7 +81,7 @@
                                 <input type="number" id="rangeStart" class="form-control" min="0" max="99" placeholder="00" />
                                 <span class="input-group-text">a</span>
                                 <input type="number" id="rangeEnd" class="form-control" min="0" max="99" placeholder="10" />
-                                <button type="button" class="btn btn-outline-primary" onclick="selectRange()">Aplicar</button>
+                                <button type="button" id="rangeApplyButton" class="btn btn-outline-primary" onclick="applyOrToggleRange()">Aplicar</button>
                             </div>
                         </div>
                         <div class="col-12">
@@ -96,14 +96,14 @@
                             <label class="form-label mb-1">Inician en</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" id="startsWithDigit" class="form-control" min="0" max="9" placeholder="0-9" />
-                                <button type="button" class="btn btn-outline-secondary" onclick="applyStartsWithDigit()">Aplicar</button>
+                                <button type="button" id="startsWithApplyButton" class="btn btn-outline-secondary" onclick="applyOrToggleStartsWithDigit()">Aplicar</button>
                             </div>
                         </div>
                         <div class="col-12 col-md-6">
                             <label class="form-label mb-1">Terminan en</label>
                             <div class="input-group input-group-sm">
                                 <input type="number" id="endsWithDigit" class="form-control" min="0" max="9" placeholder="0-9" />
-                                <button type="button" class="btn btn-outline-secondary" onclick="applyEndsWithDigit()">Aplicar</button>
+                                <button type="button" id="endsWithApplyButton" class="btn btn-outline-secondary" onclick="applyOrToggleEndsWithDigit()">Aplicar</button>
                             </div>
                         </div>
                         <div class="col-12">
@@ -111,6 +111,7 @@
                             <div class="input-group input-group-sm">
                                 <input type="number" id="randomCount" class="form-control" min="1" max="100" placeholder="Cantidad (1-100)" />
                                 <button type="button" class="btn btn-outline-dark" onclick="pickRandomNumbers()">Elegir al azar</button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="clearRandomCount()">Limpiar</button>
                             </div>
                         </div>
                     </div>
@@ -127,9 +128,6 @@
                 </div>
             </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <small class="text-muted">Agregar = suma a selección actual / Reemplazar = borra selección actual y usa solo lo pegado.</small>
       </div>
     </div>
   </div>
