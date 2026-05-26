@@ -12,6 +12,7 @@
     .number-grid .number-cell { width:100%; min-width:0 !important; padding: .2rem .1rem; font-size: .72rem; line-height: 1.1; }
     .numbers-summary { min-height: 44px; }
     .numbers-modal-trigger { white-space: nowrap; }
+    .numbers-chip { border: 0; background: #0d6efd; color: #fff; border-radius: 999px; padding: .2rem .55rem; font-size: .78rem; }
 </style>
 
 <form asp-action="Add" id="addNumberForm">
@@ -30,19 +31,15 @@
                 <span asp-validation-for="Busted" class="text-danger"></span>
             </div>
         }
-        <div class="form-group col-md-6">
+        <div class="form-group col-md-7">
             <label asp-for="Value" class="control-label">Números</label>
             <input asp-for="Value" id="number" type="hidden" />
-            <div class="border rounded bg-white p-2 mb-2 shadow-sm numbers-summary" id="selectedNumbersInputLike">
-                <div class="d-flex flex-wrap gap-1" id="selectedNumbersContainer"></div>
-                <small id="numberPlaceholder" class="text-muted">Aún no has seleccionado números</small>
-            </div>
             <div class="d-flex align-items-center gap-2 mb-2">
                 <button type="button" class="btn btn-sm btn-outline-primary numbers-modal-trigger" data-bs-toggle="modal" data-bs-target="#numbersModal" title="Abrir selector de números">
                     <span class="material-icons" style="font-size:16px;vertical-align:text-bottom;">grid_view</span>
-                    Selector
+                    Gestionar números
                 </button>
-                <small class="text-muted">Abre el modal para seleccionar, reglas rápidas o pegar lista.</small>
+                <small class="text-muted">Todo el CRUD de números se realiza dentro del modal.</small>
             </div>
             <small id="numberFeedback" class="form-text text-danger"></small>
             <span asp-validation-for="Value" class="text-danger"></span>
@@ -58,23 +55,41 @@
 <hr />
 
 <div class="modal fade" id="numbersModal" tabindex="-1" aria-labelledby="numbersModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-fullscreen-lg-down modal-xl">
+  <div class="modal-dialog modal-fullscreen-lg-down modal-xl modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="numbersModalLabel">Gestión de números</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body">
-        <div class="row g-3">
-            <div class="col-lg-7">
-                <div class="border rounded bg-white p-2 shadow-sm">
-                    <div id="numberPalette">
-                        <div id="numberGrid" class="number-grid"></div>
+      <div class="modal-body p-2 p-lg-3">
+        <div class="accordion" id="numbersAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingGrid">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGrid" aria-expanded="true" aria-controls="collapseGrid">
+                        Selector 00-99
+                    </button>
+                </h2>
+                <div id="collapseGrid" class="accordion-collapse collapse show" aria-labelledby="headingGrid" data-bs-parent="#numbersAccordion">
+                    <div class="accordion-body">
+                        <div class="border rounded bg-white p-2 shadow-sm mb-2">
+                            <div class="d-flex flex-wrap gap-1" id="selectedNumbersContainer"></div>
+                            <small id="numberPlaceholder" class="text-muted">Aún no has seleccionado números</small>
+                        </div>
+                        <div id="numberPalette">
+                            <div id="numberGrid" class="number-grid"></div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="clearSelectedNumbers()">Limpiar selección del grid</button>
                     </div>
                 </div>
             </div>
-            <div class="col-lg-5">
-                <div class="border rounded bg-white p-2 mb-2 shadow-sm">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingRules">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRules" aria-expanded="false" aria-controls="collapseRules">
+                        Reglas y filtros rápidos
+                    </button>
+                </h2>
+                <div id="collapseRules" class="accordion-collapse collapse" aria-labelledby="headingRules" data-bs-parent="#numbersAccordion">
+                    <div class="accordion-body">
                     <div class="row g-2 align-items-end">
                         <div class="col-12">
                             <label class="form-label mb-1">Rango consecutivo</label>
@@ -115,12 +130,18 @@
                                 <button type="button" class="btn btn-outline-secondary" onclick="clearRandomCount()">Limpiar</button>
                             </div>
                         </div>
-                        <div class="col-12">
-                            <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="clearSelectedNumbers()">Limpiar selección del grid</button>
-                        </div>
                     </div>
                 </div>
-                <div class="border rounded bg-white p-2 shadow-sm">
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingPaste">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePaste" aria-expanded="false" aria-controls="collapsePaste">
+                        Copiar / pegar números
+                    </button>
+                </h2>
+                <div id="collapsePaste" class="accordion-collapse collapse" aria-labelledby="headingPaste" data-bs-parent="#numbersAccordion">
+                    <div class="accordion-body">
                     <label class="form-label mb-1">Pegar lista de números</label>
                     <textarea id="bulkNumbersInput" class="form-control form-control-sm" rows="3" placeholder='Ej: "00 01 78", "00+01+78", "000178", "00,01+78 9095"'></textarea>
                     <small class="text-muted d-block mt-2">Funciona con texto libre: "metele 00, 1 y 78".</small>
@@ -129,6 +150,7 @@
                         <button type="button" class="btn btn-sm btn-outline-primary" onclick="applyPastedNumbers(false)">Agregar</button>
                         <button type="button" class="btn btn-sm btn-primary" onclick="applyPastedNumbers(true)">Reemplazar</button>
                     </div>
+                </div>
                 </div>
             </div>
         </div>

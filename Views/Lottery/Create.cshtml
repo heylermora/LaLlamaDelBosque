@@ -239,7 +239,7 @@
                 const count = selectedNumberCounts.get(number) ?? 1;
                 const chip = document.createElement("button");
                 chip.type = "button";
-                chip.className = "btn btn-sm btn-primary";
+                chip.className = "numbers-chip";
                 chip.textContent = count > 1 ? `${number} x${count} ×` : `${number} ×`;
                 chip.onclick = function () {
                     const current = selectedNumberCounts.get(number) ?? 1;
@@ -267,6 +267,8 @@
             const buttons = document.querySelectorAll(".number-cell");
             buttons.forEach(btn => {
                 const value = btn.dataset.value;
+                const count = selectedNumberCounts.get(value) ?? 0;
+                btn.title = count > 0 ? `Cantidad: ${count}` : "Cantidad: 0";
                 btn.classList.toggle("btn-success", selectedNumbers.includes(value));
                 btn.classList.toggle("btn-outline-secondary", !selectedNumbers.includes(value));
             });
