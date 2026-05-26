@@ -336,7 +336,7 @@
 
             if (feedback) feedback.textContent = `${values.length} número(s) procesado(s) desde texto.`;
 
-            const modalElement = document.getElementById("pasteNumbersModal");
+            const modalElement = document.getElementById("numbersModal");
             if (modalElement && window.bootstrap?.Modal) {
                 const instance = bootstrap.Modal.getInstance(modalElement);
                 if (instance) instance.hide();

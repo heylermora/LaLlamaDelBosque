@@ -10,6 +10,7 @@
 <style>
     .number-grid { display:grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap:.25rem; }
     .number-grid .number-cell { width:100%; min-width:0 !important; }
+    .numbers-summary { min-height: 44px; }
 </style>
 
 <form asp-action="Add" id="addNumberForm">
@@ -31,65 +32,16 @@
         <div class="form-group col-md-6">
             <label asp-for="Value" class="control-label">Números</label>
             <input asp-for="Value" id="number" type="hidden" />
-            <div class="border rounded bg-white p-2 mb-2 shadow-sm" id="selectedNumbersInputLike">
+            <div class="border rounded bg-white p-2 mb-2 shadow-sm numbers-summary" id="selectedNumbersInputLike">
                 <div class="d-flex flex-wrap gap-1" id="selectedNumbersContainer"></div>
                 <small id="numberPlaceholder" class="text-muted">Aún no has seleccionado números</small>
             </div>
-            <small class="form-text text-muted d-block mb-2">Selecciona números tocando los botones o usa una regla rápida.</small>
             <div class="d-flex align-items-center gap-2 mb-2">
-                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleNumberPalette()">
-                    Mostrar/Ocultar selector
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#numbersModal">
+                    Gestionar números
                 </button>
-                <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearSelectedNumbers()">
-                    Limpiar selección
-                </button>
-            </div>
-            <div class="border rounded bg-white p-2 mb-2 shadow-sm">
-                <div class="row g-2 align-items-end">
-                    <div class="col-md-5">
-                        <label class="form-label mb-1">Rango consecutivo</label>
-                        <div class="input-group input-group-sm">
-                            <input type="number" id="rangeStart" class="form-control" min="0" max="99" placeholder="00" />
-                            <span class="input-group-text">a</span>
-                            <input type="number" id="rangeEnd" class="form-control" min="0" max="99" placeholder="10" />
-                            <button type="button" class="btn btn-outline-primary" onclick="selectRange()">Aplicar</button>
-                        </div>
-                    </div>
-                    <div class="col-md-7">
-                        <label class="form-label mb-1">Reglas rápidas</label>
-                        <div class="d-flex flex-wrap gap-1">
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectByRule('even')">Pares</button>
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectByRule('odd')">Impares</button>
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectByRule('prime')">Primos</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="row g-2 mt-1">
-                    <div class="col-md-6">
-                        <label class="form-label mb-1">Inician en</label>
-                        <div class="input-group input-group-sm">
-                            <input type="number" id="startsWithDigit" class="form-control" min="0" max="9" placeholder="0-9" />
-                            <button type="button" class="btn btn-outline-secondary" onclick="applyStartsWithDigit()">Aplicar</button>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label mb-1">Terminan en</label>
-                        <div class="input-group input-group-sm">
-                            <input type="number" id="endsWithDigit" class="form-control" min="0" max="9" placeholder="0-9" />
-                            <button type="button" class="btn btn-outline-secondary" onclick="applyEndsWithDigit()">Aplicar</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="d-flex align-items-center gap-2 mb-2">
-                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#pasteNumbersModal">
-                    Pegar números
-                </button>
-                <small class="text-muted">Usa este atajo si el cliente ya trae lista.</small>
-            </div>
-            <div id="numberPalette" class="border rounded bg-white p-2 shadow-sm" style="max-height: 240px; overflow-y: auto;">
-                <div id="numberGrid" class="number-grid"></div>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearSelectedNumbers()">Limpiar</button>
+                <small class="text-muted">Abre el modal para seleccionar, reglas rápidas o pegar lista.</small>
             </div>
             <small id="numberFeedback" class="form-text text-danger"></small>
             <span asp-validation-for="Value" class="text-danger"></span>
@@ -104,20 +56,70 @@
 
 <hr />
 
-<div class="modal fade" id="pasteNumbersModal" tabindex="-1" aria-labelledby="pasteNumbersModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+<div class="modal fade" id="numbersModal" tabindex="-1" aria-labelledby="numbersModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="pasteNumbersModalLabel">Pegar lista de números</h5>
+        <h5 class="modal-title" id="numbersModalLabel">Gestión de números</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <textarea id="bulkNumbersInput" class="form-control" rows="4" placeholder='Ej: "00 01 78", "00+01+78", "000178", "00,01+78 9095"'></textarea>
-        <small class="text-muted d-block mt-2">Soporta espacios, comas, +, guiones y concatenados de dígitos. Siempre se normaliza a 2 dígitos (00-99).</small>
+        <div class="row g-3">
+            <div class="col-lg-7">
+                <div class="border rounded bg-white p-2 shadow-sm">
+                    <div id="numberPalette" style="max-height: 320px; overflow-y: auto;">
+                        <div id="numberGrid" class="number-grid"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="border rounded bg-white p-2 mb-2 shadow-sm">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-12">
+                            <label class="form-label mb-1">Rango consecutivo</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" id="rangeStart" class="form-control" min="0" max="99" placeholder="00" />
+                                <span class="input-group-text">a</span>
+                                <input type="number" id="rangeEnd" class="form-control" min="0" max="99" placeholder="10" />
+                                <button type="button" class="btn btn-outline-primary" onclick="selectRange()">Aplicar</button>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label mb-1">Reglas rápidas</label>
+                            <div class="d-flex flex-wrap gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectByRule('even')">Pares</button>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectByRule('odd')">Impares</button>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectByRule('prime')">Primos</button>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label mb-1">Inician en</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" id="startsWithDigit" class="form-control" min="0" max="9" placeholder="0-9" />
+                                <button type="button" class="btn btn-outline-secondary" onclick="applyStartsWithDigit()">Aplicar</button>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label mb-1">Terminan en</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" id="endsWithDigit" class="form-control" min="0" max="9" placeholder="0-9" />
+                                <button type="button" class="btn btn-outline-secondary" onclick="applyEndsWithDigit()">Aplicar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="border rounded bg-white p-2 shadow-sm">
+                    <label class="form-label mb-1">Pegar lista de números</label>
+                    <textarea id="bulkNumbersInput" class="form-control form-control-sm" rows="3" placeholder='Ej: "00 01 78", "00+01+78", "000178", "00,01+78 9095"'></textarea>
+                    <small class="text-muted d-block mt-2">Separadores libres y concatenados, siempre se normaliza a 2 dígitos (00-99).</small>
+                </div>
+            </div>
+        </div>
       </div>
       <div class="modal-footer d-flex justify-content-between">
         <small class="text-muted">Agregar = suma a selección actual / Reemplazar = borra lo actual y usa solo lo pegado.</small>
         <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-danger" onclick="clearSelectedNumbers()">Limpiar</button>
           <button type="button" class="btn btn-outline-primary" onclick="applyPastedNumbers(false)">Agregar</button>
           <button type="button" class="btn btn-primary" onclick="applyPastedNumbers(true)">Reemplazar</button>
         </div>
