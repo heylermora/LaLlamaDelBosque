@@ -643,16 +643,32 @@
             }
             if (bulkInput) {
                 bulkInput.addEventListener("input", function () {
-                    const digits = (bulkInput.value.match(/\d/g) || []).join("");
+                    const raw = bulkInput.value.replace(/[^0-9+]/g, "");
+                    const tokens = raw.split("+");
                     const groups = [];
-                    const pairLimit = Math.floor(digits.length / 2) * 2;
-                    for (let i = 0; i < pairLimit; i += 2) {
-                        groups.push(digits.slice(i, i + 2));
-                    }
-                    const remainder = digits.slice(pairLimit);
-                    if (remainder.length === 1) {
-                        groups.push(`0${remainder}`);
-                    }
+
+                    tokens.forEach((token, tokenIndex) => {
+                        if (!token) return;
+                        if (token.length <= 2) {
+                            const isSingleDigit = token.length === 1;
+                            const hasMultipleTokens = tokens.length > 1;
+                            const isLastToken = tokenIndex === tokens.length - 1;
+                            if (isSingleDigit && hasMultipleTokens && isLastToken) {
+                                groups.push(`0${token}`);
+                            } else {
+                                groups.push(token.length === 1 ? token : token);
+                            }
+                            return;
+                        }
+
+                        const pairLimit = Math.floor(token.length / 2) * 2;
+                        for (let i = 0; i < pairLimit; i += 2) {
+                            groups.push(token.slice(i, i + 2));
+                        }
+                        const remainder = token.slice(pairLimit);
+                        if (remainder) groups.push(`0${remainder}`);
+                    });
+
                     bulkInput.value = groups.join("+");
                 });
             }
