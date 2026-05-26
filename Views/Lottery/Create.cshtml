@@ -343,6 +343,13 @@
             }
         }
 
+        function clearBulkNumbersInput() {
+            const input = document.getElementById("bulkNumbersInput");
+            const feedback = document.getElementById("numberFeedback");
+            if (input) input.value = "";
+            if (feedback) feedback.textContent = "";
+        }
+
         function selectRange() {
             const startInput = document.getElementById("rangeStart");
             const endInput = document.getElementById("rangeEnd");

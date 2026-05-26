@@ -38,7 +38,7 @@
             </div>
             <div class="d-flex align-items-center gap-2 mb-2">
                 <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#numbersModal">
-                    Gestionar números
+                    Números
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearSelectedNumbers()">Limpiar</button>
                 <small class="text-muted">Abre el modal para seleccionar, reglas rápidas o pegar lista.</small>
@@ -112,17 +112,17 @@
                     <label class="form-label mb-1">Pegar lista de números</label>
                     <textarea id="bulkNumbersInput" class="form-control form-control-sm" rows="3" placeholder='Ej: "00 01 78", "00+01+78", "000178", "00,01+78 9095"'></textarea>
                     <small class="text-muted d-block mt-2">Separadores libres y concatenados, siempre se normaliza a 2 dígitos (00-99).</small>
+                    <div class="d-flex flex-wrap gap-1 mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearBulkNumbersInput()">Limpiar</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="applyPastedNumbers(false)">Agregar</button>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="applyPastedNumbers(true)">Reemplazar</button>
+                    </div>
                 </div>
             </div>
         </div>
       </div>
-      <div class="modal-footer d-flex justify-content-between">
-        <small class="text-muted">Agregar = suma a selección actual / Reemplazar = borra lo actual y usa solo lo pegado.</small>
-        <div class="d-flex gap-2">
-          <button type="button" class="btn btn-outline-danger" onclick="clearSelectedNumbers()">Limpiar</button>
-          <button type="button" class="btn btn-outline-primary" onclick="applyPastedNumbers(false)">Agregar</button>
-          <button type="button" class="btn btn-primary" onclick="applyPastedNumbers(true)">Reemplazar</button>
-        </div>
+      <div class="modal-footer">
+        <small class="text-muted">Agregar = suma a selección actual / Reemplazar = borra selección actual y usa solo lo pegado.</small>
       </div>
     </div>
   </div>
