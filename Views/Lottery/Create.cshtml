@@ -245,7 +245,7 @@
                 const chip = document.createElement("button");
                 chip.type = "button";
                 chip.className = "numbers-chip";
-                chip.textContent = count > 1 ? `${number} x${count} ×` : `${number} ×`;
+                chip.innerHTML = `<span>${number}</span><span class="numbers-chip-badge">${count}</span>`;
                 chip.onclick = function () {
                     const current = selectedNumberCounts.get(number) ?? 1;
                     if (current > 1) {
@@ -289,9 +289,19 @@
             buttons.forEach(btn => {
                 const value = btn.dataset.value;
                 const count = selectedNumberCounts.get(value) ?? 0;
-                btn.title = count > 0 ? `Cantidad: ${count}` : "Cantidad: 0";
                 btn.classList.toggle("btn-success", selectedNumbers.includes(value));
                 btn.classList.toggle("btn-outline-secondary", !selectedNumbers.includes(value));
+                let badge = btn.querySelector(".number-cell-badge");
+                if (count > 0) {
+                    if (!badge) {
+                        badge = document.createElement("span");
+                        badge.className = "number-cell-badge";
+                        btn.appendChild(badge);
+                    }
+                    badge.textContent = String(count);
+                } else if (badge) {
+                    badge.remove();
+                }
             });
         }
 
@@ -387,9 +397,8 @@
         }
 
         function parseNumbersFromText(raw) {
-            if (!raw) return [];
-            const sanitized = raw.replace(/[\[\]\(\)"'“”‘’]/g, " ");
-            const chunks = sanitized.split(/[^0-9]+/).filter(Boolean);
+            if (!raw) return { unique: [], expanded: [] };
+            const chunks = raw.split("+").map(x => x.trim()).filter(Boolean);
             const unique = new Set();
             const expanded = [];
 
@@ -426,11 +435,6 @@
 
             if (feedback) feedback.textContent = `${parsed.expanded.length} número(s) procesado(s) desde texto.`;
 
-            const modalElement = document.getElementById("numbersModal");
-            if (modalElement && window.bootstrap?.Modal) {
-                const instance = bootstrap.Modal.getInstance(modalElement);
-                if (instance) instance.hide();
-            }
         }
 
         function clearBulkNumbersInput() {
@@ -510,6 +514,7 @@
                 if (rule === "even" && i % 2 === 0) values.push(value);
                 if (rule === "odd" && i % 2 !== 0) values.push(value);
                 if (rule === "prime" && isPrime(i)) values.push(value);
+                if (rule === "m5" && i % 5 === 0) values.push(value);
                 if (rule === "startsWith" && value.startsWith(String(digit))) values.push(value);
                 if (rule === "endsWith" && value.endsWith(String(digit))) values.push(value);
             }
@@ -517,7 +522,7 @@
         }
 
         function syncRuleButtons() {
-            ["even", "odd", "prime"].forEach(rule => {
+            ["even", "odd", "prime", "m5"].forEach(rule => {
                 const button = document.getElementById(`rule-${rule}`);
                 if (!button) return;
                 const isActive = appliedRuleValues.has(rule);
@@ -628,12 +633,24 @@
 
         $(document).ready(function () {
             const numberInput = document.getElementById('number');
+            const bulkInput = document.getElementById('bulkNumbersInput');
             if (numberInput) {
                 buildNumberGrid();
                 bindGridDragSelection();
                 renderSelectedNumbers();
                 syncRuleButtons();
                 syncAdvancedButtons();
+            }
+            if (bulkInput) {
+                bulkInput.addEventListener("input", function () {
+                    const digits = (bulkInput.value.match(/\d/g) || []).join("");
+                    const normalized = digits.length % 2 === 0 ? digits : `0${digits}`;
+                    const groups = [];
+                    for (let i = 0; i < normalized.length; i += 2) {
+                        groups.push(normalized.slice(i, i + 2));
+                    }
+                    bulkInput.value = groups.join("+");
+                });
             }
 
             $('#addNumberForm').submit(function (e) {

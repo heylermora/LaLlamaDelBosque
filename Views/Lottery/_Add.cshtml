@@ -9,10 +9,12 @@
 
 <style>
     .number-grid { display:grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap:.25rem; }
-    .number-grid .number-cell { width:100%; min-width:0 !important; padding: .2rem .1rem; font-size: .72rem; line-height: 1.1; }
+    .number-grid .number-cell { position: relative; width:100%; min-width:0 !important; padding: .35rem .1rem; font-size: .72rem; line-height: 1.1; border-radius: 12px; }
     .numbers-summary { min-height: 44px; }
     .numbers-modal-trigger { white-space: nowrap; }
-    .numbers-chip { border: 0; background: #0d6efd; color: #fff; border-radius: 999px; padding: .2rem .55rem; font-size: .78rem; }
+    .numbers-chip { border: 0; background: #f2f4f8; color: #1f2937; border-radius: 999px; padding: .25rem .35rem .25rem .65rem; font-size: .78rem; display:inline-flex; align-items:center; gap:.35rem; }
+    .numbers-chip-badge { background:#0d6efd; color:#fff; border-radius:999px; font-size:.72rem; font-weight:700; min-width:26px; text-align:center; padding:.1rem .45rem; }
+    .number-cell-badge { position:absolute; top:2px; right:2px; background:#0d6efd; color:#fff; border-radius:999px; font-size:.62rem; line-height:1; padding:.15rem .3rem; min-width:20px; text-align:center; }
 </style>
 
 <form asp-action="Add" id="addNumberForm">
@@ -105,6 +107,7 @@
                                     <button type="button" id="rule-even" class="btn btn-sm btn-outline-primary" onclick="toggleRuleSelection('even')">Pares</button>
                                     <button type="button" id="rule-odd" class="btn btn-sm btn-outline-primary" onclick="toggleRuleSelection('odd')">Impares</button>
                                     <button type="button" id="rule-prime" class="btn btn-sm btn-outline-primary" onclick="toggleRuleSelection('prime')">Primos</button>
+                                    <button type="button" id="rule-m5" class="btn btn-sm btn-outline-primary" onclick="toggleRuleSelection('m5')">Múltiplos 5</button>
                                 </div>
                             </div>
                             <div class="col-12 col-md-6">
@@ -142,8 +145,8 @@
                         <div id="collapsePaste" class="accordion-collapse collapse show" aria-labelledby="headingPaste" data-bs-parent="#numbersAccordion">
                             <div class="accordion-body">
                             <label class="form-label mb-1">Pegar lista de números</label>
-                            <textarea id="bulkNumbersInput" class="form-control form-control-sm" rows="3" placeholder='Ej: "00 01 78", "00+01+78", "000178", "00,01+78 9095"'></textarea>
-                            <small class="text-muted d-block mt-2">Funciona con texto libre: "metele 00, 1 y 78".</small>
+                            <textarea id="bulkNumbersInput" class="form-control form-control-sm" rows="3" placeholder='Ej: 00+01+78'></textarea>
+                            <small class="text-muted d-block mt-2">Solo dígitos. Se formatea automáticamente como 00+01+78.</small>
                             <div class="d-flex flex-wrap gap-1 mt-2">
                                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearBulkNumbersInput()">Limpiar</button>
                                 <button type="button" class="btn btn-sm btn-outline-primary" onclick="applyPastedNumbers(false)">Agregar</button>
