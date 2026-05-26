@@ -456,10 +456,29 @@
             const verified = document.getElementById("voiceUserVerified");
             const fileInput = document.getElementById("voiceNumbersFile");
             const feedback = document.getElementById("voicePilotFeedback");
+            const transcriptInput = document.getElementById("voiceTranscriptInput");
             if (verified) verified.checked = false;
             if (fileInput) fileInput.value = "";
             if (feedback) feedback.textContent = "";
+            if (transcriptInput) transcriptInput.value = "";
             updateVoicePilotState();
+        }
+
+        function applyCorrectedTranscript() {
+            const transcriptInput = document.getElementById("voiceTranscriptInput");
+            const feedback = document.getElementById("voicePilotFeedback");
+            const bulkInput = document.getElementById("bulkNumbersInput");
+            if (!transcriptInput || !feedback || !bulkInput) return;
+
+            const parsed = parseNumbersFromText(transcriptInput.value || "");
+            if (!parsed.expanded.length) {
+                feedback.textContent = "No se detectaron números válidos (00-99) en la transcripción corregida.";
+                return;
+            }
+
+            bulkInput.value = parsed.expanded.join("+");
+            applyPastedNumbers(false);
+            feedback.textContent = `Corrección aplicada. Números validados: ${bulkInput.value}.`;
         }
 
         function processVoiceNumbersPilot() {
@@ -467,6 +486,7 @@
             const fileInput = document.getElementById("voiceNumbersFile");
             const feedback = document.getElementById("voicePilotFeedback");
             const bulkInput = document.getElementById("bulkNumbersInput");
+            const transcriptInput = document.getElementById("voiceTranscriptInput");
             if (!verified || !fileInput || !feedback) return;
             if (!(verified.checked && fileInput.files && fileInput.files.length > 0)) {
                 feedback.textContent = "Debes seleccionar un audio y verificar al usuario antes de procesar.";
@@ -491,8 +511,10 @@
                 })
                 .then(data => {
                     const normalized = (data?.normalized || "").trim();
+                    const transcript = (data?.transcript || "").trim();
+                    if (transcriptInput) transcriptInput.value = transcript;
                     if (!normalized) {
-                        feedback.textContent = "No se detectaron números válidos (00-99) en la transcripción.";
+                        feedback.textContent = "Transcripción lista. Revisa/corrige el texto y usa 'Aplicar corrección' para validar números.";
                         return;
                     }
 
@@ -501,7 +523,7 @@
                     }
 
                     applyPastedNumbers(false);
-                    feedback.textContent = `Transcripción OK. Números validados: ${normalized}.`;
+                    feedback.textContent = `Transcripción OK. Si algo quedó mal, corrige el texto y pulsa 'Aplicar corrección'.`;
                 })
                 .catch(error => {
                     feedback.textContent = `Error de transcripción: ${error.message}`;

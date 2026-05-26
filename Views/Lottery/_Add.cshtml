@@ -157,9 +157,12 @@
 
                                 <div class="d-flex flex-wrap gap-1 mt-2">
                                     <button type="button" id="processVoiceNumbersButton" class="btn btn-sm btn-outline-primary" disabled onclick="processVoiceNumbersPilot()">Procesar audio</button>
+                                    <button type="button" id="applyCorrectedTranscriptButton" class="btn btn-sm btn-outline-success" onclick="applyCorrectedTranscript()">Aplicar corrección</button>
                                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearVoiceNumbersPilot()">Limpiar</button>
                                 </div>
                                 <small id="voicePilotFeedback" class="text-muted d-block mt-2"></small>
+                                <label for="voiceTranscriptInput" class="form-label mt-3 mb-1">Transcripción (editable para corrección)</label>
+                                <textarea id="voiceTranscriptInput" class="form-control form-control-sm" rows="3" placeholder="Aquí aparecerá la transcripción para que puedas corregirla antes de validar números."></textarea>
                             </div>
                         </div>
                     </div>
