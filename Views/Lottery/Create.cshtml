@@ -481,6 +481,44 @@
             feedback.textContent = `Corrección aplicada. Números validados: ${bulkInput.value}.`;
         }
 
+        function startMicrophoneTranscription() {
+            const feedback = document.getElementById("voicePilotFeedback");
+            const transcriptInput = document.getElementById("voiceTranscriptInput");
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+            if (!SpeechRecognition) {
+                if (feedback) {
+                    feedback.textContent = "Tu navegador no soporta transcripción por micrófono. Usa carga de archivo.";
+                }
+                return;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.lang = "es-CR";
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            if (feedback) feedback.textContent = "Escuchando micrófono... habla ahora.";
+
+            recognition.onresult = function (event) {
+                const transcript = event?.results?.[0]?.[0]?.transcript || "";
+                if (transcriptInput) transcriptInput.value = transcript;
+                if (feedback) feedback.textContent = "Transcripción de micrófono lista. Revisa/corrige y pulsa 'Aplicar corrección'.";
+            };
+
+            recognition.onerror = function (event) {
+                if (feedback) feedback.textContent = `Error de micrófono: ${event.error}`;
+            };
+
+            recognition.onend = function () {
+                if (feedback && (!transcriptInput || !transcriptInput.value.trim())) {
+                    feedback.textContent = "Micrófono finalizado. No se detectó texto; intenta de nuevo.";
+                }
+            };
+
+            recognition.start();
+        }
+
         function processVoiceNumbersPilot() {
             const verified = document.getElementById("voiceUserVerified");
             const fileInput = document.getElementById("voiceNumbersFile");
