@@ -474,3 +474,46 @@ span.text-bg-danger {
     border: 1px solid var(--border-color);
     transition: transform .2s ease, box-shadow .2s ease;
 }
+
+/* Modal system: always above navbar/menus and polished look */
+.modal-backdrop {
+    --bs-backdrop-zindex: 2990;
+    z-index: 2990 !important;
+    background: rgba(15, 23, 42, 0.62);
+    backdrop-filter: blur(2px);
+}
+
+.modal {
+    --bs-modal-zindex: 3000;
+    z-index: 3000 !important;
+}
+
+.modal-dialog {
+    margin-top: clamp(1rem, 6vh, 3rem);
+}
+
+.modal-content {
+    border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border-color));
+    border-radius: 1rem;
+    box-shadow: 0 28px 80px rgba(15, 23, 42, .32);
+    overflow: hidden;
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+    background: linear-gradient(180deg, rgba(37,99,235,.08), rgba(37,99,235,0));
+}
+
+.modal-title {
+    font-weight: 700;
+    letter-spacing: .01em;
+}
+
+.modal-body {
+    background: color-mix(in srgb, var(--surface) 95%, #f6f9ff);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color);
+    background: color-mix(in srgb, var(--surface) 92%, #f8fbff);
+}
