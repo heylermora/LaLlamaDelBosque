@@ -222,23 +222,18 @@
     </div>
 
 
-@if((ViewBag.ExceededClients as List<string>)?.Any() == true)
+@if(!string.IsNullOrWhiteSpace(ViewBag.LimitExceededClientName as string))
 {
     <div class="modal fade" id="creditLimitAlertModal" tabindex="-1" aria-labelledby="creditLimitAlertModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-md modal-dialog-centered">
             <div class="modal-content border-0 shadow">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="creditLimitAlertModalLabel">Clientes con límite excedido</h5>
+                    <h5 class="modal-title" id="creditLimitAlertModalLabel">Límite excedido</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted">Estos clientes superan su límite de crédito:</p>
-                    <ul class="list-group list-group-flush">
-                        @foreach(var warning in (ViewBag.ExceededClients as List<string>)!)
-                        {
-                            <li class="list-group-item">@warning</li>
-                        }
-                    </ul>
+                    <p class="mb-2">El cliente <strong>@ViewBag.LimitExceededClientName</strong> acaba de exceder su límite de crédito.</p>
+                    <p class="mb-0 text-muted">Saldo actual: ₡ @ViewBag.LimitExceededClientTotal · Límite: ₡ @ViewBag.LimitExceededClientLimit</p>
                 </div>
             </div>
         </div>
@@ -343,10 +338,10 @@
 
 
             document.addEventListener("DOMContentLoaded", function () {
-                const exceededCount = @(((ViewBag.ExceededClients as List<string>)?.Count ?? 0));
+                const showLimitExceededModal = @((!string.IsNullOrWhiteSpace(ViewBag.LimitExceededClientName as string)).ToString().ToLower());
                 const showFortnightReminder = @(((ViewBag.ShowFortnightReminder as bool?) == true).ToString().ToLower());
 
-                if (exceededCount > 0) {
+                if (showLimitExceededModal) {
                     const limitModalElement = document.getElementById("creditLimitAlertModal");
                     if (limitModalElement) {
                         new bootstrap.Modal(limitModalElement).show();

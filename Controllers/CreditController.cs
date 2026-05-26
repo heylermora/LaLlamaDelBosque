@@ -51,12 +51,9 @@ namespace LaLlamaDelBosque.Controllers
 
             credits = credits.Where((item, index) => index >= startIndex && index <= endIndex).ToList();
 
-            var exceededClients = credits
-                .Where(c => c.Client.Limit.HasValue && c.CreditSummary.Total > c.Client.Limit.Value)
-                .Select(c => $"{c.Client.Name} (₡ {c.CreditSummary.Total:N0} / límite ₡ {c.Client.Limit.Value:N0})")
-                .ToList();
-
-            ViewBag.ExceededClients = exceededClients;
+            ViewBag.LimitExceededClientName = TempData["LimitExceededClientName"] as string;
+            ViewBag.LimitExceededClientTotal = TempData["LimitExceededClientTotal"] as string;
+            ViewBag.LimitExceededClientLimit = TempData["LimitExceededClientLimit"] as string;
             ViewBag.ShowFortnightReminder = IsFortnightCollectionWindow(DateTime.Today);
 
             ViewBag.TotalPages = totalPages;
@@ -165,6 +162,7 @@ namespace LaLlamaDelBosque.Controllers
                 var credit = _credits.Credits.FirstOrDefault(x => x.Client.Id == id);
                 if(double.Parse(collection["amount"]) > 0)
                 {
+                    var previousTotal = credit?.CreditSummary?.Total ?? 0;
                     var creditLine = new CreditLine()
                     {
                         Id = credit?.CreditLines.LastOrDefault()?.Id + 1 ?? 1,
@@ -177,6 +175,15 @@ namespace LaLlamaDelBosque.Controllers
                     {
                         credit.CreditLines.Add(creditLine);
                         credit.CreditSummary.Total = credit.CreditSummary.Total + creditLine.Amount;
+
+                        if(credit.Client.Limit.HasValue
+                            && previousTotal <= credit.Client.Limit.Value
+                            && credit.CreditSummary.Total > credit.Client.Limit.Value)
+                        {
+                            TempData["LimitExceededClientName"] = credit.Client.Name;
+                            TempData["LimitExceededClientTotal"] = credit.CreditSummary.Total.ToString("N0");
+                            TempData["LimitExceededClientLimit"] = credit.Client.Limit.Value.ToString("N0");
+                        }
                     }
 
                     SetCredits(_credits);
@@ -211,6 +218,15 @@ namespace LaLlamaDelBosque.Controllers
                     {
                         credit.CreditLines.Add(creditLine);
                         credit.CreditSummary.Total = credit.CreditSummary.Total + creditLine.Amount;
+
+                        if(credit.Client.Limit.HasValue
+                            && previousTotal <= credit.Client.Limit.Value
+                            && credit.CreditSummary.Total > credit.Client.Limit.Value)
+                        {
+                            TempData["LimitExceededClientName"] = credit.Client.Name;
+                            TempData["LimitExceededClientTotal"] = credit.CreditSummary.Total.ToString("N0");
+                            TempData["LimitExceededClientLimit"] = credit.Client.Limit.Value.ToString("N0");
+                        }
                     }
 
                     SetCredits(_credits);
@@ -233,12 +249,22 @@ namespace LaLlamaDelBosque.Controllers
                 var credit = _credits.Credits.First(x => x.Client.Id == clientId);
                 var line = credit.CreditLines.First(l => l.Id == int.Parse(collection["CreditLine.Id"]));
 
+                var previousTotal = credit.CreditSummary.Total;
                 credit.CreditSummary.Total -= line.Amount;
 
                 line.Description = collection["CreditLine.description"];
                 line.Amount = double.Parse(collection["CreditLine.amount"]);
 
                 credit.CreditSummary.Total += line.Amount;
+
+                if(credit.Client.Limit.HasValue
+                    && previousTotal <= credit.Client.Limit.Value
+                    && credit.CreditSummary.Total > credit.Client.Limit.Value)
+                {
+                    TempData["LimitExceededClientName"] = credit.Client.Name;
+                    TempData["LimitExceededClientTotal"] = credit.CreditSummary.Total.ToString("N0");
+                    TempData["LimitExceededClientLimit"] = credit.Client.Limit.Value.ToString("N0");
+                }
 
                 SetCredits(_credits);
                 return RedirectToAction(nameof(Index), new { searchString = searchString, clientId = clientId, currentPage = currentPage });

@@ -165,3 +165,41 @@
         <div class="col-6 col-lg-3"><div class="card h-100 dashboard-kpi-modern text-center border-primary-subtle"><div class="card-body"><small class="text-muted">Total</small><h4 class="fw-bold text-primary">₡ @Model.Lottery.Total</h4></div></div></div>
     </div>
 </section>
+
+
+<div class="modal fade" id="homeUpdatesModal" tabindex="-1" aria-labelledby="homeUpdatesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title" id="homeUpdatesModalLabel">Nuevas actualizaciones del sistema</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="mb-0">
+                    <li>Nuevo dashboard más moderno con mejor jerarquía visual.</li>
+                    <li>Alerta en Home cuando faltan premios del día.</li>
+                    <li>Recordatorios estratégicos de cobro en quincena.</li>
+                    <li>Alerta inmediata cuando un cliente empieza a exceder su límite.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const versionKey = "home_updates_modal_v1";
+            if (!localStorage.getItem(versionKey)) {
+                const updatesModalElement = document.getElementById("homeUpdatesModal");
+                if (updatesModalElement) {
+                    const modal = new bootstrap.Modal(updatesModalElement);
+                    modal.show();
+                    updatesModalElement.addEventListener("hidden.bs.modal", function () {
+                        localStorage.setItem(versionKey, "seen");
+                    }, { once: true });
+                }
+            }
+        });
+    </script>
+}
