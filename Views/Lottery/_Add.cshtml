@@ -5,9 +5,13 @@
     var busted = ViewData["busted"] as bool?;
 }
 
-<hr />
+<hr class="my-2" />
 
 <style>
+    #addNumberForm { background: #fff; border: 1px solid #e8eef7; border-radius: 14px; padding: .9rem; }
+    #addNumberForm label { font-weight: 600; color: #1f2a44; }
+    #bulkNumbersInput { border-radius: 10px; border-color: #dce6f6; }
+    #bulkNumbersInput:focus, #addNumberForm .form-control:focus { box-shadow: 0 0 0 .2rem rgba(59,130,246,.15); border-color: #8fb0f5; }
     .number-grid { display:grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap:.25rem; }
     .number-grid .number-cell { position: relative; width:100%; min-width:0 !important; padding: .35rem .1rem; font-size: .72rem; line-height: 1.1; border-radius: 12px; }
     .numbers-summary { min-height: 44px; }
@@ -19,7 +23,7 @@
 
 <form asp-action="Add" id="addNumberForm">
     <input type="hidden" id="addSelectedLotteries" name="selectedLotteries" value="" />
-    <div class="row g-3">
+    <div class="row g-3 align-items-end">
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
         <div class="form-group col-md-2">
             <label asp-for="Amount" class="control-label">Monto</label>
@@ -38,8 +42,9 @@
                 <label class="form-label mb-1">Pegar lista de números</label>
                 <textarea id="bulkNumbersInput" class="form-control form-control-sm" rows="3" placeholder='Ej: 00+01+78'></textarea>
                 <small class="text-muted d-block mt-2">Solo pegado / digitación. Se formatea automáticamente como 00+01+78.</small>
-                <div class="mt-2">
+                <div class="mt-2 d-flex gap-2 flex-wrap">
                     <button type="button" class="btn btn-sm btn-primary" onclick="addNumbersFromTextarea()">Agregar al cuadro final</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearBulkNumbersInput()">Limpiar texto</button>
                 </div>
             </div>
             <small id="numberFeedback" class="form-text text-danger"></small>
@@ -48,4 +53,4 @@
     </div>
 </form>
 
-<hr />
+<hr class="my-2" />
