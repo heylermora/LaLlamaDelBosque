@@ -221,6 +221,16 @@
             return value.toString().padStart(2, "0");
         }
 
+        function hydrateSelectionFromHiddenInput() {
+            const hiddenInput = document.getElementById("number");
+            if (!hiddenInput || !hiddenInput.value) return;
+            const parsed = parseNumbersFromText(hiddenInput.value);
+            if (!parsed.expanded.length) return;
+            selectedNumbers = parsed.unique;
+            selectedNumberCounts.clear();
+            parsed.expanded.forEach(v => selectedNumberCounts.set(v, (selectedNumberCounts.get(v) ?? 0) + 1));
+        }
+
         function renderSelectedNumbers() {
             const hiddenInput = document.getElementById("number");
             const container = document.getElementById("selectedNumbersContainer");
@@ -759,6 +769,7 @@
             const numberInput = document.getElementById('number');
             const bulkInput = document.getElementById('bulkNumbersInput');
             if (numberInput) {
+                hydrateSelectionFromHiddenInput();
                 buildNumberGrid();
                 bindGridDragSelection();
                 renderSelectedNumbers();
@@ -789,7 +800,7 @@
                 var busted = parseFloat($('#Busted').val());
 
                 if (numberInput && document.getElementById('addNumberSubmit')?.disabled) {
-                    document.getElementById("numberPalette")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    (document.getElementById("bulkNumbersInput") || document.getElementById("selectedNumbersContainerOutside"))?.scrollIntoView({ behavior: "smooth", block: "center" });
                     e.preventDefault();
                     return;
                 }
