@@ -122,18 +122,22 @@ namespace LaLlamaDelBosque.Controllers
 		// POST: LotteryController/Save
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public ActionResult Save(List<string>? SelectedLotteries, string? selectedLotteries, DateTime? drawDate, int? clientId, string? numbersDraftJson)
+		public ActionResult Save(string? selectedLotteries, DateTime? drawDate, int? clientId, string? numbersDraftJson)
 		{
 			try
 			{
 				var paper = TempData.Get<Paper>("Paper") ?? new Paper();
 				var selectedNames = new List<string>();
-				if(SelectedLotteries is not null && SelectedLotteries.Any())
+
+				var selectedFromForm = Request.Form["SelectedLotteries"]
+					.Select(x => x?.Trim())
+					.Where(x => !string.IsNullOrWhiteSpace(x))
+					.Select(x => x!)
+					.ToList();
+
+				if(selectedFromForm.Any())
 				{
-					selectedNames = SelectedLotteries
-						.Select(x => x?.Trim())
-						.Where(x => !string.IsNullOrWhiteSpace(x))
-						.Select(x => x!)
+					selectedNames = selectedFromForm
 						.Distinct()
 						.ToList();
 				}
