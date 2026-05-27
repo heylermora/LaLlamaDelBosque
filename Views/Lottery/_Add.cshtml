@@ -45,6 +45,9 @@
                 <small class="text-muted d-block mt-1">
                     Tip: en los números seleccionados, <strong>clic izquierdo</strong> quita 1 unidad y <strong>clic derecho</strong> agrega 1 duplicidad.
                 </small>
+                <div class="mt-2">
+                    <button type="button" class="btn btn-sm btn-primary" onclick="applyPastedNumbers(false)">Agregar números</button>
+                </div>
             </div>
             <small id="numberFeedback" class="form-text text-danger"></small>
             <span asp-validation-for="Value" class="text-danger"></span>

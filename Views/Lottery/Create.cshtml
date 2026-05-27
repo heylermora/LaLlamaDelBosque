@@ -184,8 +184,8 @@
                         <p class="card-text mb-1">Monto Total: <span id="summaryAmountTotal">@Model.Numbers.Sum(x => x.Amount).ToCRC()</span></p>
                         <p class="card-text">Reventado Total: <span id="summaryBustedTotal">@Model.Numbers.Sum(x => x.Busted).ToCRC()</span></p>
                         <hr>
-                        <p class="card-text mb-1" style="font-weight: bold; font-size: 1rem;">Total Papelito: @subsum.ToCRC()</p>
-                        <p class="card-text mb-0" style="font-weight: bold; font-size: 1.2rem;">Total General: @sum.ToCRC()</p>
+                        <p class="card-text mb-1" style="font-weight: bold; font-size: 1rem;">Total Papelito: <span id="summaryPaperTotal">@subsum.ToCRC()</span></p>
+                        <p class="card-text mb-0" style="font-weight: bold; font-size: 1.2rem;">Total General: <span id="summaryGrandTotal">@sum.ToCRC()</span></p>
                     </div>
                 </div>
 
@@ -850,12 +850,6 @@
 
                     bulkInput.value = groups.join("+");
                 });
-                bulkInput.addEventListener("keydown", function (event) {
-                    if (event.key === "Enter" && !event.shiftKey) {
-                        event.preventDefault();
-                        applyPastedNumbers(false);
-                    }
-                });
             }
             if (addSelectedLotteries && selectedLotteriesHidden) {
                 addSelectedLotteries.value = selectedLotteriesHidden.value || "";
@@ -971,6 +965,7 @@
                 }
             }
 
+            renderStagedNumbersTable();
             saveDraftState();
         }
 
@@ -994,7 +989,33 @@
             body.innerHTML = "";
             stagedNumbers.forEach((item, index) => {
                 const tr = document.createElement("tr");
-                tr.innerHTML = `<td></td><td class="fw-semibold">${item.value || item.Value || ""}</td><td>${Number(item.amount ?? item.Amount ?? 0).toLocaleString('es-CR', { style: 'currency', currency: 'CRC' })}</td><td>${Number(item.busted ?? item.Busted ?? 0).toLocaleString('es-CR', { style: 'currency', currency: 'CRC' })}</td><td><button type="button" class="btn" data-idx="${index}"><span class="material-icons icon icon-danger">delete</span></button></td>`;
+                tr.innerHTML = `<td></td><td class="fw-semibold final-number-cell" style="cursor:pointer;" title="Clic izquierdo resta 1, clic derecho suma 1">${item.value || item.Value || ""}</td><td>${Number(item.amount ?? item.Amount ?? 0).toLocaleString('es-CR', { style: 'currency', currency: 'CRC' })}</td><td>${Number(item.busted ?? item.Busted ?? 0).toLocaleString('es-CR', { style: 'currency', currency: 'CRC' })}</td><td><button type="button" class="btn" data-idx="${index}"><span class="material-icons icon icon-danger">delete</span></button></td>`;
+                const numberCell = tr.querySelector(".final-number-cell");
+                if (numberCell) {
+                    numberCell.addEventListener("click", () => {
+                        const currentAmount = Number(item.amount ?? item.Amount ?? 0);
+                        const currentBusted = Number(item.busted ?? item.Busted ?? 0);
+                        if (item.amount !== undefined) item.amount = Math.max(0, currentAmount - 1);
+                        else item.Amount = Math.max(0, currentAmount - 1);
+                        if (item.busted !== undefined) item.busted = Math.max(0, currentBusted - 1);
+                        else item.Busted = Math.max(0, currentBusted - 1);
+                        if ((Number(item.amount ?? item.Amount ?? 0) === 0) && (Number(item.busted ?? item.Busted ?? 0) === 0)) {
+                            stagedNumbers.splice(index, 1);
+                        }
+                        renderStagedNumbersTable();
+                        saveDraftState();
+                    });
+                    numberCell.addEventListener("contextmenu", (event) => {
+                        event.preventDefault();
+                        if (item.amount !== undefined) item.amount = Number(item.amount ?? 0) + 1;
+                        else item.Amount = Number(item.Amount ?? 0) + 1;
+                        if (item.busted !== undefined) item.busted = Number(item.busted ?? 0) + 1;
+                        else item.Busted = Number(item.Busted ?? 0) + 1;
+                        renderStagedNumbersTable();
+                        saveDraftState();
+                        return false;
+                    });
+                }
                 tr.querySelector("button")?.addEventListener("click", () => {
                     stagedNumbers.splice(index, 1);
                     renderStagedNumbersTable();
@@ -1009,10 +1030,16 @@
             const bustedNode = document.getElementById("summaryBustedTotal");
             const linesBadge = document.getElementById("totalLinesBadge");
             const createButton = document.getElementById("createPaperButton");
+            const paperTotalNode = document.getElementById("summaryPaperTotal");
+            const grandTotalNode = document.getElementById("summaryGrandTotal");
             if (amountNode) amountNode.textContent = amountTotal.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
             if (bustedNode) bustedNode.textContent = bustedTotal.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
             if (linesBadge) linesBadge.textContent = `Total líneas: ${stagedNumbers.length}`;
             if (createButton) createButton.disabled = stagedNumbers.length === 0;
+            const paperTotal = amountTotal + bustedTotal;
+            const selectedCount = (document.getElementById("selectedLotteriesHidden")?.value || "").split(",").filter(x => x.trim().length > 0).length || 0;
+            if (paperTotalNode) paperTotalNode.textContent = paperTotal.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
+            if (grandTotalNode) grandTotalNode.textContent = (paperTotal * selectedCount).toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
         }
 
         function toggleSelectAll(masterCheckbox) {
