@@ -25,8 +25,11 @@
     </form>
 </div>
 <style>
+    .page-shell { max-width: 1240px; margin: 0 auto; }
+    .page-title { letter-spacing: -.02em; }
+    .section-caption { font-size: .82rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #5f6b85; }
     .create-compact .card-body { padding: .85rem 1rem; }
-    .create-compact .form-group { margin-bottom: .25rem; }
+    .create-compact .form-group { margin-bottom: .2rem; }
     .create-compact .alert { margin-bottom: .6rem; padding: .55rem .75rem; }
     .create-compact .numbers-summary { min-height: 36px; }
     .numbers-workspace { background: linear-gradient(180deg,#f8fbff 0%, #ffffff 100%); border: 1px solid #e8eef7; border-radius: 16px; padding: 1rem; }
@@ -35,16 +38,23 @@
     .numbers-table-wrap .table thead th { background: #f4f8ff; border-bottom: 1px solid #e6edf7; font-size: .82rem; text-transform: uppercase; letter-spacing: .03em; }
     .numbers-table-wrap .table tbody tr:hover { background: #f8fbff; }
     .numbers-kpi { background: linear-gradient(135deg, #2463eb, #64b5f6); border-radius: 16px; }
+    .config-card { border-radius: 16px; border: 1px solid #ebeff5; }
+    .floating-actions { position: sticky; bottom: .6rem; z-index: 5; background: rgba(255,255,255,.9); backdrop-filter: blur(3px); border: 1px solid #e8eef7; border-radius: 12px; padding: .5rem; }
+    @@media (max-width: 767px) {
+        .floating-actions { position: static; }
+    }
 </style>
 
+<div class="page-shell">
 <form asp-action="Save" id="savePaperForm" class="create-compact">
     @if(TempData["ErrorMessage"] is string errorMessage && !string.IsNullOrWhiteSpace(errorMessage))
     {
         <div class="alert alert-danger shadow-sm">@errorMessage</div>
     }
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-    <div class="card shadow-sm border-0 mb-3">
+    <div class="card shadow-sm border-0 mb-3 config-card">
         <div class="card-body">
+            <div class="section-caption mb-2">Configuración del papelito</div>
             <div class="row g-3">
                 <div class="form-group col-md-2">
                     <label asp-for="Id" class="control-label fw-semibold">Papelito</label>
@@ -112,7 +122,7 @@
     </div>
     <input type="hidden" id="selectedLotteriesHidden" name="selectedLotteries" value="@string.Join(",", Model.SelectedLotteries)" />
     <input type="hidden" id="numbersDraftJson" name="numbersDraftJson" value="" />
-    <div class="d-flex justify-content-end gap-2 mb-2">
+    <div class="d-flex justify-content-end gap-2 mb-2 floating-actions">
         <input type="submit" id="createPaperButton" value="Crear" class="btn btn-primary" />
         <input type="button" onclick="location.href='@Url.Action("Clear", "Lottery")'" value="Limpiar" class="btn btn-danger" />
     </div>
@@ -146,7 +156,7 @@
 
 <div class="container-fluid mb-2" id="numbersSection" style="display:@((Model?.Numbers.Any() ?? false) ? "block" : "none");">
         <div class="row">
-            <div class="col-lg-8">
+            <div class="col-lg-8 mb-2 mb-lg-0">
                 <div class="card shadow-sm border-0 h-100">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -208,6 +218,7 @@
             </div>
         </div>
     </div>
+</div>
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
