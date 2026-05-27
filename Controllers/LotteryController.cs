@@ -120,11 +120,26 @@ namespace LaLlamaDelBosque.Controllers
 
 
 		// POST: LotteryController/Save
-		public ActionResult Save()
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public ActionResult Save(string? selectedLotteries, DateTime? drawDate, int? clientId)
 		{
 			try
 			{
-				var paper = TempData.Get<Paper>("Paper");
+				var paper = TempData.Get<Paper>("Paper") ?? new Paper();
+				var selectedNames = (selectedLotteries ?? string.Empty)
+					.Split(",", StringSplitOptions.RemoveEmptyEntries)
+					.Select(x => x.Trim())
+					.Where(x => !string.IsNullOrWhiteSpace(x))
+					.Distinct()
+					.ToList();
+				if(selectedNames.Any())
+				{
+					paper.SelectedLotteries = selectedNames;
+					paper.Lottery = string.Join(", ", selectedNames);
+				}
+				if(drawDate.HasValue) paper.DrawDate = drawDate.Value;
+				if(clientId.HasValue) paper.ClientId = clientId;
 				var ids = new List<int>();
 				if(paper != null)
 				{

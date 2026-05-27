@@ -25,7 +25,7 @@
     </form>
 </div>
 
-<form asp-action="Save">
+<form asp-action="Save" id="savePaperForm">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <div class="card shadow-sm border-0 mb-3">
         <div class="card-body">
@@ -36,7 +36,7 @@
                 </div>
                 <div class="form-group col-md-3">
                     <label asp-for="DrawDate" class="control-label fw-semibold">Fecha de sorteo</label>
-                    <input asp-for="DrawDate" onchange="redirectToCreate('dateString', 'DrawDate')" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" class="form-control" />
+                    <input asp-for="DrawDate" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" class="form-control" />
                 </div>
                 <div class="form-group col-md-4">
                     <label asp-for="SelectedLotteries" class="control-label fw-semibold">Sorteos</label>
@@ -79,7 +79,7 @@
                 </div>       
                 <div class="form-group col-md-3">
                     <label asp-for="ClientId" class="control-label fw-semibold">Cliente</label>
-                    <select asp-for="ClientId" class="form-control form-select" onchange="redirectToCreate('clientId', 'ClientId', )">
+                    <select asp-for="ClientId" class="form-control form-select">
                         <option value="-1" selected>Seleccione un nombre</option>
                         @if(ViewData["Clients"] is not null)
                         {
@@ -93,6 +93,8 @@
             </div>
         </div>
     </div>
+    <input type="hidden" id="selectedLotteriesHidden" name="selectedLotteries" value="@string.Join(",", Model.SelectedLotteries)" />
+    <input type="hidden" id="numbersDraftJson" name="numbersDraftJson" value="" />
     <div class="d-flex justify-content-end">
          @if (Model.Numbers.Any())
         {
@@ -893,17 +895,10 @@
             if (selectedLabel) {
                 selectedLabel.textContent = values.length ? values.join(', ') : 'Seleccione uno o varios';
             }
+            const selectedHidden = document.getElementById("selectedLotteriesHidden");
+            if (selectedHidden) selectedHidden.value = values.join(",");
 
-            // Crear input temporal con valores
-            const tempInput = document.createElement('input');
-            tempInput.type = 'hidden';
-            tempInput.id = 'tempSelectedLotteries';
-            tempInput.value = Array.from(checked).map(cb => cb.value).join(',');
-            document.body.appendChild(tempInput);
-
-            // Redirigir usando el input temporal
             saveDraftState();
-            redirectToCreate("SelectedLotteries", "tempSelectedLotteries");
         }
 
         function toggleSelectAll(masterCheckbox) {
