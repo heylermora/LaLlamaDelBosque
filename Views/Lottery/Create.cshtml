@@ -125,16 +125,14 @@
     <partial name="_Add" model="new Numbers()"/>
 </div>
 
-@if (Model?.Numbers.Any() ?? false)
-{
-    <div class="container-fluid mb-2">
+<div class="container-fluid mb-2" id="numbersSection" style="display:@((Model?.Numbers.Any() ?? false) ? "block" : "none");">
         <div class="row">
             <div class="col-lg-8">
                 <div class="card shadow-sm border-0">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <h5 class="mb-0 fw-bold">Números cargados</h5>
-                            <span class="badge text-bg-light border">Total líneas: @Model.Numbers.Count()</span>
+                            <span class="badge bg-secondary text-white border" id="totalLinesBadge">Total líneas: @Model.Numbers.Count()</span>
                         </div>
                         <div class="table-responsive container overflow-auto">
                             <table class="table table-hover align-middle mb-0">
@@ -191,7 +189,6 @@
             </div>
         </div>
     </div>
-}
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
@@ -989,6 +986,8 @@
         function renderStagedNumbersTable() {
             const body = document.getElementById("numbersTableBody");
             if (!body) return;
+            const numbersSection = document.getElementById("numbersSection");
+            if (numbersSection) numbersSection.style.display = stagedNumbers.length ? "block" : "none";
             body.innerHTML = "";
             stagedNumbers.forEach((item, index) => {
                 const tr = document.createElement("tr");
@@ -1005,8 +1004,10 @@
             const bustedTotal = stagedNumbers.reduce((acc, n) => acc + Number(n.busted ?? n.Busted ?? 0), 0);
             const amountNode = document.getElementById("summaryAmountTotal");
             const bustedNode = document.getElementById("summaryBustedTotal");
+            const linesBadge = document.getElementById("totalLinesBadge");
             if (amountNode) amountNode.textContent = amountTotal.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
             if (bustedNode) bustedNode.textContent = bustedTotal.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
+            if (linesBadge) linesBadge.textContent = `Total líneas: ${stagedNumbers.length}`;
         }
 
         function toggleSelectAll(masterCheckbox) {
