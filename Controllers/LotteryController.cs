@@ -120,15 +120,55 @@ namespace LaLlamaDelBosque.Controllers
 
 
 		// POST: LotteryController/Save
-		public ActionResult Save()
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public ActionResult Save(string? selectedLotteries, DateTime? drawDate, int? clientId, string? numbersDraftJson)
 		{
 			try
 			{
-				var paper = TempData.Get<Paper>("Paper");
+				var paper = TempData.Get<Paper>("Paper") ?? new Paper();
+				var selectedNames = (selectedLotteries ?? string.Empty)
+					.Split(",", StringSplitOptions.RemoveEmptyEntries)
+					.Select(x => x.Trim())
+					.Where(x => !string.IsNullOrWhiteSpace(x))
+					.Distinct()
+					.ToList();
+				if(selectedNames.Any())
+				{
+					paper.SelectedLotteries = selectedNames;
+					paper.Lottery = string.Join(", ", selectedNames);
+				}
+				if(drawDate.HasValue) paper.DrawDate = drawDate.Value;
+				if(clientId.HasValue) paper.ClientId = clientId;
+				if(!string.IsNullOrWhiteSpace(numbersDraftJson))
+				{
+					try
+					{
+						var clientNumbers = JsonSerializer.Deserialize<List<Number>>(numbersDraftJson, new JsonSerializerOptions
+						{
+							PropertyNameCaseInsensitive = true
+						});
+						if(clientNumbers is not null)
+						{
+							paper.Numbers = clientNumbers
+								.Where(n => !string.IsNullOrWhiteSpace(n.Value))
+								.Select((n, i) => new Number
+								{
+									Id = i + 1,
+									Value = n.Value?.Trim(),
+									Amount = n.Amount,
+									Busted = n.Busted
+								}).ToList();
+						}
+					}
+					catch { }
+				}
 				var ids = new List<int>();
 				if(paper != null)
 				{
-					var lotteryNames = (paper.Lottery ?? "").Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList();
+					var lotteryNames = (paper.SelectedLotteries?.Any() ?? false)
+						? paper.SelectedLotteries.Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList()
+						: (paper.Lottery ?? "").Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
 					foreach(var name in lotteryNames)
 					{
 						var lottery = _lotteries.FirstOrDefault(l => l.Name == name);
@@ -242,7 +282,7 @@ namespace LaLlamaDelBosque.Controllers
 
 		#region Lottery Line
 		// GET: LotteryController/Add/
-		public ActionResult Add(IFormCollection collection)
+		public ActionResult Add(IFormCollection collection, string? selectedLotteries)
 		{
 			try
 			{
@@ -259,6 +299,17 @@ namespace LaLlamaDelBosque.Controllers
 				}
 
 				var paper = TempData.Get<Paper>("Paper") ?? new Paper();
+				var selectedNames = (selectedLotteries ?? string.Empty)
+					.Split(",", StringSplitOptions.RemoveEmptyEntries)
+					.Select(x => x.Trim())
+					.Where(x => !string.IsNullOrWhiteSpace(x))
+					.Distinct()
+					.ToList();
+				if(selectedNames.Any())
+				{
+					paper.SelectedLotteries = selectedNames;
+					paper.Lottery = string.Join(", ", selectedNames);
+				}
 				var count = paper.Numbers.Max(p => p.Id) ?? 0;
 
 				foreach(var number in numberList)
@@ -283,7 +334,7 @@ namespace LaLlamaDelBosque.Controllers
 				}
 				paper.Numbers = paper.Numbers.OrderBy(x => x.Value).ToList();
 				TempData.Put("Paper", paper);
-				return RedirectToAction(nameof(Create), new { selectedLotteries = paper.Lottery,  cc = true });
+				return RedirectToAction(nameof(Create), new { selectedLotteries = string.Join(",", paper.SelectedLotteries), cc = true });
 			}
 			catch(Exception ex)
 			{

@@ -24,8 +24,14 @@
         </div>
     </form>
 </div>
+<style>
+    .create-compact .card-body { padding: .85rem 1rem; }
+    .create-compact .form-group { margin-bottom: .25rem; }
+    .create-compact .alert { margin-bottom: .6rem; padding: .55rem .75rem; }
+    .create-compact .numbers-summary { min-height: 36px; }
+</style>
 
-<form asp-action="Save">
+<form asp-action="Save" id="savePaperForm" class="create-compact">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <div class="card shadow-sm border-0 mb-3">
         <div class="card-body">
@@ -36,7 +42,7 @@
                 </div>
                 <div class="form-group col-md-3">
                     <label asp-for="DrawDate" class="control-label fw-semibold">Fecha de sorteo</label>
-                    <input asp-for="DrawDate" onchange="redirectToCreate('dateString', 'DrawDate')" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" class="form-control" />
+                    <input asp-for="DrawDate" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" class="form-control" />
                 </div>
                 <div class="form-group col-md-4">
                     <label asp-for="SelectedLotteries" class="control-label fw-semibold">Sorteos</label>
@@ -68,6 +74,7 @@
                                                name="SelectedLotteries"
                                                value="@item.Name"
                                                id="lottery_@item.Order"
+                                               data-busted="@((item.Busted ?? false).ToString().ToLower())"
                                                onchange="updateSelected()"
                                                @(Model.SelectedLotteries.Contains(item.Name) ? "checked" : "") />
                                         <label class="form-check-label" for="lottery_@item.Order">@item.Name</label>
@@ -79,7 +86,7 @@
                 </div>       
                 <div class="form-group col-md-3">
                     <label asp-for="ClientId" class="control-label fw-semibold">Cliente</label>
-                    <select asp-for="ClientId" class="form-control form-select" onchange="redirectToCreate('clientId', 'ClientId', )">
+                    <select asp-for="ClientId" class="form-control form-select">
                         <option value="-1" selected>Seleccione un nombre</option>
                         @if(ViewData["Clients"] is not null)
                         {
@@ -93,41 +100,42 @@
             </div>
         </div>
     </div>
-    <div class="d-flex justify-content-end">
-         @if (Model.Numbers.Any())
-        {
-            <input type="submit" value="Crear" class="btn btn-primary m-2" />
-            <input type="button" onclick="location.href='@Url.Action("Clear", "Lottery")'" value="Limpiar" class="btn btn-danger m-2" />
-        }
+    <input type="hidden" id="selectedLotteriesHidden" name="selectedLotteries" value="@string.Join(",", Model.SelectedLotteries)" />
+    <input type="hidden" id="numbersDraftJson" name="numbersDraftJson" value="" />
+    <div class="d-flex justify-content-end gap-2 mb-2">
+        <input type="submit" id="createPaperButton" value="Crear" class="btn btn-primary" />
+        <input type="button" onclick="location.href='@Url.Action("Clear", "Lottery")'" value="Limpiar" class="btn btn-danger" />
     </div>
 </form>
 
-@if(Model?.SelectedLotteries.Any() ?? false)
-{
+@{
+    var hasSelectedLotteries = Model?.SelectedLotteries.Any() ?? false;
+}
+<div id="selectedLotteriesSummary" style="display:@(hasSelectedLotteries ? "block" : "none");">
     <div class="alert alert-info d-flex align-items-start gap-2 flex-wrap mt-1 shadow-sm">
         <span class="fw-bold">
             <i class="bi bi-check-circle-fill me-1"></i> Sorteos seleccionados:
         </span>
-        <div class="d-flex flex-wrap gap-1">
+        <div class="d-flex flex-wrap gap-1" id="selectedLotteriesBadges">
             @foreach(var name in Model.SelectedLotteries)
             {
                 <span class="badge bg-primary text-light">@name</span>
             }
         </div>
     </div>
+</div>
+<div id="addSection" class="mt-2" style="display:@(hasSelectedLotteries ? "block" : "none");">
     <partial name="_Add" model="new Numbers()"/>
-}
+</div>
 
-@if (Model?.Numbers.Any() ?? false)
-{
-    <div class="container-fluid mb-2">
+<div class="container-fluid mb-2" id="numbersSection" style="display:@((Model?.Numbers.Any() ?? false) ? "block" : "none");">
         <div class="row">
             <div class="col-lg-8">
                 <div class="card shadow-sm border-0">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <h5 class="mb-0 fw-bold">Números cargados</h5>
-                            <span class="badge text-bg-light border">Total líneas: @Model.Numbers.Count()</span>
+                            <span class="badge bg-secondary text-white border" id="totalLinesBadge">Total líneas: @Model.Numbers.Count()</span>
                         </div>
                         <div class="table-responsive container overflow-auto">
                             <table class="table table-hover align-middle mb-0">
@@ -141,14 +149,14 @@
                                 <th></th>
                             </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="numbersTableBody">
                                     @foreach(var item in Model.Numbers)
                                     {
                                         <tr>
                                             <td></td>
                                             <td class="fw-semibold">@item.Value</td>
-                                            <td>@item.Amount.ToCRC()</td>
-                                            <td>@item.Busted.ToCRC()</td>
+                                            <td class="line-amount">@item.Amount.ToCRC()</td>
+                                            <td class="line-busted">@item.Busted.ToCRC()</td>
                                             <td>
                                                 <!-- Remove -->
                                                 <button type="button" class="btn" onclick="showPartial('removePartial-@Model.Id-@item.Id')">
@@ -173,42 +181,21 @@
                 <div class="card text-white border-0 shadow-sm" style="background: linear-gradient(135deg, #3B82F6, #64b5f6);">
                     <div class="card-body">
                         <h2 class="card-title">Resumen</h2>
-                        <p class="card-text mb-1">Monto Total: @Model.Numbers.Sum(x => x.Amount).ToCRC()</p>
-                        <p class="card-text">Reventado Total: @Model.Numbers.Sum(x => x.Busted).ToCRC()</p>
+                        <p class="card-text mb-1">Monto Total: <span id="summaryAmountTotal">@Model.Numbers.Sum(x => x.Amount).ToCRC()</span></p>
+                        <p class="card-text">Reventado Total: <span id="summaryBustedTotal">@Model.Numbers.Sum(x => x.Busted).ToCRC()</span></p>
                         <hr>
-                        <p class="card-text mb-1" style="font-weight: bold; font-size: 1rem;">Total Papelito: @subsum.ToCRC()</p>
-                        <p class="card-text mb-0" style="font-weight: bold; font-size: 1.2rem;">Total General: @sum.ToCRC()</p>
+                        <p class="card-text mb-1" style="font-weight: bold; font-size: 1rem;">Total Papelito: <span id="summaryPaperTotal">@subsum.ToCRC()</span></p>
+                        <p class="card-text mb-0" style="font-weight: bold; font-size: 1.2rem;">Total General: <span id="summaryGrandTotal">@sum.ToCRC()</span></p>
                     </div>
                 </div>
 
             </div>
         </div>
     </div>
-}
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script type="text/javascript">
-
-        function redirectToCreate(paramName, inputId) {
-            const input = document.getElementById(inputId);
-            const value = input.value;
-
-            const selectedLotteries = @Html.Raw(Json.Serialize(Model?.Lottery));
-            const clientId = '@Model?.ClientId';
-            const date = '@Model?.DrawDate.ToString("yyyy-MM-dd")';
-
-            const queryParams = new URLSearchParams();
-            queryParams.set(paramName, value);
-            queryParams.set('cc', 'true');
-
-            if (paramName !== 'SelectedLotteries') queryParams.set('SelectedLotteries', selectedLotteries);
-            if (paramName !== 'clientId') queryParams.set('clientId', clientId);
-            if (paramName !== 'dateString') queryParams.set('dateString', date);
-
-            const url = '@Url.Action("Create", "Lottery")' + '?' + queryParams.toString();
-            window.location.href = url;
-        }
 
         let selectedNumbers = [];
         const selectedNumberCounts = new Map();
@@ -216,20 +203,64 @@
         const appliedAdvancedValues = new Map();
         let isDraggingNumbers = false;
         let dragTouchedValues = new Set();
+        const LOTTERY_DRAFT_KEY = "lottery_add_form_draft_v1";
+        let stagedNumbers = @Html.Raw(Json.Serialize(Model?.Numbers ?? new List<Number>()));
+
+        function saveDraftState() {
+            const amountInput = document.getElementById("Amount");
+            const bustedInput = document.getElementById("Busted");
+            const numberInput = document.getElementById("number");
+            const bulkInput = document.getElementById("bulkNumbersInput");
+
+            const draft = {
+                amount: amountInput ? amountInput.value : "",
+                busted: bustedInput ? bustedInput.value : "",
+                numbers: numberInput ? numberInput.value : "",
+                bulk: bulkInput ? bulkInput.value : "",
+                stagedNumbers
+            };
+            sessionStorage.setItem(LOTTERY_DRAFT_KEY, JSON.stringify(draft));
+        }
+
+        function restoreDraftState() {
+            const raw = sessionStorage.getItem(LOTTERY_DRAFT_KEY);
+            if (!raw) return;
+
+            try {
+                const draft = JSON.parse(raw);
+                const amountInput = document.getElementById("Amount");
+                const bustedInput = document.getElementById("Busted");
+                const numberInput = document.getElementById("number");
+                const bulkInput = document.getElementById("bulkNumbersInput");
+
+                if (amountInput && draft.amount) amountInput.value = draft.amount;
+                if (bustedInput && draft.busted) bustedInput.value = draft.busted;
+                if (numberInput && draft.numbers && !numberInput.value) numberInput.value = draft.numbers;
+                if (bulkInput && draft.bulk && !bulkInput.value) bulkInput.value = draft.bulk;
+                if (Array.isArray(draft.stagedNumbers)) stagedNumbers = draft.stagedNumbers;
+            } catch (_) {
+                sessionStorage.removeItem(LOTTERY_DRAFT_KEY);
+            }
+        }
 
         function padNumber(value) {
             return value.toString().padStart(2, "0");
         }
 
+        function hydrateSelectionFromHiddenInput() {
+            const hiddenInput = document.getElementById("number");
+            if (!hiddenInput || !hiddenInput.value) return;
+            const parsed = parseNumbersFromText(hiddenInput.value);
+            if (!parsed.expanded.length) return;
+            selectedNumbers = parsed.unique;
+            selectedNumberCounts.clear();
+            parsed.expanded.forEach(v => selectedNumberCounts.set(v, (selectedNumberCounts.get(v) ?? 0) + 1));
+        }
+
         function renderSelectedNumbers() {
             const hiddenInput = document.getElementById("number");
-            const container = document.getElementById("selectedNumbersContainer");
-            const outsideContainer = document.getElementById("selectedNumbersContainerOutside");
             const feedback = document.getElementById("numberFeedback");
-            const submitButton = document.getElementById("addNumberSubmit");
-            const placeholder = document.getElementById("numberPlaceholder");
-            const outsidePlaceholder = document.getElementById("numberPlaceholderOutside");
-            if (!hiddenInput || !container) return;
+            if (!hiddenInput) return;
 
             const expanded = [];
             selectedNumbers.forEach(number => {
@@ -237,43 +268,14 @@
                 for (let i = 0; i < count; i++) expanded.push(number);
             });
             hiddenInput.value = expanded.join("+");
-            container.innerHTML = "";
-            if (outsideContainer) outsideContainer.innerHTML = "";
-
-            selectedNumbers.forEach(number => {
-                const count = selectedNumberCounts.get(number) ?? 1;
-                const chip = document.createElement("button");
-                chip.type = "button";
-                chip.className = "numbers-chip";
-                chip.innerHTML = `<span>${number}</span><span class="numbers-chip-badge">${count}</span>`;
-                chip.onclick = function () {
-                    const current = selectedNumberCounts.get(number) ?? 1;
-                    if (current > 1) {
-                        selectedNumberCounts.set(number, current - 1);
-                    } else {
-                        selectedNumberCounts.delete(number);
-                        selectedNumbers = selectedNumbers.filter(x => x !== number);
-                    }
-                    syncNumberPalette();
-                    renderSelectedNumbers();
-                };
-                container.appendChild(chip);
-                if (outsideContainer) {
-                    const outsideChip = chip.cloneNode(true);
-                    outsideChip.onclick = chip.onclick;
-                    outsideContainer.appendChild(outsideChip);
-                }
-            });
-
             const hasSelection = selectedNumbers.length > 0;
-            if (placeholder) {
-                placeholder.style.display = hasSelection ? "none" : "inline";
-            }
-            if (outsidePlaceholder) {
-                outsidePlaceholder.style.display = hasSelection ? "none" : "inline";
-            }
             if (feedback) feedback.textContent = hasSelection ? "" : "Selecciona al menos un número.";
-            if (submitButton) submitButton.disabled = !hasSelection;
+        }
+
+        function addNumbersFromTextarea() {
+            applyPastedNumbers(false);
+            if (!selectedNumbers.length) return;
+            document.getElementById("addNumberForm")?.requestSubmit();
         }
 
         function addOrIncrementSelection(value) {
@@ -434,6 +436,7 @@
             }
 
             if (feedback) feedback.textContent = `${parsed.expanded.length} número(s) procesado(s) desde texto.`;
+            input.value = "";
 
         }
 
@@ -758,13 +761,18 @@
         $(document).ready(function () {
             const numberInput = document.getElementById('number');
             const bulkInput = document.getElementById('bulkNumbersInput');
+            const addSelectedLotteries = document.getElementById('addSelectedLotteries');
+            const selectedLotteriesHidden = document.getElementById('selectedLotteriesHidden');
+            restoreDraftState();
             if (numberInput) {
+                hydrateSelectionFromHiddenInput();
                 buildNumberGrid();
                 bindGridDragSelection();
                 renderSelectedNumbers();
                 syncRuleButtons();
                 syncAdvancedButtons();
             }
+            renderStagedNumbersTable();
             if (bulkInput) {
                 bulkInput.addEventListener("input", function () {
                     const digitsOnly = bulkInput.value.replace(/\D/g, "");
@@ -777,6 +785,9 @@
                     bulkInput.value = groups.join("+");
                 });
             }
+            if (addSelectedLotteries && selectedLotteriesHidden) {
+                addSelectedLotteries.value = selectedLotteriesHidden.value || "";
+            }
 
             const voiceVerified = document.getElementById('voiceUserVerified');
             const voiceFileInput = document.getElementById('voiceNumbersFile');
@@ -785,11 +796,12 @@
             updateVoicePilotState();
 
             $('#addNumberForm').submit(function (e) {
+                e.preventDefault();
                 var amount = parseFloat($('#Amount').val());
                 var busted = parseFloat($('#Busted').val());
 
-                if (numberInput && document.getElementById('addNumberSubmit')?.disabled) {
-                    document.getElementById("numberPalette")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                if (numberInput && !numberInput.value) {
+                    document.getElementById("bulkNumbersInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
                     e.preventDefault();
                     return;
                 }
@@ -802,7 +814,33 @@
                 else {
                     $('#Busted').siblings('.text-danger').text('');
                 }
+                const hiddenValue = numberInput?.value || "";
+                const parsed = parseNumbersFromText(hiddenValue);
+                if (!parsed.expanded.length) return;
+                parsed.expanded.forEach(v => {
+                    const existing = stagedNumbers.find(n => (n.value ?? n.Value) === v);
+                    if (existing) {
+                        if (existing.amount !== undefined) existing.amount += amount || 0;
+                        else existing.Amount = Number(existing.Amount || 0) + (amount || 0);
+                        if (existing.busted !== undefined) existing.busted += busted || 0;
+                        else existing.Busted = Number(existing.Busted || 0) + (busted || 0);
+                    } else {
+                        stagedNumbers.push({ value: v, amount: amount || 0, busted: busted || 0 });
+                    }
+                });
+                stagedNumbers.sort((a,b)=> (a.value ?? a.Value).localeCompare(b.value ?? b.Value));
+                clearSelectedNumbers();
+                renderStagedNumbersTable();
+                saveDraftState();
             });
+
+            const savePaperForm = document.getElementById("savePaperForm");
+            if (savePaperForm) {
+                savePaperForm.addEventListener("submit", function () {
+                    const draftInput = document.getElementById("numbersDraftJson");
+                    if (draftInput) draftInput.value = JSON.stringify(stagedNumbers);
+                });
+            }
         });
 
         function showPartial(id) {
@@ -835,24 +873,107 @@
         function updateSelected() {
             const dropdown = document.getElementById('customDropdown');
             if (!dropdown) return;
-            const checkboxes = dropdown.querySelectorAll('input[name="SelectedLotteries"]');
             const checked = dropdown.querySelectorAll('input[name="SelectedLotteries"]:checked');
-            const selectAll = dropdown.querySelector('#selectAll');
             const values = Array.from(checked).map(cb => cb.value);
             const selectedLabel = document.getElementById('selectedLotteriesText');
             if (selectedLabel) {
                 selectedLabel.textContent = values.length ? values.join(', ') : 'Seleccione uno o varios';
             }
+            const selectedHidden = document.getElementById("selectedLotteriesHidden");
+            if (selectedHidden) selectedHidden.value = values.join(",");
+            const addSelectedLotteries = document.getElementById("addSelectedLotteries");
+            if (addSelectedLotteries) addSelectedLotteries.value = values.join(",");
+            renderSelectedLotteriesBadges(values);
+            const addSection = document.getElementById("addSection");
+            const summary = document.getElementById("selectedLotteriesSummary");
+            if (addSection) addSection.style.display = values.length ? "block" : "none";
+            if (summary) summary.style.display = values.length ? "block" : "none";
 
-            // Crear input temporal con valores
-            const tempInput = document.createElement('input');
-            tempInput.type = 'hidden';
-            tempInput.id = 'tempSelectedLotteries';
-            tempInput.value = Array.from(checked).map(cb => cb.value).join(',');
-            document.body.appendChild(tempInput);
+            const bustedGroup = document.getElementById("bustedGroup");
+            if (bustedGroup) {
+                const hasBustedLottery = Array.from(checked).some(cb => cb.dataset.busted === "true");
+                bustedGroup.style.display = hasBustedLottery ? "block" : "none";
+                if (!hasBustedLottery) {
+                    const bustedInput = document.getElementById("Busted");
+                    if (bustedInput) bustedInput.value = "0";
+                }
+            }
 
-            // Redirigir usando el input temporal
-            redirectToCreate("SelectedLotteries", "tempSelectedLotteries");
+            renderStagedNumbersTable();
+            saveDraftState();
+        }
+
+        function renderSelectedLotteriesBadges(values) {
+            const badgesContainer = document.getElementById("selectedLotteriesBadges");
+            if (!badgesContainer) return;
+            badgesContainer.innerHTML = "";
+            values.forEach(value => {
+                const badge = document.createElement("span");
+                badge.className = "badge bg-primary text-light";
+                badge.textContent = value;
+                badgesContainer.appendChild(badge);
+            });
+        }
+
+        function renderStagedNumbersTable() {
+            const body = document.getElementById("numbersTableBody");
+            if (!body) return;
+            const numbersSection = document.getElementById("numbersSection");
+            if (numbersSection) numbersSection.style.display = stagedNumbers.length ? "block" : "none";
+            body.innerHTML = "";
+            stagedNumbers.forEach((item, index) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `<td></td><td class="fw-semibold final-number-cell" style="cursor:pointer;" title="Clic izquierdo resta 1, clic derecho suma 1">${item.value || item.Value || ""}</td><td>${Number(item.amount ?? item.Amount ?? 0).toLocaleString('es-CR', { style: 'currency', currency: 'CRC' })}</td><td>${Number(item.busted ?? item.Busted ?? 0).toLocaleString('es-CR', { style: 'currency', currency: 'CRC' })}</td><td><button type="button" class="btn" data-idx="${index}"><span class="material-icons icon icon-danger">delete</span></button></td>`;
+                const numberCell = tr.querySelector(".final-number-cell");
+                if (numberCell) {
+                    numberCell.addEventListener("click", () => {
+                        const currentAmount = Number(item.amount ?? item.Amount ?? 0);
+                        const currentBusted = Number(item.busted ?? item.Busted ?? 0);
+                        if (item.amount !== undefined) item.amount = Math.max(0, currentAmount - 1);
+                        else item.Amount = Math.max(0, currentAmount - 1);
+                        if (item.busted !== undefined) item.busted = Math.max(0, currentBusted - 1);
+                        else item.Busted = Math.max(0, currentBusted - 1);
+                        if ((Number(item.amount ?? item.Amount ?? 0) === 0) && (Number(item.busted ?? item.Busted ?? 0) === 0)) {
+                            stagedNumbers.splice(index, 1);
+                        }
+                        renderStagedNumbersTable();
+                        saveDraftState();
+                    });
+                    numberCell.addEventListener("contextmenu", (event) => {
+                        event.preventDefault();
+                        if (item.amount !== undefined) item.amount = Number(item.amount ?? 0) + 1;
+                        else item.Amount = Number(item.Amount ?? 0) + 1;
+                        if (item.busted !== undefined) item.busted = Number(item.busted ?? 0) + 1;
+                        else item.Busted = Number(item.Busted ?? 0) + 1;
+                        renderStagedNumbersTable();
+                        saveDraftState();
+                        return false;
+                    });
+                }
+                tr.querySelector("button")?.addEventListener("click", () => {
+                    stagedNumbers.splice(index, 1);
+                    renderStagedNumbersTable();
+                    saveDraftState();
+                });
+                body.appendChild(tr);
+            });
+
+            const amountTotal = stagedNumbers.reduce((acc, n) => acc + Number(n.amount ?? n.Amount ?? 0), 0);
+            const bustedTotal = stagedNumbers.reduce((acc, n) => acc + Number(n.busted ?? n.Busted ?? 0), 0);
+            const amountNode = document.getElementById("summaryAmountTotal");
+            const bustedNode = document.getElementById("summaryBustedTotal");
+            const linesBadge = document.getElementById("totalLinesBadge");
+            const createButton = document.getElementById("createPaperButton");
+            const paperTotalNode = document.getElementById("summaryPaperTotal");
+            const grandTotalNode = document.getElementById("summaryGrandTotal");
+            if (amountNode) amountNode.textContent = amountTotal.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
+            if (bustedNode) bustedNode.textContent = bustedTotal.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
+            if (linesBadge) linesBadge.textContent = `Total líneas: ${stagedNumbers.length}`;
+            if (createButton) createButton.disabled = stagedNumbers.length === 0;
+            const paperTotal = amountTotal + bustedTotal;
+            const selectedCount = (document.getElementById("selectedLotteriesHidden")?.value || "").split(",").filter(x => x.trim().length > 0).length || 0;
+            if (paperTotalNode) paperTotalNode.textContent = paperTotal.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
+            if (grandTotalNode) grandTotalNode.textContent = (paperTotal * selectedCount).toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
         }
 
         function toggleSelectAll(masterCheckbox) {
@@ -887,6 +1008,7 @@
             if (selectedLabel) {
                 selectedLabel.textContent = selectedValues.length ? selectedValues.join(', ') : 'Seleccione uno o varios';
             }
+            updateSelected();
 
             // Mostrar el dropdown si viene keepSelection=true en la URL
             const urlParams = new URLSearchParams(window.location.search);

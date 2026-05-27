@@ -18,6 +18,7 @@
 </style>
 
 <form asp-action="Add" id="addNumberForm">
+    <input type="hidden" id="addSelectedLotteries" name="selectedLotteries" value="" />
     <div class="row g-3">
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
         <div class="form-group col-md-2">
@@ -25,169 +26,26 @@
             <input asp-for="Amount" class="form-control" autofocus />
             <span asp-validation-for="Amount" class="text-danger"></span>
         </div>
-        @if (busted ?? false)
-        {
-            <div class="form-group col-md-2">
-                <label asp-for="Busted" class="control-label">Reventado</label>
-                <input asp-for="Busted" class="form-control"/>
-                <span asp-validation-for="Busted" class="text-danger"></span>
-            </div>
-        }
-        <div class="form-group col-md-7">
+        <div class="form-group col-md-2" id="bustedGroup" style="display:@((busted ?? false) ? "block" : "none");">
+            <label asp-for="Busted" class="control-label">Reventado</label>
+            <input asp-for="Busted" class="form-control"/>
+            <span asp-validation-for="Busted" class="text-danger"></span>
+        </div>
+        <div class="form-group col-md-8">
             <label asp-for="Value" class="control-label">Números</label>
             <input asp-for="Value" id="number" type="hidden" />
-            <div class="border rounded bg-white p-2 mb-2 shadow-sm numbers-summary">
-                <div class="d-flex flex-wrap gap-1" id="selectedNumbersContainerOutside"></div>
-                <small id="numberPlaceholderOutside" class="text-muted">Aún no has seleccionado números</small>
-            </div>
-            <div class="d-flex align-items-center gap-2 mb-2">
-                <button type="button" class="btn btn-sm btn-outline-primary numbers-modal-trigger" data-bs-toggle="modal" data-bs-target="#numbersModal" title="Abrir selector de números">
-                    <span class="material-icons" style="font-size:16px;vertical-align:text-bottom;">grid_view</span>
-                    Gestionar números
-                </button>
-                <small class="text-muted">Aquí puedes elegir números, aplicar filtros o pegar listas.</small>
+            <div class="mb-2">
+                <label class="form-label mb-1">Pegar lista de números</label>
+                <textarea id="bulkNumbersInput" class="form-control form-control-sm" rows="3" placeholder='Ej: 00+01+78'></textarea>
+                <small class="text-muted d-block mt-2">Solo pegado / digitación. Se formatea automáticamente como 00+01+78.</small>
+                <div class="mt-2">
+                    <button type="button" class="btn btn-sm btn-primary" onclick="addNumbersFromTextarea()">Agregar al cuadro final</button>
+                </div>
             </div>
             <small id="numberFeedback" class="form-text text-danger"></small>
             <span asp-validation-for="Value" class="text-danger"></span>
-        </div>
-        <div class="form-group col-md-1">
-            <label class="control-label">&nbsp;</label>
-            <!-- Add -->
-            <input type="submit" id="addNumberSubmit" value="Agregar" class="btn btn-primary" />
         </div>
     </div>
 </form>
 
 <hr />
-
-<div class="modal fade" id="numbersModal" tabindex="-1" aria-labelledby="numbersModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-fullscreen-lg-down modal-xl modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="numbersModalLabel">Gestión de números</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body p-2 p-lg-3">
-        <div class="row g-3">
-            <div class="col-lg-7">
-                <div class="border rounded bg-white p-2 shadow-sm mb-2">
-                    <div class="d-flex flex-wrap gap-1" id="selectedNumbersContainer"></div>
-                    <small id="numberPlaceholder" class="text-muted">Aún no has seleccionado números</small>
-                </div>
-                <div class="border rounded bg-white p-2 shadow-sm mb-3">
-                    <div id="numberPalette">
-                        <div id="numberGrid" class="number-grid"></div>
-                    </div>
-                    <button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="clearSelectedNumbers()">Limpiar selección</button>
-                </div>
-            </div>
-            <div class="col-lg-5">
-                <div class="accordion" id="numbersAccordion">
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingRules">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRules" aria-expanded="false" aria-controls="collapseRules">
-                                Reglas y filtros rápidos
-                            </button>
-                        </h2>
-                        <div id="collapseRules" class="accordion-collapse collapse" aria-labelledby="headingRules" data-bs-parent="#numbersAccordion">
-                            <div class="accordion-body">
-                                <div class="row g-2 align-items-end">
-                            <div class="col-12">
-                                <label class="form-label mb-1">Rango consecutivo</label>
-                                <div class="input-group input-group-sm">
-                                    <input type="number" id="rangeStart" class="form-control" min="0" max="99" placeholder="00" />
-                                    <span class="input-group-text">a</span>
-                                    <input type="number" id="rangeEnd" class="form-control" min="0" max="99" placeholder="10" />
-                                    <button type="button" id="rangeApplyButton" class="btn btn-outline-primary" onclick="applyOrToggleRange()">Aplicar</button>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label mb-1">Reglas rápidas</label>
-                                <div class="d-flex flex-wrap gap-1">
-                                    <button type="button" id="rule-even" class="btn btn-sm btn-outline-primary" onclick="toggleRuleSelection('even')">Pares</button>
-                                    <button type="button" id="rule-odd" class="btn btn-sm btn-outline-primary" onclick="toggleRuleSelection('odd')">Impares</button>
-                                    <button type="button" id="rule-prime" class="btn btn-sm btn-outline-primary" onclick="toggleRuleSelection('prime')">Primos</button>
-                                    <button type="button" id="rule-m5" class="btn btn-sm btn-outline-primary" onclick="toggleRuleSelection('m5')">Múltiplos 5</button>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <label class="form-label mb-1">Inician en</label>
-                                <div class="input-group input-group-sm">
-                                    <input type="number" id="startsWithDigit" class="form-control" min="0" max="9" placeholder="0-9" />
-                                    <button type="button" id="startsWithApplyButton" class="btn btn-outline-secondary" onclick="applyOrToggleStartsWithDigit()">Aplicar</button>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <label class="form-label mb-1">Terminan en</label>
-                                <div class="input-group input-group-sm">
-                                    <input type="number" id="endsWithDigit" class="form-control" min="0" max="9" placeholder="0-9" />
-                                    <button type="button" id="endsWithApplyButton" class="btn btn-outline-secondary" onclick="applyOrToggleEndsWithDigit()">Aplicar</button>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label mb-1">A Gallo Tapado</label>
-                                <div class="input-group input-group-sm">
-                                    <input type="number" id="randomCount" class="form-control" min="1" max="100" placeholder="Cantidad (1-100)" />
-                                    <button type="button" class="btn btn-outline-dark" onclick="pickRandomNumbers()">Elegir al azar</button>
-                                    <button type="button" class="btn btn-outline-secondary" onclick="clearRandomCount()">Limpiar</button>
-                                </div>
-                            </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingVoicePilot">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseVoicePilot" aria-expanded="false" aria-controls="collapseVoicePilot">
-                                Ingreso por voz <span class="badge bg-warning text-dark ms-2">Plan Piloto</span>
-                            </button>
-                        </h2>
-                        <div id="collapseVoicePilot" class="accordion-collapse collapse" aria-labelledby="headingVoicePilot" data-bs-parent="#numbersAccordion">
-                            <div class="accordion-body">
-                                @* <label for="voiceNumbersFile" class="form-label mb-1">Archivo de voz (WhatsApp)</label>
-                                <input id="voiceNumbersFile" type="file" class="form-control form-control-sm" accept="audio/ogg,audio/opus,audio/mpeg,audio/mp4,audio/x-m4a,.opus,.ogg,.mp3,.m4a" />
-                                <small class="text-muted d-block mt-2">Compatible con audios descargados de WhatsApp (.opus/.ogg) y formatos comunes (.mp3/.m4a).</small>
-
-                                <div class="form-check mt-3">
-                                    <input class="form-check-input" type="checkbox" value="" id="voiceUserVerified">
-                                    <label class="form-check-label" for="voiceUserVerified">
-                                        Verifiqué que el audio pertenece al usuario correcto.
-                                    </label>
-                                </div> *@
-
-                                <div class="d-flex flex-wrap gap-1 mt-2">
-                                    <button type="button" id="startMicTranscriptionButton" class="btn btn-sm btn-outline-dark" onclick="startMicrophoneTranscription()">Usar micrófono</button>
-                                    <button type="button" id="applyCorrectedTranscriptButton" class="btn btn-sm btn-outline-success" onclick="applyCorrectedTranscript()">Aplicar corrección</button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearVoiceNumbersPilot()">Limpiar</button>
-                                </div>
-                                <small id="voicePilotFeedback" class="text-muted d-block mt-2"></small>
-                                <label for="voiceTranscriptInput" class="form-label mt-3 mb-1">Transcripción (editable para corrección)</label>
-                                <textarea id="voiceTranscriptInput" class="form-control form-control-sm" rows="3" placeholder="Aquí aparecerá la transcripción para que puedas corregirla antes de validar números."></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingPaste">
-                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePaste" aria-expanded="true" aria-controls="collapsePaste">
-                                Copiar / pegar números
-                            </button>
-                        </h2>
-                        <div id="collapsePaste" class="accordion-collapse collapse show" aria-labelledby="headingPaste" data-bs-parent="#numbersAccordion">
-                            <div class="accordion-body">
-                            <label class="form-label mb-1">Pegar lista de números</label>
-                            <textarea id="bulkNumbersInput" class="form-control form-control-sm" rows="3" placeholder='Ej: 00+01+78'></textarea>
-                            <small class="text-muted d-block mt-2">Solo dígitos. Se formatea automáticamente como 00+01+78.</small>
-                            <div class="d-flex flex-wrap gap-1 mt-2">
-                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearBulkNumbersInput()">Limpiar</button>
-                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="applyPastedNumbers(false)">Agregar</button>
-                                <button type="button" class="btn btn-sm btn-primary" onclick="applyPastedNumbers(true)">Reemplazar</button>
-                            </div>
-                        </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-      </div>
-  </div>
-</div>
