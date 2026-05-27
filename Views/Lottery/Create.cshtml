@@ -24,8 +24,14 @@
         </div>
     </form>
 </div>
+<style>
+    .create-compact .card-body { padding: .85rem 1rem; }
+    .create-compact .form-group { margin-bottom: .25rem; }
+    .create-compact .alert { margin-bottom: .6rem; padding: .55rem .75rem; }
+    .create-compact .numbers-summary { min-height: 36px; }
+</style>
 
-<form asp-action="Save" id="savePaperForm">
+<form asp-action="Save" id="savePaperForm" class="create-compact">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <div class="card shadow-sm border-0 mb-3">
         <div class="card-body">
@@ -96,12 +102,9 @@
     </div>
     <input type="hidden" id="selectedLotteriesHidden" name="selectedLotteries" value="@string.Join(",", Model.SelectedLotteries)" />
     <input type="hidden" id="numbersDraftJson" name="numbersDraftJson" value="" />
-    <div class="d-flex justify-content-end">
-         @if (Model.Numbers.Any())
-        {
-            <input type="submit" value="Crear" class="btn btn-primary m-2" />
-            <input type="button" onclick="location.href='@Url.Action("Clear", "Lottery")'" value="Limpiar" class="btn btn-danger m-2" />
-        }
+    <div class="d-flex justify-content-end gap-2 mb-2">
+        <input type="submit" id="createPaperButton" value="Crear" class="btn btn-primary" />
+        <input type="button" onclick="location.href='@Url.Action("Clear", "Lottery")'" value="Limpiar" class="btn btn-danger" />
     </div>
 </form>
 
@@ -121,7 +124,7 @@
         </div>
     </div>
 </div>
-<div id="addSection" style="display:@(hasSelectedLotteries ? "block" : "none");">
+<div id="addSection" class="mt-2" style="display:@(hasSelectedLotteries ? "block" : "none");">
     <partial name="_Add" model="new Numbers()"/>
 </div>
 
@@ -1005,9 +1008,11 @@
             const amountNode = document.getElementById("summaryAmountTotal");
             const bustedNode = document.getElementById("summaryBustedTotal");
             const linesBadge = document.getElementById("totalLinesBadge");
+            const createButton = document.getElementById("createPaperButton");
             if (amountNode) amountNode.textContent = amountTotal.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
             if (bustedNode) bustedNode.textContent = bustedTotal.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
             if (linesBadge) linesBadge.textContent = `Total líneas: ${stagedNumbers.length}`;
+            if (createButton) createButton.disabled = stagedNumbers.length === 0;
         }
 
         function toggleSelectAll(masterCheckbox) {
