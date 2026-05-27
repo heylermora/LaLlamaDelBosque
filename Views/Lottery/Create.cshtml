@@ -499,6 +499,7 @@
             }
 
             if (feedback) feedback.textContent = `${parsed.expanded.length} número(s) procesado(s) desde texto.`;
+            input.value = "";
 
         }
 
@@ -823,6 +824,8 @@
         $(document).ready(function () {
             const numberInput = document.getElementById('number');
             const bulkInput = document.getElementById('bulkNumbersInput');
+            const addSelectedLotteries = document.getElementById('addSelectedLotteries');
+            const selectedLotteriesHidden = document.getElementById('selectedLotteriesHidden');
             restoreDraftState();
             if (numberInput) {
                 hydrateSelectionFromHiddenInput();
@@ -843,6 +846,15 @@
 
                     bulkInput.value = groups.join("+");
                 });
+                bulkInput.addEventListener("keydown", function (event) {
+                    if (event.key === "Enter" && !event.shiftKey) {
+                        event.preventDefault();
+                        applyPastedNumbers(false);
+                    }
+                });
+            }
+            if (addSelectedLotteries && selectedLotteriesHidden) {
+                addSelectedLotteries.value = selectedLotteriesHidden.value || "";
             }
 
             const voiceVerified = document.getElementById('voiceUserVerified');
@@ -871,6 +883,9 @@
                 }
 
                 saveDraftState();
+                if (addSelectedLotteries && selectedLotteriesHidden) {
+                    addSelectedLotteries.value = selectedLotteriesHidden.value || "";
+                }
             });
         });
 
@@ -912,6 +927,8 @@
             }
             const selectedHidden = document.getElementById("selectedLotteriesHidden");
             if (selectedHidden) selectedHidden.value = values.join(",");
+            const addSelectedLotteries = document.getElementById("addSelectedLotteries");
+            if (addSelectedLotteries) addSelectedLotteries.value = values.join(",");
             renderSelectedLotteriesBadges(values);
             const addSection = document.getElementById("addSection");
             const summary = document.getElementById("selectedLotteriesSummary");

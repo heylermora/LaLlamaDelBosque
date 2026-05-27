@@ -18,6 +18,7 @@
 </style>
 
 <form asp-action="Add" id="addNumberForm">
+    <input type="hidden" id="addSelectedLotteries" name="selectedLotteries" value="" />
     <div class="row g-3">
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
         <div class="form-group col-md-2">
@@ -44,10 +45,6 @@
                 <small class="text-muted d-block mt-1">
                     Tip: en los números seleccionados, <strong>clic izquierdo</strong> quita 1 unidad y <strong>clic derecho</strong> agrega 1 duplicidad.
                 </small>
-                <div class="d-flex flex-wrap gap-1 mt-2">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearBulkNumbersInput()">Limpiar</button>
-                    <button type="button" class="btn btn-sm btn-primary" onclick="applyPastedNumbers(false)">Aplicar</button>
-                </div>
             </div>
             <small id="numberFeedback" class="form-text text-danger"></small>
             <span asp-validation-for="Value" class="text-danger"></span>
