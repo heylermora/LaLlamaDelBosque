@@ -259,12 +259,7 @@
 
         function renderSelectedNumbers() {
             const hiddenInput = document.getElementById("number");
-            const container = document.getElementById("selectedNumbersContainer");
-            const outsideContainer = document.getElementById("selectedNumbersContainerOutside");
             const feedback = document.getElementById("numberFeedback");
-            const submitButton = document.getElementById("addNumberSubmit");
-            const placeholder = document.getElementById("numberPlaceholder");
-            const outsidePlaceholder = document.getElementById("numberPlaceholderOutside");
             if (!hiddenInput) return;
 
             const expanded = [];
@@ -273,55 +268,14 @@
                 for (let i = 0; i < count; i++) expanded.push(number);
             });
             hiddenInput.value = expanded.join("+");
-            if (container) container.innerHTML = "";
-            if (outsideContainer) outsideContainer.innerHTML = "";
-
-            selectedNumbers.forEach(number => {
-                const count = selectedNumberCounts.get(number) ?? 1;
-                const chip = document.createElement("button");
-                chip.type = "button";
-                chip.className = "numbers-chip";
-                chip.innerHTML = `<span>${number}</span><span class="numbers-chip-badge">${count}</span>`;
-                chip.onclick = function () {
-                    const current = selectedNumberCounts.get(number) ?? 1;
-                    if (current > 1) {
-                        selectedNumberCounts.set(number, current - 1);
-                    } else {
-                        selectedNumberCounts.delete(number);
-                        selectedNumbers = selectedNumbers.filter(x => x !== number);
-                    }
-                    syncNumberPalette();
-                    renderSelectedNumbers();
-                };
-                chip.oncontextmenu = function (event) {
-                    event.preventDefault();
-                    selectedNumberCounts.set(number, (selectedNumberCounts.get(number) ?? 0) + 1);
-                    if (!selectedNumbers.includes(number)) {
-                        selectedNumbers.push(number);
-                        selectedNumbers.sort();
-                    }
-                    syncNumberPalette();
-                    renderSelectedNumbers();
-                    return false;
-                };
-                if (container) container.appendChild(chip);
-                if (outsideContainer) {
-                    const outsideChip = chip.cloneNode(true);
-                    outsideChip.onclick = chip.onclick;
-                    outsideChip.oncontextmenu = chip.oncontextmenu;
-                    outsideContainer.appendChild(outsideChip);
-                }
-            });
-
             const hasSelection = selectedNumbers.length > 0;
-            if (placeholder) {
-                placeholder.style.display = hasSelection ? "none" : "inline";
-            }
-            if (outsidePlaceholder) {
-                outsidePlaceholder.style.display = hasSelection ? "none" : "inline";
-            }
             if (feedback) feedback.textContent = hasSelection ? "" : "Selecciona al menos un número.";
-            if (submitButton) submitButton.disabled = !hasSelection;
+        }
+
+        function addNumbersFromTextarea() {
+            applyPastedNumbers(false);
+            if (!selectedNumbers.length) return;
+            document.getElementById("addNumberForm")?.requestSubmit();
         }
 
         function addOrIncrementSelection(value) {
@@ -846,8 +800,8 @@
                 var amount = parseFloat($('#Amount').val());
                 var busted = parseFloat($('#Busted').val());
 
-                if (numberInput && document.getElementById('addNumberSubmit')?.disabled) {
-                    (document.getElementById("bulkNumbersInput") || document.getElementById("selectedNumbersContainerOutside"))?.scrollIntoView({ behavior: "smooth", block: "center" });
+                if (numberInput && !numberInput.value) {
+                    document.getElementById("bulkNumbersInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
                     e.preventDefault();
                     return;
                 }
