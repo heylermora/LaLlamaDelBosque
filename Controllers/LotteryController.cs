@@ -166,7 +166,9 @@ namespace LaLlamaDelBosque.Controllers
 				var ids = new List<int>();
 				if(paper != null)
 				{
-					var lotteryNames = (paper.Lottery ?? "").Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList();
+					var lotteryNames = (paper.SelectedLotteries?.Any() ?? false)
+						? paper.SelectedLotteries.Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList()
+						: (paper.Lottery ?? "").Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
 					foreach(var name in lotteryNames)
 					{
 						var lottery = _lotteries.FirstOrDefault(l => l.Name == name);

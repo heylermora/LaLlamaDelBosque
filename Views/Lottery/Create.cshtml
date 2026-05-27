@@ -197,26 +197,6 @@
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script type="text/javascript">
 
-        function redirectToCreate(paramName, inputId) {
-            const input = document.getElementById(inputId);
-            const value = input.value;
-
-            const selectedLotteries = @Html.Raw(Json.Serialize(Model?.Lottery));
-            const clientId = '@Model?.ClientId';
-            const date = '@Model?.DrawDate.ToString("yyyy-MM-dd")';
-
-            const queryParams = new URLSearchParams();
-            queryParams.set(paramName, value);
-            queryParams.set('cc', 'true');
-
-            if (paramName !== 'SelectedLotteries') queryParams.set('SelectedLotteries', selectedLotteries);
-            if (paramName !== 'clientId') queryParams.set('clientId', clientId);
-            if (paramName !== 'dateString') queryParams.set('dateString', date);
-
-            const url = '@Url.Action("Create", "Lottery")' + '?' + queryParams.toString();
-            window.location.href = url;
-        }
-
         let selectedNumbers = [];
         const selectedNumberCounts = new Map();
         const appliedRuleValues = new Map();
