@@ -245,7 +245,7 @@ namespace LaLlamaDelBosque.Controllers
 					SetPapers(_papers);
 				}
 				TempData.Put<Paper>("Paper", null);
-				return RedirectToAction(nameof(Print), new { ids = ids });
+				return RedirectToAction(nameof(Print), new { ids = string.Join(",", ids) });
 			}
 			catch(Exception ex)
 			{
@@ -253,9 +253,24 @@ namespace LaLlamaDelBosque.Controllers
 			}
 		}
 
-		public ActionResult Print(List<int>? ids = null, int? id = null)
+		public ActionResult Print(string? ids = null, int? id = null)
 		{
-			var selectedIds = (ids?.Any() == true) ? ids : (id.HasValue ? new List<int> { id.Value } : null);
+			var selectedIds = new List<int>();
+			if(!string.IsNullOrWhiteSpace(ids))
+			{
+				selectedIds = ids
+					.Split(",", StringSplitOptions.RemoveEmptyEntries)
+					.Select(x => int.TryParse(x.Trim(), out var parsed) ? parsed : (int?)null)
+					.Where(x => x.HasValue)
+					.Select(x => x!.Value)
+					.Distinct()
+					.ToList();
+			}
+			else if(id.HasValue)
+			{
+				selectedIds.Add(id.Value);
+			}
+
 			if(selectedIds == null || !selectedIds.Any()) return BadRequest("No se especificaron IDs válidos.");
 
 			var papers = _papers.Where(p => selectedIds.Contains(p.Id)).ToList();
@@ -266,7 +281,7 @@ namespace LaLlamaDelBosque.Controllers
 
 			ViewData["Date"] = DateTime.Now.ToShortDateString();
 			ViewData["Client"] = _credits.Select(c => c.Client).FirstOrDefault(c => c.Id == paper.ClientId)?.Name;
-			ViewData["Cant"] = selectedIds.Count;
+			ViewData["Cant"] = papers.Count;
 			ViewData["Ids"] = string.Join(", ", papers.Select(p => "#" + p.Id));
 
 			return View(paper);
