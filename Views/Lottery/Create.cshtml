@@ -216,6 +216,42 @@
         const appliedAdvancedValues = new Map();
         let isDraggingNumbers = false;
         let dragTouchedValues = new Set();
+        const LOTTERY_DRAFT_KEY = "lottery_add_form_draft_v1";
+
+        function saveDraftState() {
+            const amountInput = document.getElementById("Amount");
+            const bustedInput = document.getElementById("Busted");
+            const numberInput = document.getElementById("number");
+            const bulkInput = document.getElementById("bulkNumbersInput");
+
+            const draft = {
+                amount: amountInput ? amountInput.value : "",
+                busted: bustedInput ? bustedInput.value : "",
+                numbers: numberInput ? numberInput.value : "",
+                bulk: bulkInput ? bulkInput.value : ""
+            };
+            sessionStorage.setItem(LOTTERY_DRAFT_KEY, JSON.stringify(draft));
+        }
+
+        function restoreDraftState() {
+            const raw = sessionStorage.getItem(LOTTERY_DRAFT_KEY);
+            if (!raw) return;
+
+            try {
+                const draft = JSON.parse(raw);
+                const amountInput = document.getElementById("Amount");
+                const bustedInput = document.getElementById("Busted");
+                const numberInput = document.getElementById("number");
+                const bulkInput = document.getElementById("bulkNumbersInput");
+
+                if (amountInput && draft.amount) amountInput.value = draft.amount;
+                if (bustedInput && draft.busted) bustedInput.value = draft.busted;
+                if (numberInput && draft.numbers && !numberInput.value) numberInput.value = draft.numbers;
+                if (bulkInput && draft.bulk && !bulkInput.value) bulkInput.value = draft.bulk;
+            } catch (_) {
+                sessionStorage.removeItem(LOTTERY_DRAFT_KEY);
+            }
+        }
 
         function padNumber(value) {
             return value.toString().padStart(2, "0");
@@ -768,6 +804,7 @@
         $(document).ready(function () {
             const numberInput = document.getElementById('number');
             const bulkInput = document.getElementById('bulkNumbersInput');
+            restoreDraftState();
             if (numberInput) {
                 hydrateSelectionFromHiddenInput();
                 buildNumberGrid();
@@ -813,6 +850,8 @@
                 else {
                     $('#Busted').siblings('.text-danger').text('');
                 }
+
+                saveDraftState();
             });
         });
 
@@ -863,6 +902,7 @@
             document.body.appendChild(tempInput);
 
             // Redirigir usando el input temporal
+            saveDraftState();
             redirectToCreate("SelectedLotteries", "tempSelectedLotteries");
         }
 
