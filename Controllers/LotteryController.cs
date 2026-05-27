@@ -122,7 +122,7 @@ namespace LaLlamaDelBosque.Controllers
 		// POST: LotteryController/Save
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public ActionResult Save(string? selectedLotteries, DateTime? drawDate, int? clientId)
+		public ActionResult Save(string? selectedLotteries, DateTime? drawDate, int? clientId, string? numbersDraftJson)
 		{
 			try
 			{
@@ -140,6 +140,29 @@ namespace LaLlamaDelBosque.Controllers
 				}
 				if(drawDate.HasValue) paper.DrawDate = drawDate.Value;
 				if(clientId.HasValue) paper.ClientId = clientId;
+				if(!string.IsNullOrWhiteSpace(numbersDraftJson))
+				{
+					try
+					{
+						var clientNumbers = JsonSerializer.Deserialize<List<Number>>(numbersDraftJson, new JsonSerializerOptions
+						{
+							PropertyNameCaseInsensitive = true
+						});
+						if(clientNumbers is not null)
+						{
+							paper.Numbers = clientNumbers
+								.Where(n => !string.IsNullOrWhiteSpace(n.Value))
+								.Select((n, i) => new Number
+								{
+									Id = i + 1,
+									Value = n.Value?.Trim(),
+									Amount = n.Amount,
+									Busted = n.Busted
+								}).ToList();
+						}
+					}
+					catch { }
+				}
 				var ids = new List<int>();
 				if(paper != null)
 				{

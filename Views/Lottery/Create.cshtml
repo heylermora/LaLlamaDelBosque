@@ -148,14 +148,14 @@
                                 <th></th>
                             </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="numbersTableBody">
                                     @foreach(var item in Model.Numbers)
                                     {
                                         <tr>
                                             <td></td>
                                             <td class="fw-semibold">@item.Value</td>
-                                            <td>@item.Amount.ToCRC()</td>
-                                            <td>@item.Busted.ToCRC()</td>
+                                            <td class="line-amount">@item.Amount.ToCRC()</td>
+                                            <td class="line-busted">@item.Busted.ToCRC()</td>
                                             <td>
                                                 <!-- Remove -->
                                                 <button type="button" class="btn" onclick="showPartial('removePartial-@Model.Id-@item.Id')">
@@ -180,8 +180,8 @@
                 <div class="card text-white border-0 shadow-sm" style="background: linear-gradient(135deg, #3B82F6, #64b5f6);">
                     <div class="card-body">
                         <h2 class="card-title">Resumen</h2>
-                        <p class="card-text mb-1">Monto Total: @Model.Numbers.Sum(x => x.Amount).ToCRC()</p>
-                        <p class="card-text">Reventado Total: @Model.Numbers.Sum(x => x.Busted).ToCRC()</p>
+                        <p class="card-text mb-1">Monto Total: <span id="summaryAmountTotal">@Model.Numbers.Sum(x => x.Amount).ToCRC()</span></p>
+                        <p class="card-text">Reventado Total: <span id="summaryBustedTotal">@Model.Numbers.Sum(x => x.Busted).ToCRC()</span></p>
                         <hr>
                         <p class="card-text mb-1" style="font-weight: bold; font-size: 1rem;">Total Papelito: @subsum.ToCRC()</p>
                         <p class="card-text mb-0" style="font-weight: bold; font-size: 1.2rem;">Total General: @sum.ToCRC()</p>
@@ -224,6 +224,7 @@
         let isDraggingNumbers = false;
         let dragTouchedValues = new Set();
         const LOTTERY_DRAFT_KEY = "lottery_add_form_draft_v1";
+        let stagedNumbers = @Html.Raw(Json.Serialize(Model?.Numbers ?? new List<Number>()));
 
         function saveDraftState() {
             const amountInput = document.getElementById("Amount");
@@ -235,7 +236,8 @@
                 amount: amountInput ? amountInput.value : "",
                 busted: bustedInput ? bustedInput.value : "",
                 numbers: numberInput ? numberInput.value : "",
-                bulk: bulkInput ? bulkInput.value : ""
+                bulk: bulkInput ? bulkInput.value : "",
+                stagedNumbers
             };
             sessionStorage.setItem(LOTTERY_DRAFT_KEY, JSON.stringify(draft));
         }
@@ -255,6 +257,7 @@
                 if (bustedInput && draft.busted) bustedInput.value = draft.busted;
                 if (numberInput && draft.numbers && !numberInput.value) numberInput.value = draft.numbers;
                 if (bulkInput && draft.bulk && !bulkInput.value) bulkInput.value = draft.bulk;
+                if (Array.isArray(draft.stagedNumbers)) stagedNumbers = draft.stagedNumbers;
             } catch (_) {
                 sessionStorage.removeItem(LOTTERY_DRAFT_KEY);
             }
@@ -835,6 +838,7 @@
                 syncRuleButtons();
                 syncAdvancedButtons();
             }
+            renderStagedNumbersTable();
             if (bulkInput) {
                 bulkInput.addEventListener("input", function () {
                     const digitsOnly = bulkInput.value.replace(/\D/g, "");
@@ -864,6 +868,7 @@
             updateVoicePilotState();
 
             $('#addNumberForm').submit(function (e) {
+                e.preventDefault();
                 var amount = parseFloat($('#Amount').val());
                 var busted = parseFloat($('#Busted').val());
 
@@ -881,12 +886,33 @@
                 else {
                     $('#Busted').siblings('.text-danger').text('');
                 }
-
+                const hiddenValue = numberInput?.value || "";
+                const parsed = parseNumbersFromText(hiddenValue);
+                if (!parsed.expanded.length) return;
+                parsed.expanded.forEach(v => {
+                    const existing = stagedNumbers.find(n => (n.value ?? n.Value) === v);
+                    if (existing) {
+                        if (existing.amount !== undefined) existing.amount += amount || 0;
+                        else existing.Amount = Number(existing.Amount || 0) + (amount || 0);
+                        if (existing.busted !== undefined) existing.busted += busted || 0;
+                        else existing.Busted = Number(existing.Busted || 0) + (busted || 0);
+                    } else {
+                        stagedNumbers.push({ value: v, amount: amount || 0, busted: busted || 0 });
+                    }
+                });
+                stagedNumbers.sort((a,b)=> (a.value ?? a.Value).localeCompare(b.value ?? b.Value));
+                clearSelectedNumbers();
+                renderStagedNumbersTable();
                 saveDraftState();
-                if (addSelectedLotteries && selectedLotteriesHidden) {
-                    addSelectedLotteries.value = selectedLotteriesHidden.value || "";
-                }
             });
+
+            const savePaperForm = document.getElementById("savePaperForm");
+            if (savePaperForm) {
+                savePaperForm.addEventListener("submit", function () {
+                    const draftInput = document.getElementById("numbersDraftJson");
+                    if (draftInput) draftInput.value = JSON.stringify(stagedNumbers);
+                });
+            }
         });
 
         function showPartial(id) {
@@ -958,6 +984,29 @@
                 badge.textContent = value;
                 badgesContainer.appendChild(badge);
             });
+        }
+
+        function renderStagedNumbersTable() {
+            const body = document.getElementById("numbersTableBody");
+            if (!body) return;
+            body.innerHTML = "";
+            stagedNumbers.forEach((item, index) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `<td></td><td class="fw-semibold">${item.value || item.Value || ""}</td><td>${Number(item.amount ?? item.Amount ?? 0).toLocaleString('es-CR', { style: 'currency', currency: 'CRC' })}</td><td>${Number(item.busted ?? item.Busted ?? 0).toLocaleString('es-CR', { style: 'currency', currency: 'CRC' })}</td><td><button type="button" class="btn" data-idx="${index}"><span class="material-icons icon icon-danger">delete</span></button></td>`;
+                tr.querySelector("button")?.addEventListener("click", () => {
+                    stagedNumbers.splice(index, 1);
+                    renderStagedNumbersTable();
+                    saveDraftState();
+                });
+                body.appendChild(tr);
+            });
+
+            const amountTotal = stagedNumbers.reduce((acc, n) => acc + Number(n.amount ?? n.Amount ?? 0), 0);
+            const bustedTotal = stagedNumbers.reduce((acc, n) => acc + Number(n.busted ?? n.Busted ?? 0), 0);
+            const amountNode = document.getElementById("summaryAmountTotal");
+            const bustedNode = document.getElementById("summaryBustedTotal");
+            if (amountNode) amountNode.textContent = amountTotal.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
+            if (bustedNode) bustedNode.textContent = bustedTotal.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
         }
 
         function toggleSelectAll(masterCheckbox) {
