@@ -41,10 +41,12 @@
                 <label class="form-label mb-1">Pegar lista de números</label>
                 <textarea id="bulkNumbersInput" class="form-control form-control-sm" rows="3" placeholder='Ej: 00+01+78'></textarea>
                 <small class="text-muted d-block mt-2">Solo pegado / digitación. Se formatea automáticamente como 00+01+78.</small>
+                <small class="text-muted d-block mt-1">
+                    Tip: en los números seleccionados, <strong>clic izquierdo</strong> quita 1 unidad y <strong>clic derecho</strong> agrega 1 duplicidad.
+                </small>
                 <div class="d-flex flex-wrap gap-1 mt-2">
                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearBulkNumbersInput()">Limpiar</button>
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="applyPastedNumbers(false)">Agregar</button>
-                    <button type="button" class="btn btn-sm btn-primary" onclick="applyPastedNumbers(true)">Reemplazar</button>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="applyPastedNumbers(false)">Aplicar</button>
                 </div>
             </div>
             <small id="numberFeedback" class="form-text text-danger"></small>

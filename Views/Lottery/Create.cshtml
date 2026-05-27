@@ -113,7 +113,7 @@
         <span class="fw-bold">
             <i class="bi bi-check-circle-fill me-1"></i> Sorteos seleccionados:
         </span>
-        <div class="d-flex flex-wrap gap-1">
+        <div class="d-flex flex-wrap gap-1" id="selectedLotteriesBadges">
             @foreach(var name in Model.SelectedLotteries)
             {
                 <span class="badge bg-primary text-light">@name</span>
@@ -310,10 +310,22 @@
                     syncNumberPalette();
                     renderSelectedNumbers();
                 };
+                chip.oncontextmenu = function (event) {
+                    event.preventDefault();
+                    selectedNumberCounts.set(number, (selectedNumberCounts.get(number) ?? 0) + 1);
+                    if (!selectedNumbers.includes(number)) {
+                        selectedNumbers.push(number);
+                        selectedNumbers.sort();
+                    }
+                    syncNumberPalette();
+                    renderSelectedNumbers();
+                    return false;
+                };
                 if (container) container.appendChild(chip);
                 if (outsideContainer) {
                     const outsideChip = chip.cloneNode(true);
                     outsideChip.onclick = chip.onclick;
+                    outsideChip.oncontextmenu = chip.oncontextmenu;
                     outsideContainer.appendChild(outsideChip);
                 }
             });
@@ -900,6 +912,7 @@
             }
             const selectedHidden = document.getElementById("selectedLotteriesHidden");
             if (selectedHidden) selectedHidden.value = values.join(",");
+            renderSelectedLotteriesBadges(values);
             const addSection = document.getElementById("addSection");
             const summary = document.getElementById("selectedLotteriesSummary");
             if (addSection) addSection.style.display = values.length ? "block" : "none";
@@ -916,6 +929,18 @@
             }
 
             saveDraftState();
+        }
+
+        function renderSelectedLotteriesBadges(values) {
+            const badgesContainer = document.getElementById("selectedLotteriesBadges");
+            if (!badgesContainer) return;
+            badgesContainer.innerHTML = "";
+            values.forEach(value => {
+                const badge = document.createElement("span");
+                badge.className = "badge bg-primary text-light";
+                badge.textContent = value;
+                badgesContainer.appendChild(badge);
+            });
         }
 
         function toggleSelectAll(masterCheckbox) {
