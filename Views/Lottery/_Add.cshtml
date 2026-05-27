@@ -25,14 +25,11 @@
             <input asp-for="Amount" class="form-control" autofocus />
             <span asp-validation-for="Amount" class="text-danger"></span>
         </div>
-        @if (busted ?? false)
-        {
-            <div class="form-group col-md-2">
-                <label asp-for="Busted" class="control-label">Reventado</label>
-                <input asp-for="Busted" class="form-control"/>
-                <span asp-validation-for="Busted" class="text-danger"></span>
-            </div>
-        }
+        <div class="form-group col-md-2" id="bustedGroup" style="display:@((busted ?? false) ? "block" : "none");">
+            <label asp-for="Busted" class="control-label">Reventado</label>
+            <input asp-for="Busted" class="form-control"/>
+            <span asp-validation-for="Busted" class="text-danger"></span>
+        </div>
         <div class="form-group col-md-7">
             <label asp-for="Value" class="control-label">Números</label>
             <input asp-for="Value" id="number" type="hidden" />

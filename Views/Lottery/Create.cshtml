@@ -68,6 +68,7 @@
                                                name="SelectedLotteries"
                                                value="@item.Name"
                                                id="lottery_@item.Order"
+                                               data-busted="@((item.Busted ?? false).ToString().ToLower())"
                                                onchange="updateSelected()"
                                                @(Model.SelectedLotteries.Contains(item.Name) ? "checked" : "") />
                                         <label class="form-check-label" for="lottery_@item.Order">@item.Name</label>
@@ -104,8 +105,10 @@
     </div>
 </form>
 
-@if(Model?.SelectedLotteries.Any() ?? false)
-{
+@{
+    var hasSelectedLotteries = Model?.SelectedLotteries.Any() ?? false;
+}
+<div id="selectedLotteriesSummary" style="display:@(hasSelectedLotteries ? "block" : "none");">
     <div class="alert alert-info d-flex align-items-start gap-2 flex-wrap mt-1 shadow-sm">
         <span class="fw-bold">
             <i class="bi bi-check-circle-fill me-1"></i> Sorteos seleccionados:
@@ -117,8 +120,10 @@
             }
         </div>
     </div>
+</div>
+<div id="addSection" style="display:@(hasSelectedLotteries ? "block" : "none");">
     <partial name="_Add" model="new Numbers()"/>
-}
+</div>
 
 @if (Model?.Numbers.Any() ?? false)
 {
@@ -887,9 +892,7 @@
         function updateSelected() {
             const dropdown = document.getElementById('customDropdown');
             if (!dropdown) return;
-            const checkboxes = dropdown.querySelectorAll('input[name="SelectedLotteries"]');
             const checked = dropdown.querySelectorAll('input[name="SelectedLotteries"]:checked');
-            const selectAll = dropdown.querySelector('#selectAll');
             const values = Array.from(checked).map(cb => cb.value);
             const selectedLabel = document.getElementById('selectedLotteriesText');
             if (selectedLabel) {
@@ -897,6 +900,20 @@
             }
             const selectedHidden = document.getElementById("selectedLotteriesHidden");
             if (selectedHidden) selectedHidden.value = values.join(",");
+            const addSection = document.getElementById("addSection");
+            const summary = document.getElementById("selectedLotteriesSummary");
+            if (addSection) addSection.style.display = values.length ? "block" : "none";
+            if (summary) summary.style.display = values.length ? "block" : "none";
+
+            const bustedGroup = document.getElementById("bustedGroup");
+            if (bustedGroup) {
+                const hasBustedLottery = Array.from(checked).some(cb => cb.dataset.busted === "true");
+                bustedGroup.style.display = hasBustedLottery ? "block" : "none";
+                if (!hasBustedLottery) {
+                    const bustedInput = document.getElementById("Busted");
+                    if (bustedInput) bustedInput.value = "0";
+                }
+            }
 
             saveDraftState();
         }
@@ -933,6 +950,7 @@
             if (selectedLabel) {
                 selectedLabel.textContent = selectedValues.length ? selectedValues.join(', ') : 'Seleccione uno o varios';
             }
+            updateSelected();
 
             // Mostrar el dropdown si viene keepSelection=true en la URL
             const urlParams = new URLSearchParams(window.location.search);
