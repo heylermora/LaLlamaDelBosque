@@ -163,6 +163,41 @@ namespace LaLlamaDelBosque.Controllers
 					}
 					catch { }
 				}
+
+				if(!selectedNames.Any())
+				{
+					TempData["ErrorMessage"] = "Debe seleccionar al menos un sorteo antes de crear el papelito.";
+					TempData.Put("Paper", paper);
+					return RedirectToAction(nameof(Create), new { cc = true, selectedLotteries = string.Join(",", selectedNames), dateString = drawDate?.ToString("yyyy-MM-dd"), clientId });
+				}
+
+				if(!drawDate.HasValue)
+				{
+					TempData["ErrorMessage"] = "La fecha de sorteo es obligatoria.";
+					TempData.Put("Paper", paper);
+					return RedirectToAction(nameof(Create), new { cc = true, selectedLotteries = string.Join(",", selectedNames), clientId });
+				}
+
+				var validNumbers = paper.Numbers
+					.Where(n => !string.IsNullOrWhiteSpace(n.Value))
+					.Where(n => n.Amount > 0 || n.Busted > 0)
+					.ToList();
+
+				if(!validNumbers.Any())
+				{
+					TempData["ErrorMessage"] = "Debe agregar al menos una línea de números con monto válido.";
+					TempData.Put("Paper", paper);
+					return RedirectToAction(nameof(Create), new { cc = true, selectedLotteries = string.Join(",", selectedNames), dateString = drawDate?.ToString("yyyy-MM-dd"), clientId });
+				}
+
+				if(validNumbers.Any(n => n.Busted > n.Amount))
+				{
+					TempData["ErrorMessage"] = "El reventado no puede ser mayor que el monto en ninguna línea.";
+					TempData.Put("Paper", paper);
+					return RedirectToAction(nameof(Create), new { cc = true, selectedLotteries = string.Join(",", selectedNames), dateString = drawDate?.ToString("yyyy-MM-dd"), clientId });
+				}
+
+				paper.Numbers = validNumbers;
 				var ids = new List<int>();
 				if(paper != null)
 				{

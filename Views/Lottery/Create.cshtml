@@ -32,6 +32,10 @@
 </style>
 
 <form asp-action="Save" id="savePaperForm" class="create-compact">
+    @if(TempData["ErrorMessage"] is string errorMessage && !string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger shadow-sm">@errorMessage</div>
+    }
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <div class="card shadow-sm border-0 mb-3">
         <div class="card-body">
@@ -799,21 +803,40 @@
                 e.preventDefault();
                 var amount = parseFloat($('#Amount').val());
                 var busted = parseFloat($('#Busted').val());
+                const amountValidation = document.querySelector('[data-valmsg-for="Amount"]');
+                const bustedValidation = document.querySelector('[data-valmsg-for="Busted"]');
+                let hasError = false;
 
                 if (numberInput && !numberInput.value) {
                     document.getElementById("bulkNumbersInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
-                    e.preventDefault();
+                    const feedback = document.getElementById("numberFeedback");
+                    if (feedback) feedback.textContent = "Selecciona al menos un número antes de agregar la línea.";
+                    hasError = true;
+                }
+
+                if (Number.isNaN(amount) || amount <= 0) {
+                    if (amountValidation) amountValidation.textContent = "El monto es obligatorio y debe ser mayor a 0.";
+                    $('#Amount').focus();
+                    hasError = true;
+                } else if (amountValidation) {
+                    amountValidation.textContent = '';
+                }
+
+                if (Number.isNaN(busted) || busted < 0) {
+                    if (bustedValidation) bustedValidation.textContent = "El reventado no puede ser negativo.";
+                    hasError = true;
                     return;
                 }
 
                 if (!Number.isNaN(amount) && !Number.isNaN(busted) && busted > amount) {
-                    $('#Busted').siblings('.text-danger').text('El campo no puede ser mayor que el Monto.');
+                    if (bustedValidation) bustedValidation.textContent = 'El reventado no puede ser mayor que el monto.';
                     $('#Busted').focus();
-                    e.preventDefault(); 
+                    hasError = true;
                 }
                 else {
-                    $('#Busted').siblings('.text-danger').text('');
+                    if (bustedValidation) bustedValidation.textContent = '';
                 }
+                if (hasError) return;
                 const hiddenValue = numberInput?.value || "";
                 const parsed = parseNumbersFromText(hiddenValue);
                 if (!parsed.expanded.length) return;
@@ -836,7 +859,40 @@
 
             const savePaperForm = document.getElementById("savePaperForm");
             if (savePaperForm) {
-                savePaperForm.addEventListener("submit", function () {
+                savePaperForm.addEventListener("submit", function (event) {
+                    const selectedLotteryValues = (document.getElementById("selectedLotteriesHidden")?.value || "").split(",").map(x => x.trim()).filter(Boolean);
+                    const drawDateInput = document.getElementById("DrawDate");
+
+                    if (!selectedLotteryValues.length) {
+                        event.preventDefault();
+                        alert("Debe seleccionar al menos un sorteo para crear el papelito.");
+                        return;
+                    }
+
+                    if (!drawDateInput?.value) {
+                        event.preventDefault();
+                        drawDateInput?.focus();
+                        alert("La fecha de sorteo es obligatoria.");
+                        return;
+                    }
+
+                    if (!stagedNumbers.length) {
+                        event.preventDefault();
+                        alert("Debe agregar al menos una línea de números.");
+                        return;
+                    }
+
+                    const invalidLine = stagedNumbers.find(n => {
+                        const amount = Number(n.amount ?? n.Amount ?? 0);
+                        const busted = Number(n.busted ?? n.Busted ?? 0);
+                        return amount <= 0 || busted < 0 || busted > amount;
+                    });
+                    if (invalidLine) {
+                        event.preventDefault();
+                        alert("Revise las líneas: el monto debe ser mayor a 0 y el reventado no puede superar el monto.");
+                        return;
+                    }
+
                     const draftInput = document.getElementById("numbersDraftJson");
                     if (draftInput) draftInput.value = JSON.stringify(stagedNumbers);
                 });
