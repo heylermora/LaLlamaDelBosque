@@ -307,27 +307,43 @@ namespace LaLlamaDelBosque.Controllers
 		// POST: LotteryController/Copy/5
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public ActionResult Copy(int id)
-		{
-			try
-			{
-				var numbers = _papers.FirstOrDefault(p => p.Id == id)?.Numbers;
-				var paper = TempData.Get<Paper>("Paper");
-				if(paper != null)
-				{
-					paper.Numbers = numbers ?? new List<Number>();
-				}
-				TempData.Put("Paper", paper);
-				return RedirectToAction(nameof(Create), new { cc = true });
-			}
-			catch(Exception ex)
-			{
-				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message, errorStack = ex.StackTrace });
-			}
-		}
+        public ActionResult Copy(int id)
+        {
+            try
+            {
+                var sourcePaper = _papers.FirstOrDefault(p => p.Id == id);
 
-		// POST: CreditController/Delete/5
-		[HttpPost]
+                if (sourcePaper == null)
+                {
+                    TempData["ErrorMessage"] = $"No existe el papelito #{id}.";
+                    return RedirectToAction(nameof(Create), new { cc = true });
+                }
+
+                var paper = TempData.Get<Paper>("Paper") ?? new Paper { CreationDate = DateTime.Now };
+
+                paper.Numbers = sourcePaper.Numbers
+                    .Select(n => new Number
+                    {
+                        Id = n.Id,
+                        Value = n.Value,
+                        Amount = n.Amount,
+                        Busted = n.Busted
+                    })
+                    .ToList();
+
+                TempData.Put("Paper", paper);
+                TempData["ClearLotteryDraft"] = true;
+
+                return RedirectToAction(nameof(Create), new { cc = true });
+            }
+            catch (Exception ex)
+            {
+                return RedirectToAction("Error", "Home", new { errorMsg = ex.Message, errorStack = ex.StackTrace });
+            }
+        }
+
+        // POST: CreditController/Delete/5
+        [HttpPost]
 		[ValidateAntiForgeryToken]
 		public ActionResult Delete(int id, string lottery, string fromDate, string toDate)
 		{
@@ -522,7 +538,22 @@ namespace LaLlamaDelBosque.Controllers
 			});
 		}
 
-		private static List<Lottery> GetLotteries()
+        [HttpGet]
+        public IActionResult GetAvailableLotteries(DateTime drawDate)
+        {
+            UpdateLotteries(drawDate);
+
+            var lotteries = _lotteries.Select(l => new
+            {
+                name = l.Name,
+                order = l.Order,
+                busted = l.Busted ?? false
+            });
+
+            return Json(lotteries);
+        }
+
+        private static List<Lottery> GetLotteries()
 		{
 			var lotteries = JsonFile.Read("Lotteries", new LotteryModel());
 			return lotteries.Lotteries;

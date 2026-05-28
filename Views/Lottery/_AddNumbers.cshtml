@@ -1,0 +1,56 @@
+﻿@model Numbers
+
+@{
+    var busted = ViewData["busted"] as bool?;
+}
+
+<form asp-action="Add" id="addNumberForm">
+    <input type="hidden" id="addSelectedLotteries" name="selectedLotteries" value="" />
+
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+    <div class="row g-3">
+        <div class="col-6">
+            <label asp-for="Amount" class="form-label">Monto</label>
+            <input asp-for="Amount" class="form-control" placeholder="₡0" autofocus />
+            <span asp-validation-for="Amount" class="text-danger small"></span>
+        </div>
+
+        <div class="col-6 @(busted ?? false ? "" : "d-none")" id="bustedGroup">
+            <label asp-for="Busted" class="form-label">Reventado</label>
+            <input asp-for="Busted" class="form-control" placeholder="₡0" />
+            <span asp-validation-for="Busted" class="text-danger small"></span>
+        </div>
+
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <label asp-for="Value" class="form-label">Números</label>
+                <small class="text-muted">
+                    Los números se organizarán automáticamente. Revíselos antes de agregar.
+                </small>
+            </div>
+
+            <input asp-for="Value" id="number" type="hidden" />
+
+            <div class="input-group">
+                <span class="input-group-text">
+                    <span class="material-icons">tag</span>
+                </span>
+
+                <textarea id="bulkNumbersInput"
+                          class="form-control"
+                          rows="2"
+                          placeholder="00+01+78"></textarea>
+
+                <button type="button"
+                        class="btn btn-primary px-4"
+                        onclick="addNumbersFromTextarea()">
+                    <span class="material-icons">add</span>
+                </button>
+            </div>
+
+            <small id="numberFeedback" class="text-danger d-block mt-1"></small>
+            <span asp-validation-for="Value" class="text-danger small"></span>
+        </div>
+    </div>
+</form>

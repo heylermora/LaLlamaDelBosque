@@ -4,414 +4,246 @@
 @{
     ViewData["Title"] = "Crear Papelito";
     ViewData["CC"] = true;
+
     var cant = Model.Lottery.Split(",").Count();
     var subsum = Model.Numbers.Sum(x => x.Amount) + Model.Numbers.Sum(x => x.Busted);
     var sum = subsum * cant;
+    var hasSelectedLotteries = Model?.SelectedLotteries.Any() ?? false;
 }
 
-<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
-    <div>
-        <h2 class="fw-bold mb-1">@ViewData["Title"]</h2>
-        <p class="text-muted mb-0">Configura sorteo, cliente y números para generar el papelito de venta.</p>
-    </div>
-    <form asp-action="Copy" class="w-100 w-lg-auto">
-        <div class="input-group shadow-sm">
-            <span class="input-group-text bg-white border-end-0">
-                <span class="material-icons" style="font-size:18px;">content_copy</span>
-            </span>
-            <input type="text" class="form-control border-start-0" placeholder="Copiar desde papelito #" name="id">
-            <input type="submit" class="btn btn-success px-3" value="Copiar">
+<div class="container py-2">
+    <div class="row align-items-center g-3 mb-4">
+        <div class="col-12 col-lg">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-4 bg-primary bg-opacity-10 d-flex align-items-center justify-content-center shadow-sm"
+                     style="width:56px;height:56px;">
+                    <span class="material-icons text-primary">receipt_long</span>
+                </div>
+
+                <div>
+                    <h1 class="h3 fw-bold mb-1">@ViewData["Title"]</h1>
+                    <p class="text-muted mb-0">Configura sorteo, cliente y números para crear el papelito.</p>
+                </div>
+            </div>
         </div>
-    </form>
-</div>
-<style>
-    .page-shell { max-width: 1240px; margin: 0 auto; }
-    .page-title { letter-spacing: -.02em; }
-    .section-caption { font-size: .82rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #5f6b85; }
-    .create-compact .card-body { padding: .85rem 1rem; }
-    .create-compact .form-group { margin-bottom: .2rem; }
-    .create-compact .alert { margin-bottom: .6rem; padding: .55rem .75rem; }
-    .create-compact .numbers-summary { min-height: 36px; }
-    .numbers-workspace { background: linear-gradient(180deg,#f8fbff 0%, #ffffff 100%); border: 1px solid #e8eef7; border-radius: 16px; padding: 1rem; }
-    .numbers-header { display:flex; justify-content:space-between; align-items:center; gap:.75rem; flex-wrap:wrap; }
-    .numbers-table-wrap { border: 1px solid #edf1f7; border-radius: 14px; overflow: hidden; background: #fff; }
-    .numbers-table-wrap .table thead th { background: #f4f8ff; border-bottom: 1px solid #e6edf7; font-size: .82rem; text-transform: uppercase; letter-spacing: .03em; }
-    .numbers-table-wrap .table tbody tr:hover { background: #f8fbff; }
-    .numbers-kpi { background: linear-gradient(135deg, #2463eb, #64b5f6); border-radius: 16px; }
-    .config-card { border-radius: 16px; border: 1px solid #ebeff5; }
-    .floating-actions { position: sticky; bottom: .6rem; z-index: 5; background: rgba(255,255,255,.96); backdrop-filter: blur(3px); border: 1px solid #e8eef7; border-radius: 12px; padding: .6rem; box-shadow: 0 8px 24px rgba(31,54,88,.08); }
-    .custom-multi-select { cursor: pointer; min-height: 44px; display:flex; align-items:center; border-radius: 10px; border-color:#d9e2f0; }
-    .custom-dropdown-list { border-radius: 0 0 10px 10px; border-color:#d9e2f0; }
-    .custom-dropdown-list .list-group-item { border-color:#edf2fa; }
-    .custom-dropdown-list .list-group-item:hover { background:#f7faff; }
-    #selectedLotteriesSummary .alert { border:1px solid #d9ebff; background:#f3f9ff; }
-    #selectedLotteriesBadges .badge { font-weight:600; padding:.5rem .65rem; }
-    #numbersSection .card, #addSection .numbers-workspace { border-radius: 16px; }
-    #numbersSection .card-body { padding: 1rem 1.1rem; }
-    @@media (max-width: 767px) {
-        .floating-actions { position: static; }
-    }
-</style>
 
-<div class="page-shell">
-<form asp-action="Save" id="savePaperForm" class="create-compact">
-    @if(TempData["ErrorMessage"] is string errorMessage && !string.IsNullOrWhiteSpace(errorMessage))
-    {
-        <div class="alert alert-danger shadow-sm">@errorMessage</div>
-    }
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-    <div class="card shadow-sm border-0 mb-3 config-card">
-        <div class="card-body">
-            <div class="section-caption mb-2">Configuración del papelito</div>
-            <div class="row g-3">
-                <div class="form-group col-md-2">
-                    <label asp-for="Id" class="control-label fw-semibold">Papelito</label>
-                    <input asp-for="Id" class="form-control bg-light" disabled readonly />
+        <div class="col-12 col-lg-auto">
+            <form asp-action="Copy">
+                <label class="form-label fw-semibold small text-muted mb-2">
+                    Copiar papelito
+                </label>
+
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <span class="material-icons text-muted">content_copy</span>
+                    </span>
+
+                    <input type="text"
+                           class="form-control border-start-0"
+                           placeholder="Digite el número"
+                           name="id">
+
+                    <button type="submit" class="btn btn-primary px-4">
+                        Copiar
+                    </button>
                 </div>
-                <div class="form-group col-md-3">
-                    <label asp-for="DrawDate" class="control-label fw-semibold">Fecha de sorteo</label>
-                    <input asp-for="DrawDate" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" class="form-control" />
-                </div>
-                <div class="form-group col-md-4">
-                    <label asp-for="SelectedLotteries" class="control-label fw-semibold">Sorteos</label>
-                    <div class="position-relative">
-                        <div id="customSelect" class="form-select custom-multi-select" onclick="toggleDropdown()">
-                            <span id="selectedLotteriesText">Seleccione uno o varios</span>
-                        </div>
+            </form>
+        </div>
+    </div>
 
+    <form asp-action="Save" id="savePaperForm">
+        @if (TempData["ErrorMessage"] is string errorMessage && !string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
 
-                        <!-- UL con checkboxes (se muestra al hacer clic) -->
-                        <ul id="customDropdown"
-                            class="list-group position-absolute w-100 shadow-sm custom-dropdown-list"
-                            style="z-index: 1000; display: none; max-height: 320px; overflow-y: auto; background: white; border: 1px solid #ced4da; border-top: none;">
-                            @if(ViewData["Names"] is IList<Lottery> lotteries)
-                            {
-                                <li class="list-group-item bg-light">
-                                    <input type="checkbox"
-                                           class="form-check-input me-2"
-                                           id="selectAll"
-                                           onchange="toggleSelectAll(this)"
-                                            @(Model.SelectedLotteries.Count() == lotteries.Count() ? "checked" : "indeterminate") />
-                                    <label class="form-check-label fw-bold" for="selectAll">Seleccionar todos</label>
-                                </li>
-                                foreach(var item in lotteries)
-                                {
-                                    <li class="list-group-item">
-                                        <input type="checkbox"
-                                               class="form-check-input child-checkbox me-2"
-                                               name="SelectedLotteries"
-                                               value="@item.Name"
-                                               id="lottery_@item.Order"
-                                               data-busted="@((item.Busted ?? false).ToString().ToLower())"
-                                               onchange="updateSelected()"
-                                               @(Model.SelectedLotteries.Contains(item.Name) ? "checked" : "") />
-                                        <label class="form-check-label" for="lottery_@item.Order">@item.Name</label>
-                                    </li>
-                                }
-                            }
-                        </ul>
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-2">
+                        <label asp-for="Id" class="form-label">Papelito</label>
+                        <input asp-for="Id" class="form-control" disabled readonly />
                     </div>
-                </div>       
-                <div class="form-group col-md-3">
-                    <label asp-for="ClientId" class="control-label fw-semibold">Cliente</label>
-                    <select asp-for="ClientId" class="form-control form-select">
-                        <option value="-1" selected>Seleccione un nombre</option>
-                        @if(ViewData["Clients"] is not null)
-                        {
-                            @foreach(var item in ViewData["Clients"] as IList<Client> ?? new List<Client>())
+
+                    <div class="col-md-3">
+                        <label asp-for="DrawDate" class="form-label">Fecha</label>
+                        <input asp-for="DrawDate"
+                               type="date"
+                               min="@DateTime.Now.ToString("yyyy-MM-dd")"
+                               class="form-control"
+                               onchange="loadLotteriesByDate()" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="SelectedLotteries" class="form-label">Sorteos</label>
+
+                        <div class="position-relative">
+                            <div id="customSelect" class="form-select" onclick="toggleDropdown()">
+                                <span id="selectedLotteriesText" class="text-truncate d-block">
+                                    Seleccione uno o varios
+                                </span>
+                            </div>
+
+                            <ul id="customDropdown" class="dropdown-menu w-100 p-0">
+                                @if (ViewData["Names"] is IList<Lottery> lotteries)
+                                {
+                                    <li class="px-3 py-2 bg-light">
+                                        <input type="checkbox"
+                                               class="form-check-input me-2"
+                                               id="selectAll"
+                                               onchange="toggleSelectAll(this)"
+                                        @(Model?.SelectedLotteries.Count() == lotteries.Count() ? "checked" : "") />
+
+                                        <label class="form-check-label fw-bold" for="selectAll">
+                                            Seleccionar todos
+                                        </label>
+                                    </li>
+
+                                    foreach (var item in lotteries)
+                                    {
+                                        <li class="px-3 py-2">
+                                            <input type="checkbox"
+                                                   class="form-check-input child-checkbox me-2"
+                                                   name="SelectedLotteries"
+                                                   value="@item.Name"
+                                                   id="lottery_@item.Order"
+                                                   data-busted="@((item.Busted ?? false).ToString().ToLower())"
+                                                   onchange="updateSelected()"
+                                            @(Model?.SelectedLotteries.Contains(item.Name) ?? false ? "checked" : "") />
+
+                                            <label class="form-check-label" for="lottery_@item.Order">
+                                                @item.Name
+                                            </label>
+                                        </li>
+                                    }
+                                }
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="ClientId" class="form-label">Cliente</label>
+                        <select asp-for="ClientId" class="form-select">
+                            <option value="-1">Seleccione un nombre</option>
+                            @foreach (var item in ViewData["Clients"] as IList<Client> ?? new List<Client>())
                             {
                                 <option value="@item.Id">@item.Name</option>
                             }
-                        }
-                    </select>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <input type="hidden" id="selectedLotteriesHidden" name="selectedLotteries" value="@string.Join(",", Model.SelectedLotteries)" />
-    <input type="hidden" id="numbersDraftJson" name="numbersDraftJson" value="" />
-    <div class="d-flex justify-content-end gap-2 mb-3 floating-actions">
-        <input type="submit" id="createPaperButton" value="Crear" class="btn btn-primary" />
-        <input type="button" onclick="location.href='@Url.Action("Clear", "Lottery")'" value="Limpiar" class="btn btn-danger" />
-    </div>
-</form>
 
-@{
-    var hasSelectedLotteries = Model?.SelectedLotteries.Any() ?? false;
-}
-<div id="selectedLotteriesSummary" style="display:@(hasSelectedLotteries ? "block" : "none");">
-    <div class="alert alert-info d-flex align-items-start gap-2 flex-wrap mt-1 shadow-sm">
-        <span class="fw-bold">
-            <i class="bi bi-check-circle-fill me-1"></i> Sorteos seleccionados:
-        </span>
-        <div class="d-flex flex-wrap gap-1" id="selectedLotteriesBadges">
-            @foreach(var name in Model.SelectedLotteries)
-            {
-                <span class="badge bg-primary text-light">@name</span>
-            }
-        </div>
-    </div>
-</div>
-<div id="addSection" class="mt-2" style="display:@(hasSelectedLotteries ? "block" : "none");">
-    <div class="numbers-workspace shadow-sm">
-        <div class="numbers-header mb-2">
-            <h5 class="fw-bold mb-0">Carga de números</h5>
-            <small class="text-muted">Agrega una o varias líneas y revisa el resumen antes de crear.</small>
-            <span class="badge bg-primary-subtle text-primary-emphasis border">Paso 1: arma tus líneas</span>
-        </div>
-        <partial name="_Add" model="new Numbers()"/>
-    </div>
-</div>
+        <input type="hidden" id="selectedLotteriesHidden" name="selectedLotteries" value="@string.Join(",", Model.SelectedLotteries)" />
+        <input type="hidden" id="numbersDraftJson" name="numbersDraftJson" value="" />
+    </form>
 
-<div class="container-fluid mb-2" id="numbersSection" style="display:@((Model?.Numbers.Any() ?? false) ? "block" : "none");">
-        <div class="row">
-            <div class="col-lg-8 mb-2 mb-lg-0">
-                <div class="card shadow-sm border-0 h-100">
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div id="addSection" class="@(hasSelectedLotteries ? "" : "d-none") mb-3">
+                <div class="card">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h5 class="mb-0 fw-bold">Números cargados</h5>
-                            <span class="badge bg-secondary text-white border" id="totalLinesBadge">Total líneas: @Model.Numbers.Count()</span>
+                        <div class="mb-3">
+                            <h5 class="mb-2">Agregar números</h5>
+
+                            <div class="d-flex flex-wrap gap-1" id="selectedLotteriesBadges">
+                                @foreach (var name in Model?.SelectedLotteries ?? new List<string>())
+                                {
+                                    <span class="badge bg-primary">@name</span>
+                                }
+                            </div>
                         </div>
-                        <div class="table-responsive numbers-table-wrap overflow-auto">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-light">
-                            <tr>
-                                <th></th>
-                                <th>Número</th>
-                                <th>Monto</th>
-                                <th>Reventado</th>
-                                <th></th>
-                                <th></th>
-                            </tr>
-                                </thead>
-                                <tbody id="numbersTableBody">
-                                    @foreach(var item in Model.Numbers)
-                                    {
-                                        <tr>
-                                            <td></td>
-                                            <td class="fw-semibold">@item.Value</td>
-                                            <td class="line-amount">@item.Amount.ToCRC()</td>
-                                            <td class="line-busted">@item.Busted.ToCRC()</td>
-                                            <td>
-                                                <!-- Remove -->
-                                                <button type="button" class="btn" onclick="showPartial('removePartial-@Model.Id-@item.Id')">
-                                                    <span class="material-icons icon icon-danger">delete</span>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        <tr id="removePartial-@Model.Id-@item.Id" style="display:none;">
-                                            <td colspan="6">
-                                                <partial name="_Remove" model="new LotteryConnectionModel{PaperId= Model.Id, LineId= item.Id??1}" />
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
+
+                        <partial name="_AddNumbers" model="new Numbers()" />
                     </div>
                 </div>
-
             </div>
-            <div class="col-lg-4">
-                <div class="card text-white border-0 shadow-sm numbers-kpi">
+            <div id="numbersSection" class="@((Model?.Numbers.Any() ?? false) ? "" : "d-none")">
+                <div class="card">
                     <div class="card-body">
-                        <h2 class="card-title">Resumen</h2>
-                        <p class="card-text mb-1">Monto Total: <span id="summaryAmountTotal">@Model.Numbers.Sum(x => x.Amount).ToCRC()</span></p>
-                        <p class="card-text">Reventado Total: <span id="summaryBustedTotal">@Model.Numbers.Sum(x => x.Busted).ToCRC()</span></p>
-                        <hr>
-                        <p class="card-text mb-1" style="font-weight: bold; font-size: 1rem;">Total Papelito: <span id="summaryPaperTotal">@subsum.ToCRC()</span></p>
-                        <p class="card-text mb-0" style="font-weight: bold; font-size: 1.2rem;">Total General: <span id="summaryGrandTotal">@sum.ToCRC()</span></p>
+                        <partial name="_StagedNumbers" model="Model" />
                     </div>
                 </div>
+            </div>
+        </div>
 
+        <div class="col-lg-4">
+            <div class="card ds-gradient-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-4">
+                        <div>
+                            <h5 class="mb-1">Confirmación</h5>
+                            <small class="opacity-75">Detalle del papelito</small>
+                        </div>
+                        <span class="material-icons">receipt_long</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="opacity-75">Papelitos</span>
+                        <strong id="summaryPaperCount">@cant</strong>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="opacity-75">Monto</span>
+                        <strong id="summaryAmountTotal">@Model?.Numbers.Sum(x => x.Amount).ToCRC()</strong>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="opacity-75">Reventado</span>
+                        <strong id="summaryBustedTotal">@Model?.Numbers.Sum(x => x.Busted).ToCRC()</strong>
+                    </div>
+
+                    <hr class="opacity-50" />
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="opacity-75">Total papelito</span>
+                        <strong id="summaryPaperTotal">@subsum.ToCRC()</strong>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-end">
+                        <span class="opacity-75">Total general</span>
+                        <strong class="fs-2" id="summaryGrandTotal">@sum.ToCRC()</strong>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit"
+                                form="savePaperForm"
+                                id="createPaperButton"
+                                class="btn btn-light fw-semibold">
+                            Crear papelito
+                        </button>
+
+                        <button type="button"
+                                onclick="clearLotteryForm()"
+                                class="btn btn-outline-light">
+                            Limpiar todo
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-    <script type="text/javascript">
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 
-        let selectedNumbers = [];
-        const selectedNumberCounts = new Map();
-        const appliedRuleValues = new Map();
-        const appliedAdvancedValues = new Map();
-        let isDraggingNumbers = false;
-        let dragTouchedValues = new Set();
+    <script type="text/javascript">
         const LOTTERY_DRAFT_KEY = "lottery_add_form_draft_v1";
         let stagedNumbers = @Html.Raw(Json.Serialize(Model?.Numbers ?? new List<Number>()));
 
-        function saveDraftState() {
-            const amountInput = document.getElementById("Amount");
-            const bustedInput = document.getElementById("Busted");
-            const numberInput = document.getElementById("number");
-            const bulkInput = document.getElementById("bulkNumbersInput");
+        function toggleElement(id, show) {
+            const element = document.getElementById(id);
+            if (!element) return;
 
-            const draft = {
-                amount: amountInput ? amountInput.value : "",
-                busted: bustedInput ? bustedInput.value : "",
-                numbers: numberInput ? numberInput.value : "",
-                bulk: bulkInput ? bulkInput.value : "",
-                stagedNumbers
-            };
-            sessionStorage.setItem(LOTTERY_DRAFT_KEY, JSON.stringify(draft));
-        }
-
-        function restoreDraftState() {
-            const raw = sessionStorage.getItem(LOTTERY_DRAFT_KEY);
-            if (!raw) return;
-
-            try {
-                const draft = JSON.parse(raw);
-                const amountInput = document.getElementById("Amount");
-                const bustedInput = document.getElementById("Busted");
-                const numberInput = document.getElementById("number");
-                const bulkInput = document.getElementById("bulkNumbersInput");
-
-                if (amountInput && draft.amount) amountInput.value = draft.amount;
-                if (bustedInput && draft.busted) bustedInput.value = draft.busted;
-                if (numberInput && draft.numbers && !numberInput.value) numberInput.value = draft.numbers;
-                if (bulkInput && draft.bulk && !bulkInput.value) bulkInput.value = draft.bulk;
-                if (Array.isArray(draft.stagedNumbers)) stagedNumbers = draft.stagedNumbers;
-            } catch (_) {
-                sessionStorage.removeItem(LOTTERY_DRAFT_KEY);
-            }
+            element.classList.toggle("d-none", !show);
         }
 
         function padNumber(value) {
             return value.toString().padStart(2, "0");
-        }
-
-        function hydrateSelectionFromHiddenInput() {
-            const hiddenInput = document.getElementById("number");
-            if (!hiddenInput || !hiddenInput.value) return;
-            const parsed = parseNumbersFromText(hiddenInput.value);
-            if (!parsed.expanded.length) return;
-            selectedNumbers = parsed.unique;
-            selectedNumberCounts.clear();
-            parsed.expanded.forEach(v => selectedNumberCounts.set(v, (selectedNumberCounts.get(v) ?? 0) + 1));
-        }
-
-        function renderSelectedNumbers() {
-            const hiddenInput = document.getElementById("number");
-            const feedback = document.getElementById("numberFeedback");
-            if (!hiddenInput) return;
-
-            const expanded = [];
-            selectedNumbers.forEach(number => {
-                const count = selectedNumberCounts.get(number) ?? 1;
-                for (let i = 0; i < count; i++) expanded.push(number);
-            });
-            hiddenInput.value = expanded.join("+");
-            const hasSelection = selectedNumbers.length > 0;
-            if (feedback) feedback.textContent = hasSelection ? "" : "Selecciona al menos un número.";
-        }
-
-        function addNumbersFromTextarea() {
-            applyPastedNumbers(false);
-            if (!selectedNumbers.length) return;
-            document.getElementById("addNumberForm")?.requestSubmit();
-        }
-
-        function addOrIncrementSelection(value) {
-            if (!selectedNumbers.includes(value)) {
-                selectedNumbers.push(value);
-                selectedNumbers.sort();
-            }
-            selectedNumberCounts.set(value, (selectedNumberCounts.get(value) ?? 0) + 1);
-        }
-
-        function syncNumberPalette() {
-            const buttons = document.querySelectorAll(".number-cell");
-            buttons.forEach(btn => {
-                const value = btn.dataset.value;
-                const count = selectedNumberCounts.get(value) ?? 0;
-                btn.classList.toggle("btn-success", selectedNumbers.includes(value));
-                btn.classList.toggle("btn-outline-secondary", !selectedNumbers.includes(value));
-                let badge = btn.querySelector(".number-cell-badge");
-                if (count > 0) {
-                    if (!badge) {
-                        badge = document.createElement("span");
-                        badge.className = "number-cell-badge";
-                        btn.appendChild(badge);
-                    }
-                    badge.textContent = String(count);
-                } else if (badge) {
-                    badge.remove();
-                }
-            });
-        }
-
-        function toggleNumberSelection(value) {
-            addOrIncrementSelection(value);
-            syncNumberPalette();
-            renderSelectedNumbers();
-        }
-
-        function applyNumberSelection(value) {
-            if (dragTouchedValues.has(value)) return;
-            dragTouchedValues.add(value);
-            addOrIncrementSelection(value);
-            syncNumberPalette();
-            renderSelectedNumbers();
-        }
-
-        function bindGridDragSelection() {
-            const grid = document.getElementById("numberGrid");
-            if (!grid) return;
-            grid.addEventListener("mousedown", function (e) {
-                const cell = e.target.closest(".number-cell");
-                if (!cell) return;
-                e.preventDefault();
-                isDraggingNumbers = true;
-                dragTouchedValues = new Set();
-                applyNumberSelection(cell.dataset.value);
-            });
-            grid.addEventListener("mouseover", function (e) {
-                if (!isDraggingNumbers) return;
-                const cell = e.target.closest(".number-cell");
-                if (!cell) return;
-                applyNumberSelection(cell.dataset.value);
-            });
-            document.addEventListener("mouseup", function () {
-                isDraggingNumbers = false;
-                dragTouchedValues = new Set();
-            });
-        }
-
-        function clearSelectedNumbers() {
-            selectedNumbers = [];
-            selectedNumberCounts.clear();
-            appliedRuleValues.clear();
-            appliedAdvancedValues.clear();
-            syncRuleButtons();
-            syncAdvancedButtons();
-            syncNumberPalette();
-            renderSelectedNumbers();
-        }
-
-        function addUniqueValues(values) {
-            const union = new Set(selectedNumbers);
-            values.forEach(v => union.add(v));
-            selectedNumbers = Array.from(union).sort();
-            values.forEach(v => selectedNumberCounts.set(v, (selectedNumberCounts.get(v) ?? 0) + 1));
-            syncNumberPalette();
-            renderSelectedNumbers();
-        }
-
-        function removeValues(values) {
-            values.forEach(value => {
-                const current = selectedNumberCounts.get(value) ?? 0;
-                if (current > 1) {
-                    selectedNumberCounts.set(value, current - 1);
-                } else {
-                    selectedNumberCounts.delete(value);
-                    selectedNumbers = selectedNumbers.filter(v => v !== value);
-                }
-            });
-            syncNumberPalette();
-            renderSelectedNumbers();
         }
 
         function explodeDigitChunk(chunk) {
@@ -424,391 +256,291 @@
 
             const normalized = chunk.length % 2 === 0 ? chunk : `0${chunk}`;
             const values = [];
+
             for (let i = 0; i < normalized.length; i += 2) {
-                const pair = normalized.slice(i, i + 2);
-                const value = parseInt(pair, 10);
+                const value = parseInt(normalized.slice(i, i + 2), 10);
+
                 if (!Number.isNaN(value) && value >= 0 && value <= 99) {
                     values.push(padNumber(value));
                 }
             }
+
             return values;
         }
 
         function parseNumbersFromText(raw) {
-            if (!raw) return { unique: [], expanded: [] };
-            const chunks = raw.split("+").map(x => x.trim()).filter(Boolean);
-            const unique = new Set();
-            const expanded = [];
+            if (!raw) return [];
 
-            chunks.forEach(chunk => {
-                explodeDigitChunk(chunk).forEach(value => {
-                    unique.add(value);
-                    expanded.push(value);
+            return raw
+                .split("+")
+                .map(x => x.trim())
+                .filter(Boolean)
+                .flatMap(explodeDigitChunk);
+        }
+
+        function saveDraftState() {
+            const draft = {
+                amount: document.getElementById("Amount")?.value || "",
+                busted: document.getElementById("Busted")?.value || "",
+                bulk: document.getElementById("bulkNumbersInput")?.value || "",
+                stagedNumbers
+            };
+
+            sessionStorage.setItem(LOTTERY_DRAFT_KEY, JSON.stringify(draft));
+        }
+
+        function restoreDraftState() {
+            const raw = sessionStorage.getItem(LOTTERY_DRAFT_KEY);
+            if (!raw) return;
+
+            try {
+                const draft = JSON.parse(raw);
+
+                if (document.getElementById("Amount") && draft.amount) {
+                    document.getElementById("Amount").value = draft.amount;
+                }
+
+                if (document.getElementById("Busted") && draft.busted) {
+                    document.getElementById("Busted").value = draft.busted;
+                }
+
+                if (document.getElementById("bulkNumbersInput") && draft.bulk) {
+                    document.getElementById("bulkNumbersInput").value = draft.bulk;
+                }
+
+                if (Array.isArray(draft.stagedNumbers)) {
+                    stagedNumbers = draft.stagedNumbers;
+                }
+            } catch {
+                sessionStorage.removeItem(LOTTERY_DRAFT_KEY);
+            }
+        }
+
+        function addNumbersFromTextarea() {
+            document.getElementById("addNumberForm")?.requestSubmit();
+        }
+
+        function formatCrc(value) {
+            return Number(value || 0).toLocaleString("es-CR", {
+                style: "currency",
+                currency: "CRC"
+            });
+        }
+
+        function renderSelectedLotteriesBadges(values) {
+            const container = document.getElementById("selectedLotteriesBadges");
+            if (!container) return;
+
+            container.innerHTML = "";
+
+            values.forEach(value => {
+                const badge = document.createElement("span");
+                badge.className = "badge bg-primary";
+                badge.textContent = value;
+                container.appendChild(badge);
+            });
+        }
+
+        function renderStagedNumbersTable() {
+            const body = document.getElementById("numbersTableBody");
+            if (!body) return;
+
+            const selectedCount = (document.getElementById("selectedLotteriesHidden")?.value || "")
+                .split(",")
+                .filter(Boolean).length;
+
+            body.innerHTML = "";
+
+            stagedNumbers.forEach((item, index) => {
+                const value = item.value ?? item.Value ?? "";
+                const amount = Number(item.amount ?? item.Amount ?? 0);
+                const busted = Number(item.busted ?? item.Busted ?? 0);
+
+                body.insertAdjacentHTML("beforeend", `
+                    <tr>
+                        <td></td>
+                        <td class="fw-bold">${value}</td>
+                        <td>${formatCrc(amount)}</td>
+                        <td>${formatCrc(busted)}</td>
+                        <td class="text-end">
+                            <button type="button"
+                                    class="btn btn-link text-danger remove-line-btn"
+                                    data-index="${index}">
+                                <span class="material-icons icon icon-danger">delete</span>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+
+            body.querySelectorAll(".remove-line-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    stagedNumbers.splice(btn.dataset.index, 1);
+                    renderStagedNumbersTable();
+                    saveDraftState();
                 });
             });
 
-            return { unique: Array.from(unique).sort(), expanded };
+            const amountTotal = stagedNumbers.reduce((a, n) => a + Number(n.amount ?? n.Amount ?? 0), 0);
+            const bustedTotal = stagedNumbers.reduce((a, n) => a + Number(n.busted ?? n.Busted ?? 0), 0);
+            const paperTotal = amountTotal + bustedTotal;
+
+            document.getElementById("summaryPaperCount").textContent = selectedCount;
+            document.getElementById("summaryAmountTotal").textContent = formatCrc(amountTotal);
+            document.getElementById("summaryBustedTotal").textContent = formatCrc(bustedTotal);
+            document.getElementById("summaryPaperTotal").textContent = formatCrc(paperTotal);
+            document.getElementById("summaryGrandTotal").textContent = formatCrc(paperTotal * selectedCount);
+
+            document.getElementById("totalLinesBadge").textContent =
+                `Total líneas: ${stagedNumbers.length}`;
+
+            document.getElementById("createPaperButton").disabled =
+                stagedNumbers.length === 0;
+
+            toggleElement("numbersSection", stagedNumbers.length > 0);
+        }
+        function toggleDropdown() {
+            document.getElementById("customDropdown")?.classList.toggle("show");
         }
 
-        function applyPastedNumbers(replaceSelection) {
-            const input = document.getElementById("bulkNumbersInput");
-            const feedback = document.getElementById("numberFeedback");
-            if (!input) return;
+        function updateSelected() {
+            const dropdown = document.getElementById("customDropdown");
+            if (!dropdown) return;
 
-            const parsed = parseNumbersFromText(input.value);
-            if (!parsed.unique.length) {
-                if (feedback) feedback.textContent = "No se encontraron números válidos. Usa valores de 0 a 99.";
-                return;
+            const checked = [...dropdown.querySelectorAll('input[name="SelectedLotteries"]:checked')];
+            const values = checked.map(cb => cb.value);
+            const hasBustedLottery = checked.some(cb => cb.dataset.busted === "true");
+
+            document.getElementById("selectedLotteriesText").textContent =
+                values.length ? values.join(", ") : "Seleccione uno o varios";
+
+            document.getElementById("selectedLotteriesHidden").value = values.join(",");
+
+            const addSelectedLotteries = document.getElementById("addSelectedLotteries");
+            if (addSelectedLotteries) addSelectedLotteries.value = values.join(",");
+
+            renderSelectedLotteriesBadges(values);
+
+            toggleElement("addSection", values.length > 0);
+
+            document.getElementById("bustedGroup")?.classList.toggle("d-none", !hasBustedLottery);
+
+            if (!hasBustedLottery) {
+                const bustedInput = document.getElementById("Busted");
+                if (bustedInput) bustedInput.value = "0";
             }
 
-            if (replaceSelection) {
-                selectedNumbers = parsed.unique;
-                selectedNumberCounts.clear();
-                parsed.expanded.forEach(v => selectedNumberCounts.set(v, (selectedNumberCounts.get(v) ?? 0) + 1));
-                syncNumberPalette();
-                renderSelectedNumbers();
-            } else {
-                addUniqueValues(parsed.expanded);
-            }
+            renderStagedNumbersTable();
+            saveDraftState();
+        }
+        function toggleSelectAll(masterCheckbox) {
+            const dropdown = document.getElementById("customDropdown");
+            if (!dropdown) return;
 
-            if (feedback) feedback.textContent = `${parsed.expanded.length} número(s) procesado(s) desde texto.`;
-            input.value = "";
+            dropdown
+                .querySelectorAll('input[name="SelectedLotteries"]')
+                .forEach(cb => cb.checked = masterCheckbox.checked);
 
+            updateSelected();
         }
 
-        function clearBulkNumbersInput() {
-            const input = document.getElementById("bulkNumbersInput");
-            const feedback = document.getElementById("numberFeedback");
-            if (input) input.value = "";
-            if (feedback) feedback.textContent = "";
-        }
+        async function loadLotteriesByDate() {
+            const drawDateInput = document.getElementById("DrawDate");
+            const drawDate = drawDateInput?.value;
+            const dropdown = document.getElementById("customDropdown");
 
-        function updateVoicePilotState() {
-            const verified = document.getElementById("voiceUserVerified");
-            const fileInput = document.getElementById("voiceNumbersFile");
-            const processButton = document.getElementById("processVoiceNumbersButton");
-            if (!verified || !fileInput || !processButton) return;
-            processButton.disabled = !(verified.checked && fileInput.files && fileInput.files.length > 0);
-        }
+            if (!drawDate || !dropdown) return;
 
-        function clearVoiceNumbersPilot() {
-            const verified = document.getElementById("voiceUserVerified");
-            const fileInput = document.getElementById("voiceNumbersFile");
-            const feedback = document.getElementById("voicePilotFeedback");
-            const transcriptInput = document.getElementById("voiceTranscriptInput");
-            if (verified) verified.checked = false;
-            if (fileInput) fileInput.value = "";
-            if (feedback) feedback.textContent = "";
-            if (transcriptInput) transcriptInput.value = "";
-            updateVoicePilotState();
-        }
+            const hasData =
+                stagedNumbers.length > 0 ||
+                ($("#bulkNumbersInput").val() || "").trim() !== "";
 
-        function applyCorrectedTranscript() {
-            const transcriptInput = document.getElementById("voiceTranscriptInput");
-            const feedback = document.getElementById("voicePilotFeedback");
-            const bulkInput = document.getElementById("bulkNumbersInput");
-            if (!transcriptInput || !feedback || !bulkInput) return;
+            if (hasData) {
+                const confirmed = confirm(
+                    "Cambiar la fecha actualizará los sorteos disponibles y podría eliminar sorteos incompatibles. ¿Desea continuar?"
+                );
 
-            const parsed = parseNumbersFromText(transcriptInput.value || "");
-            if (!parsed.expanded.length) {
-                feedback.textContent = "No se detectaron números válidos (00-99) en la transcripción corregida.";
-                return;
-            }
-
-            bulkInput.value = parsed.expanded.join("+");
-            applyPastedNumbers(false);
-            feedback.textContent = `Corrección aplicada. Números validados: ${bulkInput.value}.`;
-        }
-
-        function startMicrophoneTranscription() {
-            const feedback = document.getElementById("voicePilotFeedback");
-            const transcriptInput = document.getElementById("voiceTranscriptInput");
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-            if (!SpeechRecognition) {
-                if (feedback) {
-                    feedback.textContent = "Tu navegador no soporta transcripción por micrófono. Usa carga de archivo.";
+                if (!confirmed) {
+                    drawDateInput.value = previousDrawDate;
+                    return;
                 }
+            }
+
+            const previousSelected = (
+                document.getElementById("selectedLotteriesHidden")?.value || ""
+            )
+                .split(",")
+                .map(x => x.trim())
+                .filter(Boolean);
+
+            const response = await fetch(`/Lottery/GetAvailableLotteries?drawDate=${encodeURIComponent(drawDate)}`);
+
+            if (!response.ok) {
+                alert("No se pudieron cargar los sorteos.");
+                drawDateInput.value = previousDrawDate;
                 return;
             }
 
-            const recognition = new SpeechRecognition();
-            recognition.lang = "es-CR";
-            recognition.interimResults = false;
-            recognition.maxAlternatives = 1;
+            const lotteries = await response.json();
 
-            if (feedback) feedback.textContent = "Escuchando micrófono... habla ahora.";
+            dropdown.innerHTML = `
+                <li class="px-3 py-2 bg-light">
+                    <input type="checkbox"
+                           class="form-check-input me-2"
+                           id="selectAll"
+                           onchange="toggleSelectAll(this)" />
 
-            recognition.onresult = function (event) {
-                const transcript = event?.results?.[0]?.[0]?.transcript || "";
-                if (transcriptInput) transcriptInput.value = transcript;
-                if (feedback) feedback.textContent = "Transcripción de micrófono lista. Revisa/corrige y pulsa 'Aplicar corrección'.";
-            };
+                    <label class="form-check-label fw-bold" for="selectAll">
+                        Seleccionar todos
+                    </label>
+                </li>
+            `;
 
-            recognition.onerror = function (event) {
-                if (feedback) feedback.textContent = `Error de micrófono: ${event.error}`;
-            };
+            lotteries.forEach(item => {
+                const isChecked = previousSelected.includes(item.name);
 
-            recognition.onend = function () {
-                if (feedback && (!transcriptInput || !transcriptInput.value.trim())) {
-                    feedback.textContent = "Micrófono finalizado. No se detectó texto; intenta de nuevo.";
-                }
-            };
+                dropdown.insertAdjacentHTML("beforeend", `
+                    <li class="px-3 py-2">
+                        <input type="checkbox"
+                               class="form-check-input child-checkbox me-2"
+                               name="SelectedLotteries"
+                               value="${item.name}"
+                               id="lottery_${item.order}"
+                               data-busted="${item.busted}"
+                               onchange="updateSelected()"
+                               ${isChecked ? "checked" : ""} />
 
-            recognition.start();
-        }
-
-        function processVoiceNumbersPilot() {
-            const verified = document.getElementById("voiceUserVerified");
-            const fileInput = document.getElementById("voiceNumbersFile");
-            const feedback = document.getElementById("voicePilotFeedback");
-            const bulkInput = document.getElementById("bulkNumbersInput");
-            const transcriptInput = document.getElementById("voiceTranscriptInput");
-            if (!verified || !fileInput || !feedback) return;
-            if (!(verified.checked && fileInput.files && fileInput.files.length > 0)) {
-                feedback.textContent = "Debes seleccionar un audio y verificar al usuario antes de procesar.";
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append("audioFile", fileInput.files[0]);
-            formData.append("userVerified", verified.checked ? "true" : "false");
-
-            feedback.textContent = "Transcribiendo audio...";
-            fetch('@Url.Action("TranscribeVoice", "Lottery")', {
-                method: "POST",
-                body: formData
-            })
-                .then(async response => {
-                    const data = await response.json();
-                    if (!response.ok) {
-                        throw new Error(data?.error || "No se pudo transcribir el audio.");
-                    }
-                    return data;
-                })
-                .then(data => {
-                    const normalized = (data?.normalized || "").trim();
-                    const transcript = (data?.transcript || "").trim();
-                    if (transcriptInput) transcriptInput.value = transcript;
-                    if (!normalized) {
-                        feedback.textContent = "Transcripción lista. Revisa/corrige el texto y usa 'Aplicar corrección' para validar números.";
-                        return;
-                    }
-
-                    if (bulkInput) {
-                        bulkInput.value = normalized;
-                    }
-
-                    applyPastedNumbers(false);
-                    feedback.textContent = `Transcripción OK. Si algo quedó mal, corrige el texto y pulsa 'Aplicar corrección'.`;
-                })
-                .catch(error => {
-                    feedback.textContent = `Error de transcripción: ${error.message}`;
-                });
-        }
-
-        function syncAdvancedButtons() {
-            const entries = [
-                ["range", "rangeApplyButton"],
-                ["startsWith", "startsWithApplyButton"],
-                ["endsWith", "endsWithApplyButton"]
-            ];
-            entries.forEach(([key, buttonId]) => {
-                const button = document.getElementById(buttonId);
-                if (!button) return;
-                button.textContent = appliedAdvancedValues.has(key) ? "Quitar" : "Aplicar";
+                        <label class="form-check-label" for="lottery_${item.order}">
+                            ${item.name}
+                        </label>
+                    </li>
+                `);
             });
+
+            previousDrawDate = drawDate;
+            updateSelected();
         }
 
-        function applyOrToggleAdvanced(key, valuesFactory) {
-            const feedback = document.getElementById("numberFeedback");
-            const existing = appliedAdvancedValues.get(key);
-            const nextValues = valuesFactory();
-            if (!nextValues) return false;
-
-            if (existing && existing.signature === nextValues.signature) {
-                removeValues(existing.values);
-                appliedAdvancedValues.delete(key);
-                if (feedback) feedback.textContent = "Se quitó la selección aplicada.";
-            } else {
-                if (existing) removeValues(existing.values);
-                addUniqueValues(nextValues.values);
-                appliedAdvancedValues.set(key, nextValues);
-                if (feedback) feedback.textContent = "Selección aplicada.";
-            }
-            syncAdvancedButtons();
-            return true;
+        function clearLotteryForm() {
+            sessionStorage.removeItem(LOTTERY_DRAFT_KEY);
+            location.href = '@Url.Action("Clear", "Lottery")';
         }
 
-        function applyOrToggleRange() {
-            const startInput = document.getElementById("rangeStart");
-            const endInput = document.getElementById("rangeEnd");
-            const feedback = document.getElementById("numberFeedback");
-            if (!startInput || !endInput) return;
-
-            const start = parseInt(startInput.value, 10);
-            const end = parseInt(endInput.value, 10);
-
-            if (Number.isNaN(start) || Number.isNaN(end) || start < 0 || end > 99 || start > end) {
-                if (feedback) feedback.textContent = "Rango inválido. Usa valores entre 0 y 99, con inicio <= fin.";
-                return;
-            }
-
-            const values = [];
-            for (let i = start; i <= end; i++) values.push(padNumber(i));
-            applyOrToggleAdvanced("range", () => ({
-                signature: `${start}-${end}`,
-                values
-            }));
-        }
-
-        function isPrime(number) {
-            if (number < 2) return false;
-            for (let i = 2; i <= Math.sqrt(number); i++) {
-                if (number % i === 0) return false;
-            }
-            return true;
-        }
-
-        function getValuesByRule(rule, digit = null) {
-            const values = [];
-            for (let i = 0; i < 100; i++) {
-                const value = padNumber(i);
-                if (rule === "even" && i % 2 === 0) values.push(value);
-                if (rule === "odd" && i % 2 !== 0) values.push(value);
-                if (rule === "prime" && isPrime(i)) values.push(value);
-                if (rule === "m5" && i % 5 === 0) values.push(value);
-                if (rule === "startsWith" && value.startsWith(String(digit))) values.push(value);
-                if (rule === "endsWith" && value.endsWith(String(digit))) values.push(value);
-            }
-            return values;
-        }
-
-        function syncRuleButtons() {
-            ["even", "odd", "prime", "m5"].forEach(rule => {
-                const button = document.getElementById(`rule-${rule}`);
-                if (!button) return;
-                const isActive = appliedRuleValues.has(rule);
-                button.classList.toggle("btn-primary", isActive);
-                button.classList.toggle("btn-outline-primary", !isActive);
-            });
-        }
-
-        function toggleRuleSelection(rule) {
-            if (appliedRuleValues.has(rule)) {
-                removeValues(appliedRuleValues.get(rule));
-                appliedRuleValues.delete(rule);
-            } else {
-                const values = getValuesByRule(rule);
-                addUniqueValues(values);
-                appliedRuleValues.set(rule, values);
-            }
-            syncRuleButtons();
-        }
-
-        function applyOrToggleStartsWithDigit() {
-            const input = document.getElementById("startsWithDigit");
-            const feedback = document.getElementById("numberFeedback");
-            if (!input) return;
-            const digit = parseInt(input.value, 10);
-            if (Number.isNaN(digit) || digit < 0 || digit > 9) {
-                if (feedback) feedback.textContent = "Para 'Inician en', usa un dígito de 0 a 9.";
-                return;
-            }
-            applyOrToggleAdvanced("startsWith", () => ({
-                signature: String(digit),
-                values: getValuesByRule("startsWith", digit)
-            }));
-        }
-
-        function applyOrToggleEndsWithDigit() {
-            const input = document.getElementById("endsWithDigit");
-            const feedback = document.getElementById("numberFeedback");
-            if (!input) return;
-            const digit = parseInt(input.value, 10);
-            if (Number.isNaN(digit) || digit < 0 || digit > 9) {
-                if (feedback) feedback.textContent = "Para 'Terminan en', usa un dígito de 0 a 9.";
-                return;
-            }
-            applyOrToggleAdvanced("endsWith", () => ({
-                signature: String(digit),
-                values: getValuesByRule("endsWith", digit)
-            }));
-        }
-
-        function pickRandomNumbers() {
-            const countInput = document.getElementById("randomCount");
-            const feedback = document.getElementById("numberFeedback");
-            const count = parseInt(countInput?.value || "", 10);
-
-            if (Number.isNaN(count) || count < 1 || count > 100) {
-                if (feedback) feedback.textContent = "Para A Gallo Tapado usa una cantidad entre 1 y 100.";
-                return;
-            }
-
-            const pool = [];
-            for (let i = 0; i < 100; i++) pool.push(padNumber(i));
-            for (let i = pool.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [pool[i], pool[j]] = [pool[j], pool[i]];
-            }
-            selectedNumbers = pool.slice(0, count).sort();
-            selectedNumberCounts.clear();
-            selectedNumbers.forEach(v => selectedNumberCounts.set(v, 1));
-            appliedRuleValues.clear();
-            appliedAdvancedValues.clear();
-            syncRuleButtons();
-            syncAdvancedButtons();
-            syncNumberPalette();
-            renderSelectedNumbers();
-            if (feedback) feedback.textContent = `Se seleccionaron ${count} número(s) al azar (reemplazando la selección actual).`;
-        }
-
-        function clearRandomCount() {
-            const countInput = document.getElementById("randomCount");
-            const feedback = document.getElementById("numberFeedback");
-            if (countInput) countInput.value = "";
-            clearSelectedNumbers();
-            if (feedback) feedback.textContent = "";
-        }
-
-        function toggleNumberPalette() {
-            const palette = document.getElementById("numberPalette");
-            if (!palette) return;
-            palette.style.display = palette.style.display === "none" ? "block" : "none";
-        }
-
-        function buildNumberGrid() {
-            const grid = document.getElementById("numberGrid");
-            if (!grid) return;
-            grid.innerHTML = "";
-            for (let i = 0; i < 100; i++) {
-                const value = padNumber(i);
-                const button = document.createElement("button");
-                button.type = "button";
-                button.dataset.value = value;
-                button.className = "btn btn-sm btn-outline-secondary number-cell";
-                button.textContent = value;
-                button.onclick = function () { toggleNumberSelection(value); };
-                grid.appendChild(button);
-            }
-        }
+        let previousDrawDate = "";
 
         $(document).ready(function () {
-            const numberInput = document.getElementById('number');
-            const bulkInput = document.getElementById('bulkNumbersInput');
-            const addSelectedLotteries = document.getElementById('addSelectedLotteries');
-            const selectedLotteriesHidden = document.getElementById('selectedLotteriesHidden');
-            restoreDraftState();
-            if (numberInput) {
-                hydrateSelectionFromHiddenInput();
-                buildNumberGrid();
-                bindGridDragSelection();
-                renderSelectedNumbers();
-                syncRuleButtons();
-                syncAdvancedButtons();
+            previousDrawDate = $("#DrawDate").val();
+            const shouldClearDraft = @((TempData["ClearLotteryDraft"] is bool clear && clear).ToString().ToLower());
+
+            if (shouldClearDraft) {
+                sessionStorage.removeItem(LOTTERY_DRAFT_KEY);
             }
+
+            restoreDraftState();
             renderStagedNumbersTable();
+
+            const bulkInput = document.getElementById("bulkNumbersInput");
+
             if (bulkInput) {
                 bulkInput.addEventListener("input", function () {
                     const digitsOnly = bulkInput.value.replace(/\D/g, "");
@@ -821,292 +553,99 @@
                     bulkInput.value = groups.join("+");
                 });
             }
-            if (addSelectedLotteries && selectedLotteriesHidden) {
-                addSelectedLotteries.value = selectedLotteriesHidden.value || "";
-            }
 
-            const voiceVerified = document.getElementById('voiceUserVerified');
-            const voiceFileInput = document.getElementById('voiceNumbersFile');
-            if (voiceVerified) voiceVerified.addEventListener('change', updateVoicePilotState);
-            if (voiceFileInput) voiceFileInput.addEventListener('change', updateVoicePilotState);
-            updateVoicePilotState();
-
-            $('#addNumberForm').submit(function (e) {
+            $("#addNumberForm").submit(function (e) {
                 e.preventDefault();
-                var amount = parseFloat($('#Amount').val());
-                var busted = parseFloat($('#Busted').val());
-                const amountValidation = document.querySelector('[data-valmsg-for="Amount"]');
-                const bustedValidation = document.querySelector('[data-valmsg-for="Busted"]');
-                let hasError = false;
 
-                if (numberInput && !numberInput.value) {
-                    document.getElementById("bulkNumbersInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
-                    const feedback = document.getElementById("numberFeedback");
-                    if (feedback) feedback.textContent = "Selecciona al menos un número antes de agregar la línea.";
-                    hasError = true;
-                }
+                const amount = parseFloat($("#Amount").val());
+                const busted = parseFloat($("#Busted").val() || "0");
+                const numbers = parseNumbersFromText($("#bulkNumbersInput").val());
+                const feedback = document.getElementById("numberFeedback");
 
-                if (Number.isNaN(amount) || amount <= 0) {
-                    if (amountValidation) amountValidation.textContent = "El monto es obligatorio y debe ser mayor a 0.";
-                    $('#Amount').focus();
-                    hasError = true;
-                } else if (amountValidation) {
-                    amountValidation.textContent = '';
-                }
-
-                if (Number.isNaN(busted) || busted < 0) {
-                    if (bustedValidation) bustedValidation.textContent = "El reventado no puede ser negativo.";
-                    hasError = true;
+                if (!numbers.length) {
+                    if (feedback) feedback.textContent = "Digite al menos un número válido.";
                     return;
                 }
 
-                if (!Number.isNaN(amount) && !Number.isNaN(busted) && busted > amount) {
-                    if (bustedValidation) bustedValidation.textContent = 'El reventado no puede ser mayor que el monto.';
-                    $('#Busted').focus();
-                    hasError = true;
+                if (Number.isNaN(amount) || amount <= 0) {
+                    $('[data-valmsg-for="Amount"]').text("El monto es obligatorio y debe ser mayor a 0.");
+                    $("#Amount").focus();
+                    return;
                 }
-                else {
-                    if (bustedValidation) bustedValidation.textContent = '';
+
+                if (Number.isNaN(busted) || busted < 0 || busted > amount) {
+                    $('[data-valmsg-for="Busted"]').text("El reventado no puede ser negativo ni mayor que el monto.");
+                    $("#Busted").focus();
+                    return;
                 }
-                if (hasError) return;
-                const hiddenValue = numberInput?.value || "";
-                const parsed = parseNumbersFromText(hiddenValue);
-                if (!parsed.expanded.length) return;
-                parsed.expanded.forEach(v => {
-                    const existing = stagedNumbers.find(n => (n.value ?? n.Value) === v);
+
+                $('[data-valmsg-for="Amount"]').text("");
+                $('[data-valmsg-for="Busted"]').text("");
+
+                numbers.forEach(value => {
+                    const existing = stagedNumbers.find(n => (n.value ?? n.Value) === value);
+
                     if (existing) {
-                        if (existing.amount !== undefined) existing.amount += amount || 0;
-                        else existing.Amount = Number(existing.Amount || 0) + (amount || 0);
-                        if (existing.busted !== undefined) existing.busted += busted || 0;
-                        else existing.Busted = Number(existing.Busted || 0) + (busted || 0);
+                        existing.amount = Number(existing.amount ?? existing.Amount ?? 0) + amount;
+                        existing.busted = Number(existing.busted ?? existing.Busted ?? 0) + busted;
                     } else {
-                        stagedNumbers.push({ value: v, amount: amount || 0, busted: busted || 0 });
+                        stagedNumbers.push({ value, amount, busted });
                     }
                 });
-                stagedNumbers.sort((a,b)=> (a.value ?? a.Value).localeCompare(b.value ?? b.Value));
-                clearSelectedNumbers();
+
+                stagedNumbers.sort((a, b) => (a.value ?? a.Value).localeCompare(b.value ?? b.Value));
+
+                $("#bulkNumbersInput").val("");
+                $("#Amount").val("");
+                $("#Busted").val("");
+                $("#Amount").focus();
+
+                if (feedback) feedback.textContent = "";
+
                 renderStagedNumbersTable();
                 saveDraftState();
             });
 
-            const savePaperForm = document.getElementById("savePaperForm");
-            if (savePaperForm) {
-                savePaperForm.addEventListener("submit", function (event) {
-                    const selectedLotteryValues = (document.getElementById("selectedLotteriesHidden")?.value || "").split(",").map(x => x.trim()).filter(Boolean);
-                    const drawDateInput = document.getElementById("DrawDate");
+            $("#savePaperForm").submit(function (event) {
+                const selectedLotteryValues = ($("#selectedLotteriesHidden").val() || "")
+                    .split(",")
+                    .map(x => x.trim())
+                    .filter(Boolean);
 
-                    if (!selectedLotteryValues.length) {
-                        event.preventDefault();
-                        alert("Debe seleccionar al menos un sorteo para crear el papelito.");
-                        return;
-                    }
+                if (!selectedLotteryValues.length) {
+                    event.preventDefault();
+                    alert("Debe seleccionar al menos un sorteo.");
+                    return;
+                }
 
-                    if (!drawDateInput?.value) {
-                        event.preventDefault();
-                        drawDateInput?.focus();
-                        alert("La fecha de sorteo es obligatoria.");
-                        return;
-                    }
+                if (!$("#DrawDate").val()) {
+                    event.preventDefault();
+                    $("#DrawDate").focus();
+                    alert("La fecha de sorteo es obligatoria.");
+                    return;
+                }
 
-                    if (!stagedNumbers.length) {
-                        event.preventDefault();
-                        alert("Debe agregar al menos una línea de números.");
-                        return;
-                    }
+                if (!stagedNumbers.length) {
+                    event.preventDefault();
+                    alert("Debe agregar al menos una línea de números.");
+                    return;
+                }
 
-                    const invalidLine = stagedNumbers.find(n => {
-                        const amount = Number(n.amount ?? n.Amount ?? 0);
-                        const busted = Number(n.busted ?? n.Busted ?? 0);
-                        return amount <= 0 || busted < 0 || busted > amount;
-                    });
-                    if (invalidLine) {
-                        event.preventDefault();
-                        alert("Revise las líneas: el monto debe ser mayor a 0 y el reventado no puede superar el monto.");
-                        return;
-                    }
+                $("#numbersDraftJson").val(JSON.stringify(stagedNumbers));
+            });
 
-                    const draftInput = document.getElementById("numbersDraftJson");
-                    if (draftInput) draftInput.value = JSON.stringify(stagedNumbers);
-                });
-            }
-        });
+            document.addEventListener("click", function (event) {
+                const dropdown = document.getElementById("customDropdown");
+                const customSelect = document.getElementById("customSelect");
 
-        function showPartial(id) {
-            var partialDivs = document.querySelectorAll('[id*="Partial"]');
-            partialDivs.forEach(function (partialDiv) {
-                if (partialDiv.id !== id) {
-                    partialDiv.style.display = "none";
+                if (!dropdown || !customSelect) return;
+
+                if (!customSelect.contains(event.target) && !dropdown.contains(event.target)) {
+                    dropdown.classList.remove("show");
                 }
             });
 
-            var element = document.getElementById(id);
-
-            if (element.style.display === "none") {
-                if (element.tagName === "DIV") {
-                    element.style.display = "block";
-                } else if (element.tagName === "TR") {
-                    element.style.display = "table-row";
-                }            
-            } else {
-                element.style.display = "none";
-            }
-        }
-
-        // Toggle de visibilidad al hacer clic en el div
-        function toggleDropdown() {
-            const dropdown = document.getElementById('customDropdown');
-            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-        }
-
-        function updateSelected() {
-            const dropdown = document.getElementById('customDropdown');
-            if (!dropdown) return;
-            const checked = dropdown.querySelectorAll('input[name="SelectedLotteries"]:checked');
-            const values = Array.from(checked).map(cb => cb.value);
-            const selectedLabel = document.getElementById('selectedLotteriesText');
-            if (selectedLabel) {
-                selectedLabel.textContent = values.length ? values.join(', ') : 'Seleccione uno o varios';
-            }
-            const selectedHidden = document.getElementById("selectedLotteriesHidden");
-            if (selectedHidden) selectedHidden.value = values.join(",");
-            const addSelectedLotteries = document.getElementById("addSelectedLotteries");
-            if (addSelectedLotteries) addSelectedLotteries.value = values.join(",");
-            renderSelectedLotteriesBadges(values);
-            const addSection = document.getElementById("addSection");
-            const summary = document.getElementById("selectedLotteriesSummary");
-            if (addSection) addSection.style.display = values.length ? "block" : "none";
-            if (summary) summary.style.display = values.length ? "block" : "none";
-
-            const bustedGroup = document.getElementById("bustedGroup");
-            if (bustedGroup) {
-                const hasBustedLottery = Array.from(checked).some(cb => cb.dataset.busted === "true");
-                bustedGroup.style.display = hasBustedLottery ? "block" : "none";
-                if (!hasBustedLottery) {
-                    const bustedInput = document.getElementById("Busted");
-                    if (bustedInput) bustedInput.value = "0";
-                }
-            }
-
-            renderStagedNumbersTable();
-            saveDraftState();
-        }
-
-        function renderSelectedLotteriesBadges(values) {
-            const badgesContainer = document.getElementById("selectedLotteriesBadges");
-            if (!badgesContainer) return;
-            badgesContainer.innerHTML = "";
-            values.forEach(value => {
-                const badge = document.createElement("span");
-                badge.className = "badge bg-primary text-light";
-                badge.textContent = value;
-                badgesContainer.appendChild(badge);
-            });
-        }
-
-        function renderStagedNumbersTable() {
-            const body = document.getElementById("numbersTableBody");
-            if (!body) return;
-            const numbersSection = document.getElementById("numbersSection");
-            if (numbersSection) numbersSection.style.display = stagedNumbers.length ? "block" : "none";
-            body.innerHTML = "";
-            stagedNumbers.forEach((item, index) => {
-                const tr = document.createElement("tr");
-                tr.innerHTML = `<td></td><td class="fw-semibold final-number-cell" style="cursor:pointer;" title="Clic izquierdo resta 1, clic derecho suma 1">${item.value || item.Value || ""}</td><td>${Number(item.amount ?? item.Amount ?? 0).toLocaleString('es-CR', { style: 'currency', currency: 'CRC' })}</td><td>${Number(item.busted ?? item.Busted ?? 0).toLocaleString('es-CR', { style: 'currency', currency: 'CRC' })}</td><td><button type="button" class="btn" data-idx="${index}"><span class="material-icons icon icon-danger">delete</span></button></td>`;
-                const numberCell = tr.querySelector(".final-number-cell");
-                if (numberCell) {
-                    numberCell.addEventListener("click", () => {
-                        const currentAmount = Number(item.amount ?? item.Amount ?? 0);
-                        const currentBusted = Number(item.busted ?? item.Busted ?? 0);
-                        if (item.amount !== undefined) item.amount = Math.max(0, currentAmount - 1);
-                        else item.Amount = Math.max(0, currentAmount - 1);
-                        if (item.busted !== undefined) item.busted = Math.max(0, currentBusted - 1);
-                        else item.Busted = Math.max(0, currentBusted - 1);
-                        if ((Number(item.amount ?? item.Amount ?? 0) === 0) && (Number(item.busted ?? item.Busted ?? 0) === 0)) {
-                            stagedNumbers.splice(index, 1);
-                        }
-                        renderStagedNumbersTable();
-                        saveDraftState();
-                    });
-                    numberCell.addEventListener("contextmenu", (event) => {
-                        event.preventDefault();
-                        if (item.amount !== undefined) item.amount = Number(item.amount ?? 0) + 1;
-                        else item.Amount = Number(item.Amount ?? 0) + 1;
-                        if (item.busted !== undefined) item.busted = Number(item.busted ?? 0) + 1;
-                        else item.Busted = Number(item.Busted ?? 0) + 1;
-                        renderStagedNumbersTable();
-                        saveDraftState();
-                        return false;
-                    });
-                }
-                tr.querySelector("button")?.addEventListener("click", () => {
-                    stagedNumbers.splice(index, 1);
-                    renderStagedNumbersTable();
-                    saveDraftState();
-                });
-                body.appendChild(tr);
-            });
-
-            const amountTotal = stagedNumbers.reduce((acc, n) => acc + Number(n.amount ?? n.Amount ?? 0), 0);
-            const bustedTotal = stagedNumbers.reduce((acc, n) => acc + Number(n.busted ?? n.Busted ?? 0), 0);
-            const amountNode = document.getElementById("summaryAmountTotal");
-            const bustedNode = document.getElementById("summaryBustedTotal");
-            const linesBadge = document.getElementById("totalLinesBadge");
-            const createButton = document.getElementById("createPaperButton");
-            const paperTotalNode = document.getElementById("summaryPaperTotal");
-            const grandTotalNode = document.getElementById("summaryGrandTotal");
-            if (amountNode) amountNode.textContent = amountTotal.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
-            if (bustedNode) bustedNode.textContent = bustedTotal.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
-            if (linesBadge) linesBadge.textContent = `Total líneas: ${stagedNumbers.length}`;
-            if (createButton) createButton.disabled = stagedNumbers.length === 0;
-            const paperTotal = amountTotal + bustedTotal;
-            const selectedCount = (document.getElementById("selectedLotteriesHidden")?.value || "").split(",").filter(x => x.trim().length > 0).length || 0;
-            if (paperTotalNode) paperTotalNode.textContent = paperTotal.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
-            if (grandTotalNode) grandTotalNode.textContent = (paperTotal * selectedCount).toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
-        }
-
-        function toggleSelectAll(masterCheckbox) {
-            const dropdown = document.getElementById('customDropdown');
-            if (!dropdown) return;
-            const checkboxes = dropdown.querySelectorAll('input[name="SelectedLotteries"]');
-
-            checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
             updateSelected();
-        }
-
-        // Cerrar el dropdown al hacer clic fuera
-        document.addEventListener('click', function (event) {
-            const dropdown = document.getElementById('customDropdown');
-            const customSelect = document.getElementById('customSelect');
-
-            if (!customSelect.contains(event.target) && !dropdown.contains(event.target)) {
-                dropdown.style.display = 'none';
-            }
         });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const checkboxes = document.querySelectorAll('.child-checkbox');
-            const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
-            const selectAll = document.getElementById('selectAll');
-            const selectedLabel = document.getElementById('selectedLotteriesText');
-            const selectedValues = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
-            if (selectAll) {
-                selectAll.checked = checkedCount === checkboxes.length && checkboxes.length > 0;
-                selectAll.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
-            }
-            if (selectedLabel) {
-                selectedLabel.textContent = selectedValues.length ? selectedValues.join(', ') : 'Seleccione uno o varios';
-            }
-            updateSelected();
-
-            // Mostrar el dropdown si viene keepSelection=true en la URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const cc = urlParams.get('cc');
-
-            if (cc === 'true' && checkedCount > 0) {
-                const dropdown = document.getElementById('customDropdown');
-                dropdown.style.display = 'block';
-            }
-        });
-
     </script>
 }

@@ -1,0 +1,45 @@
+﻿@model Paper
+@using LaLlamaDelBosque.Utils;
+
+<div class="accordion" id="numbersAccordion">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="numbersHeading">
+                <button class="accordion-button collapsed"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#numbersCollapse">
+
+                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                        <span>Números cargados</span>
+
+                        <span class="badge bg-secondary" id="totalLinesBadge">
+                            Total líneas: @Model?.Numbers.Count()
+                        </span>
+                    </div>
+                </button>
+            </h2>
+
+            <div id="numbersCollapse"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#numbersAccordion">
+
+                <div class="accordion-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Número</th>
+                                    <th>Monto</th>
+                                    <th>Reventado</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="numbersTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
