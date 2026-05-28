@@ -117,34 +117,18 @@ namespace LaLlamaDelBosque.Controllers
 		// POST: LotteryController/Save
 		[HttpPost]
 		[ValidateAntiForgeryToken]
-		public ActionResult Save(string? selectedLotteries, DateTime? drawDate, int? clientId, string? numbersDraftJson)
+		public ActionResult Save(DateTime? drawDate, int? clientId, string? numbersDraftJson)
 		{
 			try
 			{
 				var paper = TempData.Get<Paper>("Paper") ?? new Paper();
-				var selectedNames = new List<string>();
-
-				var selectedFromForm = Request.Form["SelectedLotteries"]
+                var selectedNames = Request.Form["SelectedLotteries"]
 					.Select(x => x?.Trim())
 					.Where(x => !string.IsNullOrWhiteSpace(x))
 					.Select(x => x!)
+					.Distinct()
 					.ToList();
 
-				if(selectedFromForm.Any())
-				{
-					selectedNames = selectedFromForm
-						.Distinct()
-						.ToList();
-				}
-				else if(!string.IsNullOrWhiteSpace(selectedLotteries))
-				{
-					selectedNames = selectedLotteries
-						.Split(",", StringSplitOptions.RemoveEmptyEntries)
-						.Select(x => x.Trim())
-						.Where(x => !string.IsNullOrWhiteSpace(x))
-						.Distinct()
-						.ToList();
-				}
 				if(selectedNames.Any())
 				{
 					paper.SelectedLotteries = selectedNames;
@@ -271,7 +255,8 @@ namespace LaLlamaDelBosque.Controllers
 					}
 					SetPapers(_papers);
 				}
-				TempData.Put<Paper>("Paper", null);
+                TempData["ClearLotteryDraft"] = true;
+                TempData.Put<Paper>("Paper", null);
 				return RedirectToAction(nameof(Print), new { ids = string.Join(",", ids) });
 			}
 			catch(Exception ex)

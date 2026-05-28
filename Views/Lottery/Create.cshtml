@@ -150,7 +150,6 @@
             </div>
         </div>
 
-        <input type="hidden" id="selectedLotteriesHidden" name="selectedLotteries" value="@string.Join(",", Model.SelectedLotteries)" />
         <input type="hidden" id="numbersDraftJson" name="numbersDraftJson" value="" />
     </form>
 
@@ -380,65 +379,66 @@
         }
 
         function renderStagedNumbersTable() {
-            const body = document.getElementById("numbersTableBody");
-            if (!body) return;
+    const body = document.getElementById("numbersTableBody");
+    if (!body) return;
 
-            const selectedCount = (document.getElementById("selectedLotteriesHidden")?.value || "")
-                .split(",")
-                .filter(Boolean).length;
+    const selectedCount = document.querySelectorAll(
+        'input[name="SelectedLotteries"]:checked'
+    ).length;
 
-            body.innerHTML = "";
+    body.innerHTML = "";
 
-            stagedNumbers.forEach((item, index) => {
-                const value = item.value ?? item.Value ?? "";
-                const amount = Number(item.amount ?? item.Amount ?? 0);
-                const busted = Number(item.busted ?? item.Busted ?? 0);
+    stagedNumbers.forEach((item, index) => {
+        const value = item.value ?? item.Value ?? "";
+        const amount = Number(item.amount ?? item.Amount ?? 0);
+        const busted = Number(item.busted ?? item.Busted ?? 0);
 
-                body.insertAdjacentHTML("beforeend", `
-                    <tr>
-                        <td></td>
-                        <td class="fw-bold">${value}</td>
-                        <td>${formatCrc(amount)}</td>
-                        <td>${formatCrc(busted)}</td>
-                        <td class="text-end">
-                            <button type="button"
-                                    class="btn btn-link text-danger remove-line-btn"
-                                    data-index="${index}">
-                                <span class="material-icons icon icon-danger">delete</span>
-                            </button>
-                        </td>
-                    </tr>
-                `);
-            });
+        body.insertAdjacentHTML("beforeend", `
+            <tr>
+                <td></td>
+                <td class="fw-bold">${value}</td>
+                <td>${formatCrc(amount)}</td>
+                <td>${formatCrc(busted)}</td>
+                <td class="text-end">
+                    <button type="button"
+                            class="btn btn-link text-danger remove-line-btn"
+                            data-index="${index}">
+                        <span class="material-icons icon icon-danger">delete</span>
+                    </button>
+                </td>
+            </tr>
+        `);
+    });
 
-            body.querySelectorAll(".remove-line-btn").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    stagedNumbers.splice(btn.dataset.index, 1);
-                    renderStagedNumbersTable();
-                    saveDraftState();
-                });
-            });
+    body.querySelectorAll(".remove-line-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            stagedNumbers.splice(btn.dataset.index, 1);
+            renderStagedNumbersTable();
+            saveDraftState();
+        });
+    });
 
-            const amountTotal = stagedNumbers.reduce((a, n) => a + Number(n.amount ?? n.Amount ?? 0), 0);
-            const bustedTotal = stagedNumbers.reduce((a, n) => a + Number(n.busted ?? n.Busted ?? 0), 0);
-            const paperTotal = amountTotal + bustedTotal;
+    const amountTotal = stagedNumbers.reduce((a, n) => a + Number(n.amount ?? n.Amount ?? 0), 0);
+    const bustedTotal = stagedNumbers.reduce((a, n) => a + Number(n.busted ?? n.Busted ?? 0), 0);
+    const paperTotal = amountTotal + bustedTotal;
 
-            document.getElementById("summaryPaperCount").textContent = selectedCount;
-            document.getElementById("summaryAmountTotal").textContent = formatCrc(amountTotal);
-            document.getElementById("summaryBustedTotal").textContent = formatCrc(bustedTotal);
-            document.getElementById("summaryPaperTotal").textContent = formatCrc(paperTotal);
-            document.getElementById("summaryGrandTotal").textContent = formatCrc(paperTotal * selectedCount);
+    document.getElementById("summaryPaperCount").textContent = selectedCount;
+    document.getElementById("summaryAmountTotal").textContent = formatCrc(amountTotal);
+    document.getElementById("summaryBustedTotal").textContent = formatCrc(bustedTotal);
+    document.getElementById("summaryPaperTotal").textContent = formatCrc(paperTotal);
+    document.getElementById("summaryGrandTotal").textContent = formatCrc(paperTotal * selectedCount);
 
-            const totalLinesBadge = document.getElementById("totalLinesBadge");
-            if (totalLinesBadge) {
-                totalLinesBadge.textContent = `Total líneas: ${stagedNumbers.length}`;
-            }
+    const totalLinesBadge = document.getElementById("totalLinesBadge");
+    if (totalLinesBadge) {
+        totalLinesBadge.textContent = `Total líneas: ${stagedNumbers.length}`;
+    }
 
-            document.getElementById("createPaperButton").disabled =
-                selectedCount === 0 || stagedNumbers.length === 0;
+    document.getElementById("createPaperButton").disabled =
+        selectedCount === 0 || stagedNumbers.length === 0;
 
-            toggleElement("numbersSection", stagedNumbers.length > 0);
-        }
+    toggleElement("numbersSection", stagedNumbers.length > 0);
+}
+        
         function toggleDropdown() {
             document.getElementById("customDropdown")?.classList.toggle("show");
         }
@@ -453,8 +453,6 @@
 
             document.getElementById("selectedLotteriesText").textContent =
                 values.length ? values.join(", ") : "Seleccione uno o varios";
-
-            document.getElementById("selectedLotteriesHidden").value = values.join(",");
 
             const addSelectedLotteries = document.getElementById("addSelectedLotteries");
             if (addSelectedLotteries) addSelectedLotteries.value = values.join(",");
@@ -512,13 +510,6 @@
                     return;
                 }
             }
-
-            const previousSelected = (
-                document.getElementById("selectedLotteriesHidden")?.value || ""
-            )
-                .split(",")
-                .map(x => x.trim())
-                .filter(Boolean);
 
             const response = await fetch(`/Lottery/GetAvailableLotteries?drawDate=${encodeURIComponent(drawDate)}`);
 
@@ -662,11 +653,9 @@
             });
 
             $("#savePaperForm").submit(function (event) {
-                const selectedLotteryValues = ($("#selectedLotteriesHidden").val() || "")
-                    .split(",")
-                    .map(x => x.trim())
-                    .filter(Boolean);
-
+                const selectedLotteryValues = [
+                    ...document.querySelectorAll('input[name="SelectedLotteries"]:checked')
+                ].map(x => x.value);
                 if (!selectedLotteryValues.length) {
                     event.preventDefault();
                     showLotteryAlert("Debe seleccionar al menos un sorteo.", "warning");
