@@ -1,7 +1,6 @@
-﻿using LaLlamaDelBosque.Models;
+using LaLlamaDelBosque.Models;
 using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Mvc;
-using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -9,7 +8,6 @@ namespace LaLlamaDelBosque.Controllers
 {
 	public class LotteryController: Controller
 	{
-		private static readonly HttpClient HttpClient = new();
 		private static readonly Regex NumberTokenPattern = new(@"^\d{1,2}$", RegexOptions.Compiled);
 		private static readonly Regex CompactNumberPattern = new(@"^\d{3,}$", RegexOptions.Compiled);
 		private static readonly Regex NumberSplitPattern = new(@"[+,\s]+", RegexOptions.Compiled);
@@ -18,11 +16,8 @@ namespace LaLlamaDelBosque.Controllers
 		private readonly List<Paper> _papers;
 		private readonly List<Credit> _credits;
 		private readonly List<Award> _awards;
-		private readonly IConfiguration _configuration;
-
-		public LotteryController(IConfiguration configuration)
+		public LotteryController()
 		{
-			_configuration = configuration;
 			_lotteries = GetLotteries();
 			_papers = GetPapers();
 			_credits = GetCredits();
@@ -195,6 +190,21 @@ namespace LaLlamaDelBosque.Controllers
 					return RedirectToAction(nameof(Create), new { cc = true, selectedLotteries = string.Join(",", selectedNames), clientId });
 				}
 
+				UpdateLotteries(drawDate.Value);
+				var availableLotteryNames = _lotteries.Select(l => l.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+				var unavailableLotteries = selectedNames
+					.Where(name => !availableLotteryNames.Contains(name))
+					.ToList();
+
+				if(unavailableLotteries.Any())
+				{
+					TempData["ErrorMessage"] = $"Estos sorteos ya no están disponibles para la fecha seleccionada: {string.Join(", ", unavailableLotteries)}. Revise la selección antes de crear el papelito.";
+					paper.SelectedLotteries = selectedNames.Except(unavailableLotteries, StringComparer.OrdinalIgnoreCase).ToList();
+					paper.Lottery = string.Join(", ", paper.SelectedLotteries);
+					TempData.Put("Paper", paper);
+					return RedirectToAction(nameof(Create), new { cc = true, selectedLotteries = string.Join(",", paper.SelectedLotteries), dateString = drawDate?.ToString("yyyy-MM-dd"), clientId });
+				}
+
 				var validNumbers = paper.Numbers
 					.Where(n => !string.IsNullOrWhiteSpace(n.Value))
 					.Where(n => n.Amount > 0 || n.Busted > 0)
@@ -352,6 +362,7 @@ namespace LaLlamaDelBosque.Controllers
 				var paper = _papers.First(x => x.Id == id);
 				_papers.Remove(paper);
 				SetPapers(_papers);
+				TempData["SuccessMessage"] = $"Papelito #{id} eliminado correctamente.";
 				DateTime? parsedFromDate = DateTime.TryParse(fromDate, out var tempFromDate) ? tempFromDate : null;
 				DateTime? parsedToDate = DateTime.TryParse(toDate, out var tempToDate) ? tempToDate : null;
 
@@ -451,26 +462,6 @@ namespace LaLlamaDelBosque.Controllers
 			return new[] { token };
 		}
 
-		// POST: LotteryController/Remove/5
-		[HttpPost]
-		[ValidateAntiForgeryToken]
-		public ActionResult Remove(string paperId, string lineId)
-		{
-			try
-			{
-				TempData["Id"] = int.Parse(paperId);
-				var paper = TempData.Get<Paper>("Paper") ?? new Paper();
-				var line = paper.Numbers.First(l => l.Id == int.Parse(lineId));
-				paper.Numbers.Remove(line);
-				TempData.Put("Paper", paper);
-				return RedirectToAction(nameof(Create), new { cc = true });
-			}
-			catch(Exception ex)
-			{
-				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message, errorStack = ex.StackTrace });
-			}
-		}
-
 		// GET: LotteryController/Clear/
 		public ActionResult Clear()
 		{
@@ -486,57 +477,6 @@ namespace LaLlamaDelBosque.Controllers
 		}
 
 		#endregion
-
-		[HttpPost]
-		public async Task<IActionResult> TranscribeVoice(IFormFile? audioFile, bool userVerified)
-		{
-			if(!userVerified) return BadRequest(new { error = "Debes verificar al usuario antes de transcribir." });
-			if(audioFile == null || audioFile.Length == 0) return BadRequest(new { error = "Debes adjuntar un archivo de audio." });
-
-			var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
-			if(string.IsNullOrWhiteSpace(apiKey))
-			{
-				apiKey = _configuration["OpenAI:ApiKey"];
-			}
-			if(string.IsNullOrWhiteSpace(apiKey))
-			{
-				return StatusCode(500, new
-				{
-					error = "Falta configurar la llave de OpenAI. Define OPENAI_API_KEY o OpenAI:ApiKey en configuración."
-				});
-			}
-
-			using var form = new MultipartFormDataContent();
-			await using var stream = audioFile.OpenReadStream();
-			using var streamContent = new StreamContent(stream);
-			streamContent.Headers.ContentType = new MediaTypeHeaderValue(audioFile.ContentType ?? "application/octet-stream");
-			form.Add(streamContent, "file", audioFile.FileName);
-			form.Add(new StringContent("gpt-4o-mini-transcribe"), "model");
-			form.Add(new StringContent("es"), "language");
-
-			using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/audio/transcriptions");
-			request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-			request.Content = form;
-
-			using var response = await HttpClient.SendAsync(request);
-			var responseBody = await response.Content.ReadAsStringAsync();
-			if(!response.IsSuccessStatusCode)
-			{
-				return StatusCode((int)response.StatusCode, new { error = "No fue posible transcribir el audio.", detail = responseBody });
-			}
-
-			using var doc = JsonDocument.Parse(responseBody);
-			var transcript = doc.RootElement.TryGetProperty("text", out var textProp) ? (textProp.GetString() ?? string.Empty) : string.Empty;
-			var validNumbers = ParseNumberTokens(transcript);
-
-			return Ok(new
-			{
-				transcript,
-				validNumbers,
-				normalized = string.Join("+", validNumbers),
-				isValid = validNumbers.Any()
-			});
-		}
 
         [HttpGet]
         public IActionResult GetAvailableLotteries(DateTime drawDate)

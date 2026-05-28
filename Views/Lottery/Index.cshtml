@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Paper>
+@model IEnumerable<Paper>
 
 @using LaLlamaDelBosque.Utils;
 @{
@@ -14,6 +14,17 @@
 }
 
 <h2 class="fw-bold mb-4">@ViewData["Title"]</h2>
+
+@if (TempData["SuccessMessage"] is string successMessage && !string.IsNullOrWhiteSpace(successMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <div class="d-flex gap-2 align-items-start">
+            <span class="material-icons">check_circle</span>
+            <span>@successMessage</span>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
 
 <div class="card shadow-sm border-0 mb-4">
     <div class="card-body">
@@ -145,7 +156,7 @@
                                                 @if (item.DrawDate > DateTime.Now)
                                                 {
                                                     <button type="button"
-                                                            class="btn btn-sm"
+                                                            class="btn btn-sm btn-delete"
                                                             data-id="@item.Id"
                                                             title="Eliminar">
                                                         <span class="material-icons icon icon-danger" style="font-size:20px;">delete</span>
