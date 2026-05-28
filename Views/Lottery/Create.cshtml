@@ -1,14 +1,20 @@
-﻿@model Paper
+@model Paper
 @using LaLlamaDelBosque.Utils;
 
 @{
     ViewData["Title"] = "Crear Papelito";
-    ViewData["CC"] = true;
+    var selectedLotteryCount = Model?.SelectedLotteries?.Count ?? 0;
+    if (selectedLotteryCount == 0 && !string.IsNullOrWhiteSpace(Model?.Lottery))
+    {
+        selectedLotteryCount = Model.Lottery
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Trim())
+            .Count(x => !string.IsNullOrWhiteSpace(x));
+    }
 
-    var cant = Model.Lottery.Split(",").Count();
-    var subsum = Model.Numbers.Sum(x => x.Amount) + Model.Numbers.Sum(x => x.Busted);
-    var sum = subsum * cant;
-    var hasSelectedLotteries = Model?.SelectedLotteries.Any() ?? false;
+    var subsum = Model?.Numbers.Sum(x => x.Amount) + Model?.Numbers.Sum(x => x.Busted) ?? 0;
+    var sum = subsum * selectedLotteryCount;
+    var hasSelectedLotteries = selectedLotteryCount > 0;
 }
 
 <div class="container py-2">
@@ -28,7 +34,7 @@
         </div>
 
         <div class="col-12 col-lg-auto">
-            <form asp-action="Copy">
+            <form asp-action="Copy" method="post">
                 <label class="form-label fw-semibold small text-muted mb-2">
                     Copiar papelito
                 </label>
@@ -51,11 +57,20 @@
         </div>
     </div>
 
-    <form asp-action="Save" id="savePaperForm">
+    <div id="lotteryAlertHost" class="mb-3" aria-live="polite">
         @if (TempData["ErrorMessage"] is string errorMessage && !string.IsNullOrWhiteSpace(errorMessage))
         {
-            <div class="alert alert-danger">@errorMessage</div>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <div class="d-flex gap-2 align-items-start">
+                    <span class="material-icons">error</span>
+                    <span>@errorMessage</span>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
         }
+    </div>
+
+    <form asp-action="Save" method="post" id="savePaperForm">
 
         <div class="card mb-3">
             <div class="card-body">
@@ -181,7 +196,7 @@
 
                     <div class="d-flex justify-content-between mb-2">
                         <span class="opacity-75">Papelitos</span>
-                        <strong id="summaryPaperCount">@cant</strong>
+                        <strong id="summaryPaperCount">@selectedLotteryCount</strong>
                     </div>
 
                     <div class="d-flex justify-content-between mb-2">
@@ -234,6 +249,29 @@
     <script type="text/javascript">
         const LOTTERY_DRAFT_KEY = "lottery_add_form_draft_v1";
         let stagedNumbers = @Html.Raw(Json.Serialize(Model?.Numbers ?? new List<Number>()));
+
+        function showLotteryAlert(message, type = "warning") {
+            const host = document.getElementById("lotteryAlertHost");
+            if (!host) return;
+
+            const icon = type === "danger" ? "error" : type === "success" ? "check_circle" : "info";
+
+            host.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    <div class="d-flex gap-2 align-items-start">
+                        <span class="material-icons">${icon}</span>
+                        <span>${message}</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                </div>
+            `;
+            host.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+
+        function clearLotteryAlert() {
+            const host = document.getElementById("lotteryAlertHost");
+            if (host) host.innerHTML = "";
+        }
 
         function toggleElement(id, show) {
             const element = document.getElementById(id);
@@ -391,11 +429,13 @@
             document.getElementById("summaryPaperTotal").textContent = formatCrc(paperTotal);
             document.getElementById("summaryGrandTotal").textContent = formatCrc(paperTotal * selectedCount);
 
-            document.getElementById("totalLinesBadge").textContent =
-                `Total líneas: ${stagedNumbers.length}`;
+            const totalLinesBadge = document.getElementById("totalLinesBadge");
+            if (totalLinesBadge) {
+                totalLinesBadge.textContent = `Total líneas: ${stagedNumbers.length}`;
+            }
 
             document.getElementById("createPaperButton").disabled =
-                stagedNumbers.length === 0;
+                selectedCount === 0 || stagedNumbers.length === 0;
 
             toggleElement("numbersSection", stagedNumbers.length > 0);
         }
@@ -424,6 +464,13 @@
             toggleElement("addSection", values.length > 0);
 
             document.getElementById("bustedGroup")?.classList.toggle("d-none", !hasBustedLottery);
+
+            const hasVisibleAlert = Boolean(document.querySelector("#lotteryAlertHost .alert"));
+            if (!values.length && !hasVisibleAlert) {
+                showLotteryAlert("Seleccione al menos un sorteo para habilitar la carga de números.", "info");
+            } else if (values.length) {
+                clearLotteryAlert();
+            }
 
             if (!hasBustedLottery) {
                 const bustedInput = document.getElementById("Busted");
@@ -476,7 +523,7 @@
             const response = await fetch(`/Lottery/GetAvailableLotteries?drawDate=${encodeURIComponent(drawDate)}`);
 
             if (!response.ok) {
-                alert("No se pudieron cargar los sorteos.");
+                showLotteryAlert("No se pudieron cargar los sorteos. Intente nuevamente.", "danger");
                 drawDateInput.value = previousDrawDate;
                 return;
             }
@@ -495,6 +542,10 @@
                     </label>
                 </li>
             `;
+
+            if (!lotteries.length) {
+                showLotteryAlert("No hay sorteos disponibles para la fecha seleccionada.", "warning");
+            }
 
             lotteries.forEach(item => {
                 const isChecked = previousSelected.includes(item.name);
@@ -564,17 +615,20 @@
 
                 if (!numbers.length) {
                     if (feedback) feedback.textContent = "Digite al menos un número válido.";
+                    showLotteryAlert("Digite al menos un número válido antes de agregar.", "warning");
                     return;
                 }
 
                 if (Number.isNaN(amount) || amount <= 0) {
                     $('[data-valmsg-for="Amount"]').text("El monto es obligatorio y debe ser mayor a 0.");
+                    showLotteryAlert("El monto es obligatorio y debe ser mayor a 0.", "warning");
                     $("#Amount").focus();
                     return;
                 }
 
                 if (Number.isNaN(busted) || busted < 0 || busted > amount) {
                     $('[data-valmsg-for="Busted"]').text("El reventado no puede ser negativo ni mayor que el monto.");
+                    showLotteryAlert("El reventado no puede ser negativo ni mayor que el monto.", "warning");
                     $("#Busted").focus();
                     return;
                 }
@@ -601,6 +655,7 @@
                 $("#Amount").focus();
 
                 if (feedback) feedback.textContent = "";
+                showLotteryAlert(`${numbers.length} número(s) agregados correctamente.`, "success");
 
                 renderStagedNumbersTable();
                 saveDraftState();
@@ -614,20 +669,20 @@
 
                 if (!selectedLotteryValues.length) {
                     event.preventDefault();
-                    alert("Debe seleccionar al menos un sorteo.");
+                    showLotteryAlert("Debe seleccionar al menos un sorteo.", "warning");
                     return;
                 }
 
                 if (!$("#DrawDate").val()) {
                     event.preventDefault();
                     $("#DrawDate").focus();
-                    alert("La fecha de sorteo es obligatoria.");
+                    showLotteryAlert("La fecha de sorteo es obligatoria.", "warning");
                     return;
                 }
 
                 if (!stagedNumbers.length) {
                     event.preventDefault();
-                    alert("Debe agregar al menos una línea de números.");
+                    showLotteryAlert("Debe agregar al menos una línea de números.", "warning");
                     return;
                 }
 
