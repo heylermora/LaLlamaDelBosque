@@ -16,7 +16,7 @@ namespace LaLlamaDelBosque.Models
         public string Title { get; set; } = "";
 
         [Required(ErrorMessage = "El campo es requerido")]
-        [Range(10, 1000000, ErrorMessage = "La longitud de la descripción debe estar entre {2} y {1}.")]
+        [Range(10, 1000000, ErrorMessage = "El valor debe estar entre {1} y {2}.")]
         public double Value { get; set; }
     }
 }

@@ -1,59 +1,133 @@
 ﻿<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
 @model IEnumerable<LaLlamaDelBosque.Models.Note>
+@using LaLlamaDelBosque.Utils
 
 @{
     ViewData["Title"] = "Notas de pedidos";
 }
 
-<h1 class="display-4">@ViewData["Title"]</h1>
+<div class="container py-3">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+        <div>
+            <h1 class="display-6 mb-1">@ViewData["Title"]</h1>
+            <p class="text-muted mb-0">Administra los SINPEs o apuntes rápidos de clientes.</p>
+        </div>
 
+        <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2"
+                onclick="location.href='@Url.Action("Create", "Note")'">
+            <span class="material-icons">add_circle</span>
+            Crear nota
+        </button>
+    </div>
 
-<!-- Add -->
-<button type="button" class="btn"
-        onclick="location.href='@Url.Action("Create", "Note")'">
-    <span class="material-icons icon icon-primary">add_circle</span>
-</button>
+    <form asp-controller="Note" asp-action="Index" method="get" class="mb-3">
+        <div class="input-group shadow-sm">
+            <input type="search" name="searchText" class="form-control" value="@ViewBag.SearchText" placeholder="Buscar por cliente..." />
+            <button class="btn btn-outline-primary" type="submit">Buscar</button>
+            @if(!string.IsNullOrWhiteSpace(ViewBag.SearchText as string))
+            {
+                <a class="btn btn-outline-secondary" asp-controller="Note" asp-action="Index">Limpiar</a>
+            }
+        </div>
+    </form>
 
-@if(Model.Any() && TempData["Method"] is not null && Model.FirstOrDefault(x => x.Id == (int)TempData["Id"]) is not null)
-{
-    @switch(TempData["Method"])
+    @if(TempData["SuccessMessage"] is string successMessage)
     {
-        case "Delete":
-            @Html.Partial("_Delete", Model.FirstOrDefault(n => n.Id == (int)TempData["Id"]))
-            ;
-            break;
+        <div class="alert alert-success border-0 shadow-sm" role="alert">@successMessage</div>
     }
-}
 
-<div class="container">
-    <div class="d-flex justify-content-around flex-wrap">
+    @if(!Model.Any())
+    {
+        <div class="alert alert-info border-0 shadow-sm" role="alert">
+            No hay notas registradas todavía. Cree una nota para empezar.
+        </div>
+    }
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
         @foreach(var item in Model)
         {
-            <div class="card" style="width: 20rem; margin-bottom: 6px; margin-top: 12px;">
-                    <div class="card-header">
-                    <h5 class="card-title">@item.Title | ₡ @item.Value</h5>
-                    </div>
+            <div class="col">
+                <div class="card h-100 shadow-sm" id="note-card-@item.Id">
                     <div class="card-body">
-                        <div class="btn-group mx-auto" role="group">
-                            <!-- Edit -->
-                            <button type="button" class="btn"
-                                onclick="location.href='@Url.Action("Edit", "Note", new {Id= item.Id})'">
-                                <span class="material-icons icon icon-dark">edit</span>
+                        <div class="d-flex justify-content-between gap-3">
+                            <div>
+                                <div class="small text-muted text-uppercase">Cliente</div>
+                                <h5 class="card-title mb-1">@item.Title</h5>
+                            </div>
+                            <span class="badge text-bg-primary align-self-start">@item.Value.ToCRC()</span>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-0 pt-0">
+                        <div class="btn-group w-100" role="group" aria-label="Acciones de nota">
+                            <button type="button" class="btn btn-outline-dark"
+                                    onclick="location.href='@Url.Action("Edit", "Note", new { id = item.Id })'">
+                                <span class="material-icons">edit</span>
                             </button>
-                            <!-- Delete -->
-                            <button type="button" class="btn"
-                                onclick="location.href='@Url.Action("Delete", "Note", new {Id= item.Id})'">
-                                <span class="material-icons icon icon-danger">delete</span>
+                            <button type="button" class="btn btn-outline-danger"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deleteNoteModal-@item.Id">
+                                <span class="material-icons">delete</span>
                             </button>
-                            <!-- Image -->
-                            <button type="button" class="btn"
-                                onclick="location.href='@Url.Action("Delete", "Note", new {Id= item.Id})'">
-                                <span class="material-icons icon icon-danger">image</span>
+                            <button type="button" class="btn btn-outline-primary"
+                                    onclick="copyNoteAsImage('@item.Id')">
+                                <span class="material-icons">image</span>
                             </button>
                         </div>
                     </div>
                 </div>
-            }
-        </div>
+            </div>
+
+            <div class="modal fade" id="deleteNoteModal-@item.Id" tabindex="-1" aria-labelledby="deleteNoteModalLabel-@item.Id" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteNoteModalLabel-@item.Id">Eliminar nota</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <partial name="_Delete" model="item"></partial>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
 </div>
+
+<div class="modal fade" id="copySuccessModal" tabindex="-1" aria-labelledby="copySuccessModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body text-center py-4">
+                <span class="material-icons text-success mb-2" style="font-size: 32px;">check_circle</span>
+                <h6 class="mb-0" id="copySuccessModalLabel">¡Imagen copiada!</h6>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script type="text/javascript">
+        function copyNoteAsImage(id) {
+            const card = document.getElementById('note-card-' + id);
+            if (!card) return;
+
+            html2canvas(card).then(function(canvas) {
+                canvas.toBlob(function(blob) {
+                    if (!blob || !navigator.clipboard || !navigator.clipboard.write) return;
+
+                    navigator.clipboard.write([
+                        new ClipboardItem({ "image/png": blob })
+                    ]).then(function() {
+                        const modal = new bootstrap.Modal(document.getElementById('copySuccessModal'));
+                        modal.show();
+                        setTimeout(function() { modal.hide(); }, 1800);
+                    }).catch(function(error) {
+                        console.error('Error al copiar la nota como imagen:', error);
+                    });
+                });
+            });
+        }
+    </script>
+}

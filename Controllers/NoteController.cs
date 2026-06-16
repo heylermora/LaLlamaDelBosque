@@ -3,103 +3,102 @@ using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace KrakenNotes.Web.Controllers
+namespace LaLlamaDelBosque.Controllers
 {
     [Authorize]
     public class NoteController: Controller
     {
-        private NoteModel _notes;
+        private readonly NoteModel _notes;
 
         public NoteController()
         {
             _notes = GetNotes();
         }
 
-        public IActionResult Index()
+        public IActionResult Index(string? searchText)
         {
-            return View(_notes.Notes);
+            var notes = _notes.Notes.AsEnumerable();
+
+            if(!string.IsNullOrWhiteSpace(searchText))
+                notes = notes.Where(n => n.Title.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+
+            ViewBag.SearchText = searchText;
+            return View(notes.OrderBy(n => n.Title).ToList());
         }
 
         [HttpGet]
         public IActionResult Create()
         {
-            return View();
+            return View(new Note());
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Create(Note model)
         {
-            model.Id = _notes.Notes.LastOrDefault()?.Id + 1 ?? 1;
+            if(!ModelState.IsValid)
+                return View(model);
+
+            model.Id = _notes.Notes.Any() ? _notes.Notes.Max(n => n.Id) + 1 : 1;
             _notes.Notes.Add(model);
             SetNotes(_notes);
-            return RedirectToAction("Index");
+            TempData["SuccessMessage"] = "Nota creada correctamente.";
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpGet]
         public IActionResult Edit(int id)
         {
             var note = _notes.Notes.FirstOrDefault(n => n.Id == id);
+            if(note is null)
+                return NotFound();
+
             return View(note);
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public ActionResult Edit(Note model)
         {
-            var note = _notes.Notes.FirstOrDefault(n => n.Id == model.Id);
-            if(note != null)
-            {
-                note.Title = model.Title;
-                note.Value = model.Value;
-                SetNotes(_notes);
-            }
-            return RedirectToAction("Index");
-        }
+            if(!ModelState.IsValid)
+                return View(model);
 
-        // GET: CreditController/Delete/5
-        public ActionResult Delete(int id)
-        {
-            TempData["Id"] = id;
-            TempData["Method"] = "Delete";
+            var note = _notes.Notes.FirstOrDefault(n => n.Id == model.Id);
+            if(note is null)
+                return NotFound();
+
+            note.Title = model.Title;
+            note.Value = model.Value;
+            SetNotes(_notes);
+            TempData["SuccessMessage"] = "Nota actualizada correctamente.";
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: CreditController/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Delete(string id)
+        public IActionResult Delete(int id)
         {
-            _notes.Notes.RemoveAll(n => n.Id == int.Parse(id));
+            var removed = _notes.Notes.RemoveAll(n => n.Id == id) > 0;
+            if(!removed)
+                return NotFound();
+
             SetNotes(_notes);
-            return RedirectToAction("Index");
+            TempData["SuccessMessage"] = "Nota eliminada correctamente.";
+            return RedirectToAction(nameof(Index));
         }
 
         public IActionResult Search(SearchModel srcModel)
         {
-            var result = _notes.Notes.FindAll(n => n.Title.Contains(srcModel.SearchText));
-
-            var sResult = result.Select(n => new Note
-            {
-                Value = n.Value,
-                Id = n.Id,
-                Title = n.Title
-            });
-
-            var model = new SearchModel
-            {
-                SearchText = "",
-                SearchResult = sResult
-            };
-
-            return View(model);
+            return RedirectToAction(nameof(Index), new { searchText = srcModel.SearchText });
         }
 
-        private NoteModel GetNotes()
+        private static NoteModel GetNotes()
         {
             var notes = JsonFile.Read<NoteModel>("Notes", new NoteModel());
             return notes;
         }
 
-        private void SetNotes(NoteModel notes)
+        private static void SetNotes(NoteModel notes)
         {
             JsonFile.Write<NoteModel>("Notes", notes);
         }
