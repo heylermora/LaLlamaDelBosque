@@ -55,6 +55,7 @@ namespace LaLlamaDelBosque.Controllers
             ViewBag.LimitExceededClientTotal = TempData["LimitExceededClientTotal"] as string;
             ViewBag.LimitExceededClientLimit = TempData["LimitExceededClientLimit"] as string;
             ViewBag.ShowFortnightReminder = IsFortnightCollectionWindow(DateTime.Today);
+            ViewBag.FortnightReminderKey = GetFortnightCollectionReminderKey(DateTime.Today);
 
             ViewBag.TotalPages = totalPages;
             ViewBag.CurrentPage = currentPage;
@@ -306,17 +307,21 @@ namespace LaLlamaDelBosque.Controllers
 
         private static bool IsFortnightCollectionWindow(DateTime date)
         {
+            return GetFortnightCollectionReminderKey(date) is not null;
+        }
+
+        private static string? GetFortnightCollectionReminderKey(DateTime date)
+        {
             var day = date.Day;
             var daysInMonth = DateTime.DaysInMonth(date.Year, date.Month);
 
-            var firstWindowStart = 14;
-            var firstWindowEnd = 16;
+            if(day >= 14 && day <= 16)
+                return $"fortnight-collection-{date:yyyy-MM}-midmonth";
 
-            var secondWindowStart = Math.Max(daysInMonth - 2, 1);
-            var secondWindowEnd = daysInMonth;
+            if(day >= Math.Max(daysInMonth - 2, 1) && day <= daysInMonth)
+                return $"fortnight-collection-{date:yyyy-MM}-endmonth";
 
-            return (day >= firstWindowStart && day <= firstWindowEnd)
-                || (day >= secondWindowStart && day <= secondWindowEnd);
+            return null;
         }
 
         private CreditModel GetCredits()

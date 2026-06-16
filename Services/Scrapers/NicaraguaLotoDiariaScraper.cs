@@ -24,7 +24,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		{
 			var awardLines = new List<AwardLine>();
 
-			// NICA: mapa literal "12PM", "3PM", "6PM", "9PM"
+			// NICA: mapa literal "11AM", "3PM", "6PM", "9PM"
 			var hourToLottery = scrapingLotteries
 				.Where(x => x.Type == "NICA" && !string.IsNullOrWhiteSpace(x.Hour))
 				.ToDictionary(x => x.Hour!.Trim().ToUpperInvariant(), x => x);
@@ -57,6 +57,9 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				var hourKey = $"{int.Parse(m.Groups[1].Value)}:00 {m.Groups[2].Value.ToUpperInvariant()}";
 
 				if(!hourToLottery.TryGetValue(hourKey, out var matchedLottery))
+					continue;
+
+				if(matchedLottery.Order == 9 && DateTime.Today.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
 					continue;
 
 				// 2) Número dentro del mismo bloque: .ball h2
