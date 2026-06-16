@@ -1,79 +1,154 @@
-﻿<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-<link rel="stylesheet" href="~/LaLlamaDelBosque.styles.css" asp-append-version="true" />
+﻿<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 
 @model IEnumerable<LaLlamaDelBosque.Models.Credit>
 
-@using System.Web;
-@using Microsoft.AspNetCore.Mvc;
+@using LaLlamaDelBosque.Utils
 
 @{
     ViewData["Title"] = "Créditos de Clientes";
 }
 
-<h1 class="display-4">@ViewData["Title"]</h1>
+<style>
+    @@page {
+        size: A4;
+        margin: 12mm 10mm;
+    }
 
-<div class="container">
-    <div class="row justify-content-md-center">
-        <div class="col-xl-10">
-            <div class="accordion" id="accordionFlushExample">
-                @foreach (var item in Model)
+    body {
+        color: #1f2937;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 11px;
+        line-height: 1.25;
+    }
+
+    .report-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin: 0 0 12px;
+    }
+
+    .credit-report-client {
+        page-break-inside: auto;
+        break-inside: auto;
+        margin-bottom: 14px;
+    }
+
+    .client-title {
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        border-bottom: 0;
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0;
+        padding: 6px 8px;
+        page-break-after: avoid;
+        break-after: avoid;
+    }
+
+    .credit-report-table {
+        border-collapse: collapse;
+        margin: 0;
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    .credit-report-table thead {
+        display: table-header-group;
+    }
+
+    .credit-report-table tfoot {
+        display: table-footer-group;
+    }
+
+    .credit-report-table tr {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .credit-report-table th,
+    .credit-report-table td {
+        border: 1px solid #cbd5e1;
+        padding: 4px 5px;
+        vertical-align: top;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+
+    .col-id { width: 8%; }
+    .col-date { width: 15%; }
+    .col-time { width: 13%; }
+    .col-description { width: 34%; }
+    .col-amount { width: 15%; }
+    .col-cumulative { width: 15%; }
+
+    .money-cell {
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .total-row td {
+        background: #f8fafc;
+        font-weight: 700;
+    }
+
+    .grand-total {
+        border: 1px solid #cbd5e1;
+        margin-top: 18px;
+        padding: 10px;
+        page-break-inside: avoid;
+        text-align: right;
+    }
+
+    .grand-total h2 {
+        font-size: 20px;
+        margin: 4px 0 0;
+    }
+</style>
+
+<h1 class="report-title">@ViewData["Title"]</h1>
+
+@foreach (var item in Model.OrderBy(c => c.Client.Name))
+{
+    var cumulative = 0D;
+    <section class="credit-report-client">
+        <h2 class="client-title">@item.Client.Name</h2>
+        <table class="credit-report-table">
+            <thead>
+                <tr>
+                    <th class="col-id">Id</th>
+                    <th class="col-date">Fecha</th>
+                    <th class="col-time">Hora</th>
+                    <th class="col-description">Descripción</th>
+                    <th class="col-amount money-cell">Precio</th>
+                    <th class="col-cumulative money-cell">Acumulado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach(var line in item.CreditLines.OrderBy(l => l.CreatedDate).ThenBy(l => l.Id))
                 {
-                    var cumulative = 0D;
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th class="align-content-center" colspan="6"><h1>@item.Client.Name</h1></th>
-                            </tr>
-                            <tr>
-                                <th>Id</th>
-                                <th>Fecha</th>
-                                <th>Hora</th>
-                                <th>Descripción</th>
-                                <th>Precio</th>
-                                <th>Acumulado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach(var line in item.CreditLines) 
-                            {
-                                <tr>
-                                    <td>@line.Id</td>
-                                    <td>@line.CreatedDate.ToShortDateString()</td>
-                                    <td>@line.CreatedDate.ToShortTimeString()</td>
-                                    <td>@line.Description</td>
-                                    <td>₡ @line.Amount</td>
-                                    <td class="table-active">@{cumulative += @line.Amount;}₡ @cumulative</td>
-                                </tr>
-                            }
-                            </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="4">
-                                </td>
-                                <td>Total</td>
-                                <td id="TotalSummary">₡ @item.CreditSummary.Total</td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                    cumulative += line.Amount;
+                    <tr>
+                        <td>@line.Id</td>
+                        <td>@line.CreatedDate.ToShortDateString()</td>
+                        <td>@line.CreatedDate.ToShortTimeString()</td>
+                        <td>@line.Description</td>
+                        <td class="money-cell">@line.Amount.ToCRC()</td>
+                        <td class="money-cell">@cumulative.ToCRC()</td>
+                    </tr>
                 }
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th class="align-content-center">
-                                <h1>TOTAL</h1>
-                            </th>
-                        </tr>
-                        <tr>
-                            <th class="align-content-center">
-                                <hr />
-                                <h2>₡ @Model.Sum(m => m.CreditSummary.Total)</h2>
-                            </th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
-        </div>
-    </div>
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="4"></td>
+                    <td>Total</td>
+                    <td class="money-cell">@item.CreditSummary.Total.ToCRC()</td>
+                </tr>
+            </tfoot>
+        </table>
+    </section>
+}
+
+<div class="grand-total">
+    <strong>TOTAL GENERAL</strong>
+    <h2>@Model.Sum(m => m.CreditSummary.Total).ToCRC()</h2>
 </div>
