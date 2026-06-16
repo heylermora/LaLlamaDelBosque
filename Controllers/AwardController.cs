@@ -59,11 +59,13 @@ namespace LaLlamaDelBosque.Controllers
                     award.AwardLines.AddRange(awardLines);
                 }
                 SetAwards(_awards);
+                TempData["SuccessMessage"] = $"Actualización completada. Se registraron {award.AwardLines.Count} resultados encontrados en las fuentes.";
                 return RedirectToAction(nameof(Index));
 			}
 			catch(Exception ex)
 			{
-				return RedirectToAction("Error", "Home", new { errorMsg = ex.Message, errorStack = ex.StackTrace });
+				TempData["ErrorMessage"] = $"No se pudo completar la actualización automática: {ex.Message}. Revise las fuentes oficiales y vuelva a intentarlo.";
+				return RedirectToAction(nameof(Index));
 			}
 		}
 
