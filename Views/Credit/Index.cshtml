@@ -340,6 +340,7 @@
             document.addEventListener("DOMContentLoaded", function () {
                 const showLimitExceededModal = @((!string.IsNullOrWhiteSpace(ViewBag.LimitExceededClientName as string)).ToString().ToLower());
                 const showFortnightReminder = @(((ViewBag.ShowFortnightReminder as bool?) == true).ToString().ToLower());
+                const fortnightReminderKey = '@(ViewBag.FortnightReminderKey ?? string.Empty)';
 
                 if (showLimitExceededModal) {
                     const limitModalElement = document.getElementById("creditLimitAlertModal");
@@ -349,9 +350,12 @@
                     }
                 }
 
-                if (showFortnightReminder) {
+                if (showFortnightReminder && fortnightReminderKey) {
+                    const alreadyShown = localStorage.getItem(fortnightReminderKey) === "shown";
                     const fortnightModalElement = document.getElementById("fortnightCollectionModal");
-                    if (fortnightModalElement) {
+
+                    if (!alreadyShown && fortnightModalElement) {
+                        localStorage.setItem(fortnightReminderKey, "shown");
                         new bootstrap.Modal(fortnightModalElement).show();
                     }
                 }
