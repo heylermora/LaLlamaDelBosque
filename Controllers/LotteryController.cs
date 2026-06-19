@@ -127,12 +127,29 @@ namespace LaLlamaDelBosque.Controllers
 			try
 			{
 				var paper = TempData.Get<Paper>("Paper") ?? new Paper();
-				var selectedNames = (selectedLotteries ?? string.Empty)
-					.Split(",", StringSplitOptions.RemoveEmptyEntries)
-					.Select(x => x.Trim())
+				var selectedNames = new List<string>();
+
+				var selectedFromForm = Request.Form["SelectedLotteries"]
+					.Select(x => x?.Trim())
 					.Where(x => !string.IsNullOrWhiteSpace(x))
-					.Distinct()
+					.Select(x => x!)
 					.ToList();
+
+				if(selectedFromForm.Any())
+				{
+					selectedNames = selectedFromForm
+						.Distinct()
+						.ToList();
+				}
+				else if(!string.IsNullOrWhiteSpace(selectedLotteries))
+				{
+					selectedNames = selectedLotteries
+						.Split(",", StringSplitOptions.RemoveEmptyEntries)
+						.Select(x => x.Trim())
+						.Where(x => !string.IsNullOrWhiteSpace(x))
+						.Distinct()
+						.ToList();
+				}
 				if(selectedNames.Any())
 				{
 					paper.SelectedLotteries = selectedNames;
@@ -163,6 +180,41 @@ namespace LaLlamaDelBosque.Controllers
 					}
 					catch { }
 				}
+
+				if(!selectedNames.Any())
+				{
+					TempData["ErrorMessage"] = "Debe seleccionar al menos un sorteo antes de crear el papelito.";
+					TempData.Put("Paper", paper);
+					return RedirectToAction(nameof(Create), new { cc = true, selectedLotteries = string.Join(",", selectedNames), dateString = drawDate?.ToString("yyyy-MM-dd"), clientId });
+				}
+
+				if(!drawDate.HasValue)
+				{
+					TempData["ErrorMessage"] = "La fecha de sorteo es obligatoria.";
+					TempData.Put("Paper", paper);
+					return RedirectToAction(nameof(Create), new { cc = true, selectedLotteries = string.Join(",", selectedNames), clientId });
+				}
+
+				var validNumbers = paper.Numbers
+					.Where(n => !string.IsNullOrWhiteSpace(n.Value))
+					.Where(n => n.Amount > 0 || n.Busted > 0)
+					.ToList();
+
+				if(!validNumbers.Any())
+				{
+					TempData["ErrorMessage"] = "Debe agregar al menos una línea de números con monto válido.";
+					TempData.Put("Paper", paper);
+					return RedirectToAction(nameof(Create), new { cc = true, selectedLotteries = string.Join(",", selectedNames), dateString = drawDate?.ToString("yyyy-MM-dd"), clientId });
+				}
+
+				if(validNumbers.Any(n => n.Busted > n.Amount))
+				{
+					TempData["ErrorMessage"] = "El reventado no puede ser mayor que el monto en ninguna línea.";
+					TempData.Put("Paper", paper);
+					return RedirectToAction(nameof(Create), new { cc = true, selectedLotteries = string.Join(",", selectedNames), dateString = drawDate?.ToString("yyyy-MM-dd"), clientId });
+				}
+
+				paper.Numbers = validNumbers;
 				var ids = new List<int>();
 				if(paper != null)
 				{
@@ -210,7 +262,7 @@ namespace LaLlamaDelBosque.Controllers
 					SetPapers(_papers);
 				}
 				TempData.Put<Paper>("Paper", null);
-				return RedirectToAction(nameof(Print), new { ids = ids });
+				return RedirectToAction(nameof(Print), new { ids = string.Join(",", ids) });
 			}
 			catch(Exception ex)
 			{
@@ -218,9 +270,24 @@ namespace LaLlamaDelBosque.Controllers
 			}
 		}
 
-		public ActionResult Print(List<int>? ids = null, int? id = null)
+		public ActionResult Print(string? ids = null, int? id = null)
 		{
-			var selectedIds = (ids?.Any() == true) ? ids : (id.HasValue ? new List<int> { id.Value } : null);
+			var selectedIds = new List<int>();
+			if(!string.IsNullOrWhiteSpace(ids))
+			{
+				selectedIds = ids
+					.Split(",", StringSplitOptions.RemoveEmptyEntries)
+					.Select(x => int.TryParse(x.Trim(), out var parsed) ? parsed : (int?)null)
+					.Where(x => x.HasValue)
+					.Select(x => x!.Value)
+					.Distinct()
+					.ToList();
+			}
+			else if(id.HasValue)
+			{
+				selectedIds.Add(id.Value);
+			}
+
 			if(selectedIds == null || !selectedIds.Any()) return BadRequest("No se especificaron IDs válidos.");
 
 			var papers = _papers.Where(p => selectedIds.Contains(p.Id)).ToList();
@@ -231,7 +298,7 @@ namespace LaLlamaDelBosque.Controllers
 
 			ViewData["Date"] = DateTime.Now.ToShortDateString();
 			ViewData["Client"] = _credits.Select(c => c.Client).FirstOrDefault(c => c.Id == paper.ClientId)?.Name;
-			ViewData["Cant"] = selectedIds.Count;
+			ViewData["Cant"] = papers.Count;
 			ViewData["Ids"] = string.Join(", ", papers.Select(p => "#" + p.Id));
 
 			return View(paper);

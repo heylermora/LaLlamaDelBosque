@@ -127,6 +127,18 @@
                                             <h2 class="text-truncate">
                                                 <b style="font-size: 24px">@item.Client.Name</b>
                                             </h2>
+                                            @if(!string.IsNullOrWhiteSpace(item.Client.Identification))
+                                            {
+                                                <p class="card-text text-truncate mb-1">Cédula: @item.Client.Identification</p>
+                                            }
+                                            @if(!string.IsNullOrWhiteSpace(item.Client.Phone))
+                                            {
+                                                <p class="card-text text-truncate mb-1">Tel: @item.Client.Phone</p>
+                                            }
+                                            @if(!string.IsNullOrWhiteSpace(item.Client.Address))
+                                            {
+                                                <p class="card-text text-truncate mb-1">Dirección: @item.Client.Address</p>
+                                            }
                                             <p class="card-text text-truncate">Total: ₡ @item.CreditSummary.Total</p>
                                         </div>
                                     </div>

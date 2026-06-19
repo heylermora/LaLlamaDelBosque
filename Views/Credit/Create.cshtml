@@ -4,40 +4,238 @@
     ViewData["Title"] = "Crear Cliente";
 }
 
-<h1 class="display-6">@ViewData["Title"]</h1>
+<style>
+    .client-create-shell { max-width: 980px; margin: 0 auto; }
+    .client-step-card { border: 1px solid #e8eef7; border-radius: 18px; overflow: hidden; }
+    .client-step-header { background: linear-gradient(135deg, #eff6ff, #ffffff); border-bottom: 1px solid #e8eef7; }
+    .step-pill { width: 34px; height: 34px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; }
+    .step-pill.active { background: #0d6efd; color: #fff; }
+    .step-pill.pending { background: #eaf0f8; color: #41506b; }
+    .verification-panel { background: #f8fbff; border: 1px dashed #b8c9e6; border-radius: 14px; }
+    .form-control:focus { box-shadow: 0 0 0 .2rem rgba(13,110,253,.13); }
+</style>
 
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label class="control-label">Nombre</label>
-                <input asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label class="control-label">Teléfono</label>
-                <input asp-for="Phone" class="form-control" placeholder="50688888888" value="506" />
-                <span asp-validation-for="Phone" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label class="control-label">Límite</label>
-                <input asp-for="Limit" class="form-control" />
-                <span asp-validation-for="Limit" class="text-danger"></span>
-            </div>
-            <hr />
-            <div class="form-group">
-                <input type="submit" value="Crear" class="btn btn-primary"/>
-                &nbsp;&nbsp;&nbsp;
-                <a asp-action="Index" style="color: var(--dark);">Volver</a>
-            </div>
-        </form>
+<div class="client-create-shell">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h1 class="display-6 fw-bold mb-1">@ViewData["Title"]</h1>
+            <p class="text-muted mb-0">Primero verifica cédula y teléfono; luego completa los datos del cliente.</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
     </div>
+
+    <form asp-action="Create" id="clientCreateForm" class="card shadow-sm client-step-card">
+        <div class="client-step-header p-3">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="step-pill active" id="stepOnePill">1</span>
+                    <span class="fw-semibold">Verificación</span>
+                </div>
+                <div class="text-muted">→</div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="step-pill pending" id="stepTwoPill">2</span>
+                    <span class="fw-semibold text-muted" id="stepTwoLabel">Información completa</span>
+                </div>
+                <div class="text-muted">→</div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="step-pill pending" id="stepThreePill">3</span>
+                    <span class="fw-semibold text-muted" id="stepThreeLabel">Pedido</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body p-4">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <section id="verificationStep">
+                <div class="verification-panel p-3 mb-3">
+                    <h5 class="fw-bold mb-1">Datos para verificar</h5>
+                    <p class="text-muted small mb-0">La cédula y el teléfono permiten detectar si el cliente ya existe o si el número no es válido.</p>
+                </div>
+                <div class="row g-3">
+                    <div class="form-group col-md-6">
+                        <label asp-for="Identification" class="form-label fw-semibold">Cédula</label>
+                        <input asp-for="Identification" class="form-control form-control-lg" inputmode="numeric" placeholder="Ej: 101110111" />
+                        <span asp-validation-for="Identification" class="text-danger"></span>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label asp-for="Phone" class="form-label fw-semibold">Teléfono</label>
+                        <input asp-for="Phone" class="form-control form-control-lg" inputmode="numeric" placeholder="50688888888" />
+                        <span asp-validation-for="Phone" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <button type="button" class="btn btn-primary px-4" id="continueClientButton">Continuar</button>
+                </div>
+            </section>
+
+            <section id="detailsStep" style="display:none;">
+                <div class="verification-panel p-3 mb-3">
+                    <h5 class="fw-bold mb-1">Información del cliente</h5>
+                    <p class="text-muted small mb-0">Completa los datos requeridos para crear el cliente con crédito.</p>
+                </div>
+                <div class="row g-3">
+                    <div class="form-group col-md-7">
+                        <label asp-for="Name" class="form-label fw-semibold">Nombre completo</label>
+                        <input asp-for="Name" class="form-control" autocomplete="name" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                    <div class="form-group col-md-5">
+                        <label asp-for="Limit" class="form-label fw-semibold">Límite</label>
+                        <input asp-for="Limit" class="form-control" inputmode="decimal" placeholder="Monto máximo de crédito" />
+                        <span asp-validation-for="Limit" class="text-danger"></span>
+                    </div>
+                    <div class="form-group col-12">
+                        <label asp-for="Address" class="form-label fw-semibold">Dirección</label>
+                        <textarea asp-for="Address" class="form-control" rows="3" placeholder="Provincia, cantón, distrito y señas"></textarea>
+                        <span asp-validation-for="Address" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between gap-2 mt-4">
+                    <button type="button" class="btn btn-outline-secondary" id="backToVerificationButton">Atrás</button>
+                    <button type="button" class="btn btn-primary px-4" id="continueOrderButton">Continuar</button>
+                </div>
+            </section>
+
+            <section id="orderStep" style="display:none;">
+                <div class="verification-panel p-3 mb-3">
+                    <h5 class="fw-bold mb-1">Pedido</h5>
+                    <p class="text-muted small mb-0">Registra únicamente los datos del pedido: producto, cantidad y monto.</p>
+                </div>
+                <div class="row g-3">
+                    <div class="form-group col-md-5">
+                        <label for="orderProduct" class="form-label fw-semibold">Producto</label>
+                        <input id="orderProduct" name="orderProduct" class="form-control" value="@ViewData["OrderProduct"]" placeholder="Producto solicitado" />
+                        <span class="text-danger">@Html.ValidationMessage("OrderProduct")</span>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label for="orderQuantity" class="form-label fw-semibold">Cantidad</label>
+                        <input id="orderQuantity" name="orderQuantity" class="form-control" inputmode="numeric" value="@ViewData["OrderQuantity"]" placeholder="1" />
+                        <span class="text-danger">@Html.ValidationMessage("OrderQuantity")</span>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="orderUnitPrice" class="form-label fw-semibold">Precio unitario</label>
+                        <input id="orderUnitPrice" name="orderUnitPrice" class="form-control" inputmode="decimal" value="@ViewData["OrderUnitPrice"]" placeholder="0" />
+                        <span class="text-danger">@Html.ValidationMessage("OrderUnitPrice")</span>
+                    </div>
+                    <div class="form-group col-12">
+                        <label for="orderNotes" class="form-label fw-semibold">Detalle / notas</label>
+                        <textarea id="orderNotes" name="orderNotes" class="form-control" rows="2" placeholder="Color, medidas, entrega, referencias...">@ViewData["OrderNotes"]</textarea>
+                    </div>
+                    <div class="col-12">
+                        <div class="alert alert-info mb-0">
+                            Total pedido: <strong id="orderTotalPreview">₡ 0</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between gap-2 mt-4">
+                    <button type="button" class="btn btn-outline-secondary" id="backToDetailsButton">Atrás</button>
+                    <input type="submit" value="Crear cliente" class="btn btn-primary px-4" />
+                </div>
+            </section>
+        </div>
+    </form>
 </div>
-
-
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        const verificationStep = document.getElementById('verificationStep');
+        const detailsStep = document.getElementById('detailsStep');
+        const stepOnePill = document.getElementById('stepOnePill');
+        const stepTwoPill = document.getElementById('stepTwoPill');
+        const stepTwoLabel = document.getElementById('stepTwoLabel');
+        const stepThreePill = document.getElementById('stepThreePill');
+        const stepThreeLabel = document.getElementById('stepThreeLabel');
+        const orderStep = document.getElementById('orderStep');
+        const identificationInput = document.getElementById('Identification');
+        const phoneInput = document.getElementById('Phone');
+
+        function showDetailsStep() {
+            verificationStep.style.display = 'none';
+            orderStep.style.display = 'none';
+            detailsStep.style.display = 'block';
+            stepOnePill.classList.remove('active');
+            stepOnePill.classList.add('pending');
+            stepTwoPill.classList.remove('pending');
+            stepTwoPill.classList.add('active');
+            stepThreePill.classList.remove('active');
+            stepThreePill.classList.add('pending');
+            stepTwoLabel.classList.remove('text-muted');
+            stepThreeLabel.classList.add('text-muted');
+            document.getElementById('Name')?.focus();
+        }
+
+        function showVerificationStep() {
+            detailsStep.style.display = 'none';
+            orderStep.style.display = 'none';
+            verificationStep.style.display = 'block';
+            stepTwoPill.classList.remove('active');
+            stepTwoPill.classList.add('pending');
+            stepThreePill.classList.remove('active');
+            stepThreePill.classList.add('pending');
+            stepOnePill.classList.remove('pending');
+            stepOnePill.classList.add('active');
+            stepTwoLabel.classList.add('text-muted');
+            stepThreeLabel.classList.add('text-muted');
+            identificationInput?.focus();
+        }
+
+        function showOrderStep() {
+            verificationStep.style.display = 'none';
+            detailsStep.style.display = 'none';
+            orderStep.style.display = 'block';
+            stepOnePill.classList.remove('active');
+            stepOnePill.classList.add('pending');
+            stepTwoPill.classList.remove('active');
+            stepTwoPill.classList.add('pending');
+            stepThreePill.classList.remove('pending');
+            stepThreePill.classList.add('active');
+            stepTwoLabel.classList.remove('text-muted');
+            stepThreeLabel.classList.remove('text-muted');
+            document.getElementById('orderProduct')?.focus();
+            updateOrderTotal();
+        }
+
+        document.getElementById('continueClientButton')?.addEventListener('click', function () {
+            const identificationOk = /^[0-9]{9,12}$/.test(identificationInput?.value || '');
+            const phoneOk = /^506[0-9]{8}$/.test(phoneInput?.value || '');
+
+            if (!identificationOk || !phoneOk) {
+                document.getElementById('clientCreateForm')?.reportValidity();
+                if (!identificationOk) identificationInput?.focus();
+                else phoneInput?.focus();
+                return;
+            }
+
+            showDetailsStep();
+        });
+
+        document.getElementById('continueOrderButton')?.addEventListener('click', showOrderStep);
+        document.getElementById('backToVerificationButton')?.addEventListener('click', showVerificationStep);
+        document.getElementById('backToDetailsButton')?.addEventListener('click', showDetailsStep);
+
+        function updateOrderTotal() {
+            const quantity = Number(document.getElementById('orderQuantity')?.value || 0);
+            const unitPrice = Number(document.getElementById('orderUnitPrice')?.value || 0);
+            const total = quantity > 0 && unitPrice > 0 ? quantity * unitPrice : 0;
+            document.getElementById('orderTotalPreview').textContent = total.toLocaleString('es-CR', { style: 'currency', currency: 'CRC' });
+        }
+
+        document.getElementById('orderQuantity')?.addEventListener('input', updateOrderTotal);
+        document.getElementById('orderUnitPrice')?.addEventListener('input', updateOrderTotal);
+        updateOrderTotal();
+
+        if (document.querySelector('[data-valmsg-for="Name"]')?.textContent.trim()
+            || document.querySelector('[data-valmsg-for="Address"]')?.textContent.trim()
+            || document.querySelector('[data-valmsg-for="Limit"]')?.textContent.trim()) {
+            showDetailsStep();
+        }
+
+        if (document.querySelector('[data-valmsg-for="OrderProduct"]')?.textContent.trim()
+            || document.querySelector('[data-valmsg-for="OrderQuantity"]')?.textContent.trim()
+            || document.querySelector('[data-valmsg-for="OrderUnitPrice"]')?.textContent.trim()) {
+            showOrderStep();
+        }
+    </script>
 }

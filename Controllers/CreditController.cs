@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Rotativa.AspNetCore;
 using Rotativa.AspNetCore.Options;
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace LaLlamaDelBosque.Controllers
 {
@@ -12,6 +13,8 @@ namespace LaLlamaDelBosque.Controllers
 
     public class CreditController: Controller
     {
+        private static readonly Regex CostaRicaPhonePattern = new(@"^506[0-9]{8}$", RegexOptions.Compiled);
+        private static readonly Regex IdentificationPattern = new(@"^[0-9]{9,12}$", RegexOptions.Compiled);
         private CreditModel _credits;
 
         public CreditController()
@@ -38,7 +41,11 @@ namespace LaLlamaDelBosque.Controllers
                 }
                 else
                 {
-					credits = credits.Where(s => s.Client.Name.ToLower().Contains(searchString.ToLower())).ToList();
+					credits = credits.Where(s =>
+                        s.Client.Name.ToLower().Contains(searchString.ToLower()) ||
+                        s.Client.Phone.Contains(searchString) ||
+                        (!string.IsNullOrWhiteSpace(s.Client.Identification) && s.Client.Identification.Contains(searchString))
+                    ).ToList();
 				}
 			}
             credits = credits.OrderBy(c => c.Client.Name).ToList();
@@ -77,7 +84,7 @@ namespace LaLlamaDelBosque.Controllers
         // GET: CreditController/Create
         public ActionResult Create()
         {
-            return View();
+            return View(new Client { Phone = "506" });
         }
 
         // POST: CreditController/Create
@@ -87,16 +94,123 @@ namespace LaLlamaDelBosque.Controllers
         {
             try
             {
+                var identification = collection["identification"].ToString().Trim();
+                var phone = collection["phone"].ToString().Trim();
+                var name = collection["name"].ToString().Trim();
+                var address = collection["address"].ToString().Trim();
+                var limitValue = collection["limit"].ToString().Trim();
+                var orderProduct = collection["orderProduct"].ToString().Trim();
+                var orderQuantityValue = collection["orderQuantity"].ToString().Trim();
+                var orderUnitPriceValue = collection["orderUnitPrice"].ToString().Trim();
+                var orderNotes = collection["orderNotes"].ToString().Trim();
+                ViewData["OrderProduct"] = orderProduct;
+                ViewData["OrderQuantity"] = orderQuantityValue;
+                ViewData["OrderUnitPrice"] = orderUnitPriceValue;
+                ViewData["OrderNotes"] = orderNotes;
+
+                var client = new Client
+                {
+                    Identification = identification,
+                    Phone = phone,
+                    Name = name,
+                    Address = address
+                };
+
+                if(!IdentificationPattern.IsMatch(identification))
+                {
+                    ModelState.AddModelError(nameof(Client.Identification), "La cédula debe tener entre 9 y 12 dígitos.");
+                }
+
+                if(!CostaRicaPhonePattern.IsMatch(phone))
+                {
+                    ModelState.AddModelError(nameof(Client.Phone), "El teléfono debe iniciar con 506 y tener 11 dígitos.");
+                }
+
+                if(_credits.Credits.Any(c => !string.IsNullOrWhiteSpace(c.Client.Identification) && c.Client.Identification == identification))
+                {
+                    ModelState.AddModelError(nameof(Client.Identification), "Ya existe un cliente con esta cédula.");
+                }
+
+                if(_credits.Credits.Any(c => c.Client.Phone == phone))
+                {
+                    ModelState.AddModelError(nameof(Client.Phone), "Ya existe un cliente con este teléfono.");
+                }
+
+                if(string.IsNullOrWhiteSpace(name))
+                {
+                    ModelState.AddModelError(nameof(Client.Name), "El nombre es obligatorio.");
+                }
+
+                if(string.IsNullOrWhiteSpace(address))
+                {
+                    ModelState.AddModelError(nameof(Client.Address), "La dirección es obligatoria.");
+                }
+
+                if(!double.TryParse(limitValue, out var limit))
+                {
+                    ModelState.AddModelError(nameof(Client.Limit), "El límite debe ser un monto válido.");
+                }
+
+                var hasOrderData = !string.IsNullOrWhiteSpace(orderProduct)
+                    || !string.IsNullOrWhiteSpace(orderQuantityValue)
+                    || !string.IsNullOrWhiteSpace(orderUnitPriceValue)
+                    || !string.IsNullOrWhiteSpace(orderNotes);
+                var orderQuantity = 0;
+                var orderUnitPrice = 0D;
+
+                if(hasOrderData)
+                {
+                    if(string.IsNullOrWhiteSpace(orderProduct))
+                    {
+                        ModelState.AddModelError("OrderProduct", "El producto del pedido es obligatorio.");
+                    }
+
+                    if(!int.TryParse(orderQuantityValue, out orderQuantity) || orderQuantity <= 0)
+                    {
+                        ModelState.AddModelError("OrderQuantity", "La cantidad debe ser mayor a 0.");
+                    }
+
+                    if(!double.TryParse(orderUnitPriceValue, out orderUnitPrice) || orderUnitPrice <= 0)
+                    {
+                        ModelState.AddModelError("OrderUnitPrice", "El precio unitario debe ser mayor a 0.");
+                    }
+                }
+
+                if(!ModelState.IsValid)
+                {
+                    return View(client);
+                }
+
                 var credit = new Credit()
                 {
                     Client = new Client()
                     {
                         Id = _credits.Credits.LastOrDefault()?.Client.Id + 1 ?? 1,
-                        Name = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(collection["name"]),
-                        Phone = collection["phone"],
-                        Limit = double.Parse(collection["limit"])
+                        Identification = identification,
+                        Name = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(name),
+                        Phone = phone,
+                        Address = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(address),
+                        Limit = limit
                     }
                 };
+
+                if(hasOrderData)
+                {
+                    var description = $"Pedido: {CultureInfo.InvariantCulture.TextInfo.ToTitleCase(orderProduct)} x {orderQuantity}";
+                    if(!string.IsNullOrWhiteSpace(orderNotes))
+                    {
+                        description += $" - {orderNotes}";
+                    }
+
+                    credit.CreditLines.Add(new CreditLine
+                    {
+                        Id = 1,
+                        CreatedDate = DateTime.Now,
+                        Description = description,
+                        Amount = orderQuantity * orderUnitPrice
+                    });
+                    credit.CreditSummary.Total = orderQuantity * orderUnitPrice;
+                }
 
                 _credits.Credits.Add(credit);
                 SetCredits(_credits);
@@ -119,8 +233,10 @@ namespace LaLlamaDelBosque.Controllers
                 credit.Client = new Client()
                 {
                     Id = int.Parse(id),
+                    Identification = collection["identification"],
                     Name = collection["name"],
                     Phone = collection["phone"],
+                    Address = collection["address"],
                     Limit = !string.IsNullOrEmpty(collection["limit"]) ? double.Parse(collection["limit"]) : null
                 };
                 SetCredits(_credits);

@@ -10,10 +10,13 @@ namespace LaLlamaDelBosque.Models
     public class Client
     {
         public int Id { get; set; }
+        [RegularExpression(@"[0-9]{9,12}", ErrorMessage = "La cédula debe tener entre 9 y 12 dígitos.")]
+        public string Identification { get; set; } = "";
         public string Name { get; set; } = "";
 
         [RegularExpression(@"506[0-9]{8}", ErrorMessage = "Este número no es válido.")]
         public string Phone { get; set; } = "";
+        public string Address { get; set; } = "";
         public double? Limit { get; set; }
 
     }
