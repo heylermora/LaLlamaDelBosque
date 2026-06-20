@@ -59,7 +59,11 @@ namespace LaLlamaDelBosque.Controllers
                     award.AwardLines.AddRange(awardLines);
                 }
                 SetAwards(_awards);
-                TempData["SuccessMessage"] = $"Actualización completada. Se registraron {award.AwardLines.Count} resultados encontrados en las fuentes.";
+                var foundCount = award.AwardLines.Count(x => !x.IsMissing);
+                var missingCount = award.AwardLines.Count(x => x.IsMissing);
+                TempData["SuccessMessage"] = $"Actualización completada. Se registraron {foundCount} resultados encontrados en las fuentes.";
+                if(missingCount > 0)
+                    TempData["WarningMessage"] = $"Hay {missingCount} sorteos programados que no se encontraron. Revise las filas marcadas como 'No encontrado' para ver el motivo.";
                 return RedirectToAction(nameof(Index));
 			}
 			catch(Exception ex)

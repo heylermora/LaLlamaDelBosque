@@ -18,6 +18,8 @@ namespace LaLlamaDelBosque.Models
         public double Award { get; set; }
         public bool IsBusted { get; set; }
         public int MatchCount { get; set; }
+        public string MissingReason { get; set; } = "";
+        public bool IsMissing => !string.IsNullOrWhiteSpace(MissingReason);
     }
     public class Award
     {

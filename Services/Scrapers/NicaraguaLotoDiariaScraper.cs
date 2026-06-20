@@ -10,7 +10,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
 		private static readonly Regex SorteoHour = new(@"SORTEO\s+(\d{1,2})\s*([AP]M)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		private static readonly Regex MultiXRegex =	new(@"\(Multi\s*X\)\s*=\s*([A-Za-z0-9]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		private static readonly Regex PostedResult = new(@"SORTEO\s+(\d{1,2})\s*([AP]M)\s+(\d{2}|[—-]|XX)\s+\(Más\s*1\)\s*=\s*[^│|]+[│|]\s*\(Multi\s*X\)\s*=\s*([A-Za-z0-9—-]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		private static readonly Regex PostedResult = new(@"SORTEO\s+(\d{1,2})\s*([AP]M)\s+(\d{2}|XX|[-—]+).*?\(M[aá]s\s*1\)\s*=.*?(?:[│|]\s*)?\(Multi\s*X\)\s*=\s*([A-Za-z0-9—-]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
 		public NicaraguaLotoDiariaScraper(HttpClient httpClient)
 			: base(httpClient, "https://nicatiempos.com/")

@@ -44,8 +44,30 @@ namespace LaLlamaDelBosque.Services
                 award.AwardLines.AddRange(awardLines);
             }
 
+            AddMissingExpectedAwardLines(award);
             award.AwardLines = award.AwardLines.OrderBy(x => x.Order).ToList();
             return award;
+        }
+
+        private void AddMissingExpectedAwardLines(Award award)
+        {
+            var now = DateTime.Now.TimeOfDay;
+            var todayName = DateTime.Today.DayOfWeek.ToString();
+            var foundOrders = award.AwardLines.Select(x => x.Order).ToHashSet();
+
+            var missingLines = _lotteries
+                .Where(lottery => lottery.Hour <= now)
+                .Where(lottery => lottery.Days == null || lottery.Days.Count == 0 || lottery.Days.Contains(todayName))
+                .Where(lottery => !foundOrders.Contains(lottery.Order))
+                .Select(lottery => new AwardLine
+                {
+                    Order = lottery.Order,
+                    Description = lottery.Name,
+                    Number = "No encontrado",
+                    MissingReason = $"No se encontró resultado en la fuente para el sorteo programado a las {DateTime.Today.Add(lottery.Hour):h:mm tt}. Puede que la fuente no haya publicado el resultado, haya cambiado el formato o el scraper no haya hecho match."
+                });
+
+            award.AwardLines.AddRange(missingLines);
         }
 
         private static List<ScrapingLottery> GetScrapingLotteries()

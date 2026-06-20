@@ -63,6 +63,14 @@
         </div>
     }
 
+    @if (TempData["WarningMessage"] is string warningMessage)
+    {
+        <div class="alert alert-warning border-0 rounded-4 shadow-sm d-flex align-items-start gap-3" role="alert">
+            <span class="material-icons">warning</span>
+            <div>@warningMessage</div>
+        </div>
+    }
+
     @if (TempData["ErrorMessage"] is string errorMessage)
     {
         <div class="alert alert-warning border-0 rounded-4 shadow-sm d-flex align-items-start gap-3" role="alert">
@@ -235,16 +243,31 @@
                                                     </td>
                                                 </tr>
 
-                                                <tr>
+                                                <tr class="@(line.IsMissing ? "table-warning" : "")">
                                                     <td class="fw-semibold">@line.Order</td>
-                                                    <td>@line.Description</td>
+                                                    <td>
+                                                        <div>@line.Description</div>
+                                                        @if (line.IsMissing)
+                                                        {
+                                                            <div class="small text-muted">@line.MissingReason</div>
+                                                        }
+                                                    </td>
                                                     <td class="text-center">
                                                         @if (line.IsBusted)
                                                         {
                                                             <span class="badge rounded-pill text-bg-danger px-2">R</span>
                                                         }
                                                     </td>
-                                                    <td>@line.Number</td>
+                                                    <td>
+                                                        @if (line.IsMissing)
+                                                        {
+                                                            <span class="badge rounded-pill text-bg-warning px-3 py-2">@line.Number</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            @line.Number
+                                                        }
+                                                    </td>
                                                     <td>@line.Amount.ToCRC()</td>
                                                     <td>@line.Busted.ToCRC()</td>
                                                     <td>@line.TimesAmount</td>
