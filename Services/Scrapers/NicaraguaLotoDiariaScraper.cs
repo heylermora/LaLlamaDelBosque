@@ -10,6 +10,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
 		private static readonly Regex SorteoHour = new(@"SORTEO\s+(\d{1,2})\s*([AP]M)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		private static readonly Regex MultiXRegex =	new(@"\(Multi\s*X\)\s*=\s*([A-Za-z0-9]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		private static readonly Regex PostedResult = new(@"SORTEO\s+(\d{1,2})\s*([AP]M)\s+(\d{2}|[—-]|XX)\s+\(Más\s*1\)\s*=\s*[^│|]+[│|]\s*\(Multi\s*X\)\s*=\s*([A-Za-z0-9—-]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
 		public NicaraguaLotoDiariaScraper(HttpClient httpClient)
 			: base(httpClient, "https://nicatiempos.com/")
@@ -24,10 +25,10 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		{
 			var awardLines = new List<AwardLine>();
 
-			// NICA: mapa literal "11AM", "3PM", "6PM", "9PM"
+			// NICA: el JSON usa horas con formato "11:00 AM", "3:00 PM", "6:00 PM", "9:00 PM".
 			var hourToLottery = scrapingLotteries
 				.Where(x => x.Type == "NICA" && !string.IsNullOrWhiteSpace(x.Hour))
-				.ToDictionary(x => x.Hour!.Trim().ToUpperInvariant(), x => x);
+				.ToDictionary(x => NormalizeHourKey(x.Hour!), x => x);
 
 			if(hourToLottery.Count == 0) return awardLines;
 
@@ -43,7 +44,8 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				"//div[contains(@class,'e-loop-item')]//div[contains(@class,'e-con-full') and contains(@class,'e-con') and contains(@class,'e-child')][.//h2[contains(.,'SORTEO')]]"
 			);
 
-			if(sectionNodes == null || sectionNodes.Count == 0) return awardLines;
+			if(sectionNodes == null || sectionNodes.Count == 0)
+				return ProcessPlainText(doc, hourToLottery, orderToName, papers);
 
 			foreach(var section in sectionNodes)
 			{
@@ -54,7 +56,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				var m = SorteoHour.Match(Clean(hourH2.InnerText));
 				if(!m.Success) continue;
 
-				var hourKey = $"{int.Parse(m.Groups[1].Value)}:00 {m.Groups[2].Value.ToUpperInvariant()}";
+				var hourKey = NormalizeHourKey(m.Groups[1].Value, m.Groups[2].Value);
 
 				if(!hourToLottery.TryGetValue(hourKey, out var matchedLottery))
 					continue;
@@ -96,8 +98,52 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				if(line != null) awardLines.Add(line);
 			}
 
+			return awardLines.Count > 0 ? awardLines : ProcessPlainText(doc, hourToLottery, orderToName, papers);
+		}
+
+		private List<AwardLine> ProcessPlainText(
+			HtmlDocument doc,
+			Dictionary<string, ScrapingLottery> hourToLottery,
+			Dictionary<int, string> orderToName,
+			List<Paper> papers)
+		{
+			var awardLines = new List<AwardLine>();
+			var pageText = Clean(doc.DocumentNode.InnerText);
+
+			foreach(Match match in PostedResult.Matches(pageText))
+			{
+				var hourKey = NormalizeHourKey(match.Groups[1].Value, match.Groups[2].Value);
+				if(!hourToLottery.TryGetValue(hourKey, out var matchedLottery))
+					continue;
+
+				if(matchedLottery.Order == 9 && DateTime.Today.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
+					continue;
+
+				var numberText = match.Groups[3].Value;
+				if(!TwoDigits.IsMatch(numberText))
+					continue;
+
+				var order = matchedLottery.Order;
+				var description = orderToName.TryGetValue(order, out var name) ? name : string.Empty;
+				var multiX = match.Groups[4].Value.ToUpperInvariant();
+				var isBusted = Constants.BustedList.Contains(multiX) || Constants.NicaBustedMultipliers.ContainsKey(multiX);
+				double? timesBusted = null;
+
+				if(Constants.NicaBustedMultipliers.TryGetValue(multiX, out var mappedTimesBusted))
+					timesBusted = mappedTimesBusted;
+
+				var line = CreateAwardLine(order, description, numberText, isBusted, papers, timesBusted);
+				if(line != null) awardLines.Add(line);
+			}
+
 			return awardLines;
 		}
+
+		private static string NormalizeHourKey(string hour) =>
+			Clean(hour).ToUpperInvariant();
+
+		private static string NormalizeHourKey(string hour, string meridiem) =>
+			$"{int.Parse(hour)}:00 {meridiem.ToUpperInvariant()}";
 
 		private static string Clean(string? s) =>
 			Regex.Replace(HtmlEntity.DeEntitize(s ?? "").Replace('\u00A0', ' '), @"\s+", " ").Trim();
