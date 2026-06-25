@@ -35,6 +35,24 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+IWebHostEnvironment env = app.Environment;
+string? configuredWebRootPath = env.WebRootPath;
+string webRootPath;
+if (string.IsNullOrWhiteSpace(configuredWebRootPath))
+{
+    webRootPath = Path.Combine(env.ContentRootPath, "wwwroot");
+    if (!Directory.Exists(webRootPath))
+    {
+        throw new DirectoryNotFoundException($"Web root directory was not found at '{webRootPath}'. Ensure wwwroot is copied to the published output.");
+    }
+
+    env.WebRootPath = webRootPath;
+}
+else
+{
+    webRootPath = configuredWebRootPath;
+}
+
 app.UseExceptionHandler("/Home/Error");
 app.UseHsts();
 
@@ -55,6 +73,20 @@ app.MapControllerRoute(
     name: "schedule",
     pattern: "{controller=Schedule}/{action=Schedule}/{id?}");
 
-IWebHostEnvironment env = app.Environment;
-RotativaConfiguration.Setup(env.WebRootPath, "Rotativa");
+string rotativaRelativePath = "Rotativa";
+string rotativaPath = Path.Combine(webRootPath, rotativaRelativePath);
+
+if (!Directory.Exists(rotativaPath))
+{
+    throw new DirectoryNotFoundException($"Rotativa wkhtmltopdf directory was not found at '{rotativaPath}'. Ensure wwwroot/Rotativa is copied to the published output.");
+}
+
+string wkhtmltopdfFileName = OperatingSystem.IsWindows() ? "wkhtmltopdf.exe" : "wkhtmltopdf";
+string wkhtmltopdfPath = Path.Combine(rotativaPath, wkhtmltopdfFileName);
+if (!File.Exists(wkhtmltopdfPath))
+{
+    throw new FileNotFoundException($"The platform-specific wkhtmltopdf executable '{wkhtmltopdfFileName}' was not found in '{rotativaPath}'. Ensure it is included in wwwroot/Rotativa and copied to the published output.", wkhtmltopdfPath);
+}
+
+RotativaConfiguration.Setup(webRootPath, rotativaRelativePath);
 app.Run();
