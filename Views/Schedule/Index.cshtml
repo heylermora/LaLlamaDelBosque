@@ -1,8 +1,8 @@
-﻿<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
 @model IEnumerable<LaLlamaDelBosque.Models.Schedule>
 
-@using System.Web;
+@using System.Net
 @using Microsoft.AspNetCore.Mvc;
 
 @{
@@ -19,7 +19,7 @@
     </button>
     <!-- Send -->
     <button type="button" class="btn"
-            onclick="window.open('@HttpUtility.HtmlDecode(String.Format(ConfigurationModel.ScheduleMessage, $"https://api.whatsapp.com/send/?phone=83232377&text=", TempData["Message"]))')">
+            onclick="window.open('@WebUtility.HtmlDecode(String.Format(ConfigurationModel.ScheduleMessage, $"https://api.whatsapp.com/send/?phone=83232377&text=", TempData["Message"]))')">
         <span class="material-icons icon icon-success">send</span>
     </button>
 </div>
