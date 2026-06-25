@@ -81,14 +81,11 @@ if (!Directory.Exists(rotativaPath))
     throw new DirectoryNotFoundException($"Rotativa wkhtmltopdf directory was not found at '{rotativaPath}'. Ensure wwwroot/Rotativa is copied to the published output.");
 }
 
-string wkhtmltopdfPath = Path.Combine(rotativaPath, OperatingSystem.IsWindows() ? "wkhtmltopdf.exe" : "wkhtmltopdf");
+string wkhtmltopdfFileName = OperatingSystem.IsWindows() ? "wkhtmltopdf.exe" : "wkhtmltopdf";
+string wkhtmltopdfPath = Path.Combine(rotativaPath, wkhtmltopdfFileName);
 if (!File.Exists(wkhtmltopdfPath))
 {
-    string windowsWkhtmltopdfPath = Path.Combine(rotativaPath, "wkhtmltopdf.exe");
-    if (!File.Exists(windowsWkhtmltopdfPath))
-    {
-        throw new FileNotFoundException($"wkhtmltopdf was not found in '{rotativaPath}'. Ensure the wkhtmltopdf executable is included in wwwroot/Rotativa and copied to the published output.", wkhtmltopdfPath);
-    }
+    throw new FileNotFoundException($"The platform-specific wkhtmltopdf executable '{wkhtmltopdfFileName}' was not found in '{rotativaPath}'. Ensure it is included in wwwroot/Rotativa and copied to the published output.", wkhtmltopdfPath);
 }
 
 RotativaConfiguration.Setup(webRootPath, rotativaRelativePath);
