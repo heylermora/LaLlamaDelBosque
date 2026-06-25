@@ -1,5 +1,3 @@
-﻿using System.Web.Mvc;
-
 namespace LaLlamaDelBosque.Models
 {
     public class AwardModel
