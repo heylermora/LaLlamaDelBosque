@@ -364,3 +364,14 @@ FodyWeavers.xsd
 
 # Excluded Folders
 Data/
+Data/*.json
+/Data/Auth.json
+/Data/Awards.json
+/Data/Credits.json
+/Data/Lotteries.json
+/Data/Notes.json
+/Data/Papers.json
+/Data/Schedules.json
+/Data/ScrapingLotteries.json
+/Data/Setting.json
+/Data/Workers.json
