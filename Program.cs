@@ -35,6 +35,24 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+IWebHostEnvironment env = app.Environment;
+string? configuredWebRootPath = env.WebRootPath;
+string webRootPath;
+if (string.IsNullOrWhiteSpace(configuredWebRootPath))
+{
+    webRootPath = Path.Combine(env.ContentRootPath, "wwwroot");
+    if (!Directory.Exists(webRootPath))
+    {
+        throw new DirectoryNotFoundException($"Web root directory was not found at '{webRootPath}'. Ensure wwwroot is copied to the published output.");
+    }
+
+    env.WebRootPath = webRootPath;
+}
+else
+{
+    webRootPath = configuredWebRootPath;
+}
+
 app.UseExceptionHandler("/Home/Error");
 app.UseHsts();
 
@@ -55,9 +73,8 @@ app.MapControllerRoute(
     name: "schedule",
     pattern: "{controller=Schedule}/{action=Schedule}/{id?}");
 
-IWebHostEnvironment env = app.Environment;
-string rotativaRelativePath = Path.Combine("wwwroot", "Rotativa");
-string rotativaPath = Path.Combine(env.ContentRootPath, rotativaRelativePath);
+string rotativaRelativePath = "Rotativa";
+string rotativaPath = Path.Combine(webRootPath, rotativaRelativePath);
 
 if (!Directory.Exists(rotativaPath))
 {
@@ -74,5 +91,5 @@ if (!File.Exists(wkhtmltopdfPath))
     }
 }
 
-RotativaConfiguration.Setup(env.ContentRootPath, rotativaRelativePath);
+RotativaConfiguration.Setup(webRootPath, rotativaRelativePath);
 app.Run();
