@@ -546,10 +546,12 @@ namespace LaLlamaDelBosque.Controllers
 
 		private void UpdateLotteries(DateTime date)
 		{
+			var drawDate = date.Date;
+			var isToday = drawDate == DateTime.Today;
+
 			_lotteries = _lotteries
-				.Where(l => (date.ToShortDateString() == DateTime.Today.ToShortDateString() ?
-							 l.Hour.Add(TimeSpan.FromMinutes(-10)) > DateTime.Now.TimeOfDay : true) &&
-							(l.Days?.Contains(date.DayOfWeek.ToString()) ?? true))
+				.Where(l => (!isToday || l.Hour.Add(TimeSpan.FromMinutes(-10)) > DateTime.Now.TimeOfDay) &&
+							(l.Days?.Contains(drawDate.DayOfWeek.ToString()) ?? true))
 				.OrderBy(l => l.Hour)
 				.ToList();
 		}

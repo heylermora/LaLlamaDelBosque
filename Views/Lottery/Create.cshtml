@@ -496,6 +496,10 @@
 
             if (!drawDate || !dropdown) return;
 
+            const previousSelected = [
+                ...dropdown.querySelectorAll('input[name="SelectedLotteries"]:checked')
+            ].map(cb => cb.value);
+
             const hasData =
                 stagedNumbers.length > 0 ||
                 ($("#bulkNumbersInput").val() || "").trim() !== "";
