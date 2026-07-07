@@ -15,21 +15,36 @@ namespace LaLlamaDelBosque.Controllers
             _notes = GetNotes();
         }
 
-        public IActionResult Index(string? searchText)
+        public IActionResult Index(string? searchText, DateTime? shiftDate, NotePaymentMethod? paymentMethod)
         {
-            var notes = _notes.Notes.AsEnumerable();
+            var selectedDate = shiftDate?.Date ?? DateTime.Today;
+            var notes = _notes.Notes.AsEnumerable()
+                .Where(n => n.ShiftDate.Date == selectedDate);
 
             if(!string.IsNullOrWhiteSpace(searchText))
                 notes = notes.Where(n => n.Title.Contains(searchText, StringComparison.OrdinalIgnoreCase));
 
+            if(paymentMethod.HasValue)
+                notes = notes.Where(n => n.PaymentMethod == paymentMethod.Value);
+
+            var filteredNotes = notes
+                .OrderBy(n => n.PaymentMethod)
+                .ThenBy(n => n.Title)
+                .ToList();
+
             ViewBag.SearchText = searchText;
-            return View(notes.OrderBy(n => n.Title).ToList());
+            ViewBag.ShiftDate = selectedDate.ToString("yyyy-MM-dd");
+            ViewBag.PaymentMethod = paymentMethod;
+            ViewBag.SinpeTotal = filteredNotes.Where(n => n.PaymentMethod == NotePaymentMethod.SINPE).Sum(n => n.Value);
+            ViewBag.CardTotal = filteredNotes.Where(n => n.PaymentMethod == NotePaymentMethod.Tarjeta).Sum(n => n.Value);
+            ViewBag.GrandTotal = filteredNotes.Sum(n => n.Value);
+            return View(filteredNotes);
         }
 
         [HttpGet]
         public IActionResult Create()
         {
-            return View(new Note());
+            return View(new Note { ShiftDate = DateTime.Today });
         }
 
         [HttpPost]
@@ -43,7 +58,7 @@ namespace LaLlamaDelBosque.Controllers
             _notes.Notes.Add(model);
             SetNotes(_notes);
             TempData["SuccessMessage"] = "Nota creada correctamente.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new { shiftDate = model.ShiftDate.ToString("yyyy-MM-dd") });
         }
 
         [HttpGet]
@@ -69,9 +84,11 @@ namespace LaLlamaDelBosque.Controllers
 
             note.Title = model.Title;
             note.Value = model.Value;
+            note.PaymentMethod = model.PaymentMethod;
+            note.ShiftDate = model.ShiftDate.Date;
             SetNotes(_notes);
             TempData["SuccessMessage"] = "Nota actualizada correctamente.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new { shiftDate = model.ShiftDate.ToString("yyyy-MM-dd") });
         }
 
         [HttpPost]
@@ -95,6 +112,10 @@ namespace LaLlamaDelBosque.Controllers
         private static NoteModel GetNotes()
         {
             var notes = JsonFile.Read<NoteModel>("Notes", new NoteModel());
+            foreach(var note in notes.Notes.Where(n => n.ShiftDate == default))
+            {
+                note.ShiftDate = DateTime.Today;
+            }
             return notes;
         }
 
