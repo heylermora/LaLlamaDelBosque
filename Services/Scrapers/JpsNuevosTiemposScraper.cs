@@ -12,6 +12,43 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		{
 		}
 
+		public override async Task<List<AwardLine>> ScrapeAwards(
+			List<ScrapingLottery> scrapingLotteries,
+			List<Lottery> lotteries,
+			List<Paper> papers)
+		{
+			try
+			{
+				using var request = new HttpRequestMessage(HttpMethod.Get, _url);
+				request.Headers.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36");
+				request.Headers.TryAddWithoutValidation("Accept", "application/json, text/plain, */*");
+				request.Headers.TryAddWithoutValidation("Accept-Language", "es-CR,es;q=0.9,en;q=0.8");
+				request.Headers.TryAddWithoutValidation("Origin", "https://www.jps.go.cr");
+				request.Headers.Referrer = new Uri("https://www.jps.go.cr/resultados/nuevos-tiempos-reventados");
+
+				var response = await _httpClient.SendAsync(request);
+				response.EnsureSuccessStatusCode();
+				var jsonContent = await response.Content.ReadAsStringAsync();
+
+				return ProcessHtml(jsonContent, scrapingLotteries, lotteries, papers);
+			}
+			catch(HttpRequestException httpEx)
+			{
+				var errorMessage = $"Error HTTP al realizar la solicitud a la URL {_url}. Detalles: {httpEx.Message}";
+				throw new InvalidOperationException(errorMessage, httpEx);
+			}
+			catch(TaskCanceledException timeoutEx)
+			{
+				var errorMessage = $"La solicitud HTTP excedió el tiempo de espera para la URL {_url}. Detalles: {timeoutEx.Message}";
+				throw new InvalidOperationException(errorMessage, timeoutEx);
+			}
+			catch(Exception ex)
+			{
+				var errorMessage = $"Error inesperado al procesar la solicitud HTTP para la URL {_url}. Detalles: {ex.Message}";
+				throw new InvalidOperationException(errorMessage, ex);
+			}
+		}
+
 		protected override List<AwardLine> ProcessHtml(string htmlContent, List<ScrapingLottery> scrapingLotteries, List<Lottery> lotteries, List<Paper> papers)
 		{
 			var awardLines = new List<AwardLine>();

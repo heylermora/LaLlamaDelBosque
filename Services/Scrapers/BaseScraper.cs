@@ -15,7 +15,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			_url = url;
 		}
 
-		public async Task<List<AwardLine>> ScrapeAwards(
+		public virtual async Task<List<AwardLine>> ScrapeAwards(
 				   List<ScrapingLottery> scrapingLotteries,
 				   List<Lottery> lotteries,
 				   List<Paper> papers)
