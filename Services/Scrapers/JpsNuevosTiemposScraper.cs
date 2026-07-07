@@ -1,102 +1,62 @@
-﻿using LaLlamaDelBosque.Models;
-using LaLlamaDelBosque.Utils;
-using System.Globalization;
-using System.Text.Json;
+﻿using HtmlAgilityPack;
+using LaLlamaDelBosque.Models;
+using System.Text.RegularExpressions;
 
 namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class JpsNuevosTiemposScraper: BaseScraper
 	{
+		private static readonly Regex DrawLabel = new(@"\b(Mediod[ií]a|Tarde|Noche)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
+
 		public JpsNuevosTiemposScraper(HttpClient httpClient)
-			: base(httpClient, "https://integration.jps.go.cr/api/App/nuevostiempos/page")
+			: base(httpClient, "https://www.jps.go.cr/resultados")
 		{
-		}
-
-		public override async Task<List<AwardLine>> ScrapeAwards(
-			List<ScrapingLottery> scrapingLotteries,
-			List<Lottery> lotteries,
-			List<Paper> papers)
-		{
-			try
-			{
-				using var request = new HttpRequestMessage(HttpMethod.Get, _url);
-				request.Headers.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36");
-				request.Headers.TryAddWithoutValidation("Accept", "application/json, text/plain, */*");
-				request.Headers.TryAddWithoutValidation("Accept-Language", "es-CR,es;q=0.9,en;q=0.8");
-				request.Headers.TryAddWithoutValidation("Origin", "https://www.jps.go.cr");
-				request.Headers.Referrer = new Uri("https://www.jps.go.cr/resultados/nuevos-tiempos-reventados");
-
-				var response = await _httpClient.SendAsync(request);
-				response.EnsureSuccessStatusCode();
-				var jsonContent = await response.Content.ReadAsStringAsync();
-
-				return ProcessHtml(jsonContent, scrapingLotteries, lotteries, papers);
-			}
-			catch(HttpRequestException httpEx)
-			{
-				var errorMessage = $"Error HTTP al realizar la solicitud a la URL {_url}. Detalles: {httpEx.Message}";
-				throw new InvalidOperationException(errorMessage, httpEx);
-			}
-			catch(TaskCanceledException timeoutEx)
-			{
-				var errorMessage = $"La solicitud HTTP excedió el tiempo de espera para la URL {_url}. Detalles: {timeoutEx.Message}";
-				throw new InvalidOperationException(errorMessage, timeoutEx);
-			}
-			catch(Exception ex)
-			{
-				var errorMessage = $"Error inesperado al procesar la solicitud HTTP para la URL {_url}. Detalles: {ex.Message}";
-				throw new InvalidOperationException(errorMessage, ex);
-			}
 		}
 
 		protected override List<AwardLine> ProcessHtml(string htmlContent, List<ScrapingLottery> scrapingLotteries, List<Lottery> lotteries, List<Paper> papers)
 		{
 			var awardLines = new List<AwardLine>();
-			var todayResult = GetTodayResult(htmlContent);
+			var sourceKeyToLottery = scrapingLotteries
+				.Where(HasJpsSourceKey)
+				.GroupBy(x => NormalizeSourceKey(x.SourceKey))
+				.ToDictionary(x => x.Key, x => x.First());
 
-			if(todayResult.ValueKind == JsonValueKind.Undefined)
+			if(sourceKeyToLottery.Count == 0)
 				return awardLines;
 
-			foreach(var scrapingLottery in scrapingLotteries.Where(HasJpsSourceKey))
+			var orderToName = lotteries
+				.GroupBy(x => x.Order)
+				.ToDictionary(x => x.Key, x => x.First().Name);
+
+			var doc = new HtmlDocument();
+			doc.LoadHtml(htmlContent);
+			var textLines = ExtractTextLines(doc);
+
+			for(var index = 0; index < textLines.Count; index++)
 			{
-				var sourceKey = NormalizeSourceKey(scrapingLottery.SourceKey);
-				if(!todayResult.TryGetProperty(sourceKey, out var draw) || draw.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+				var drawLabelMatch = DrawLabel.Match(textLines[index]);
+				if(!drawLabelMatch.Success)
 					continue;
 
-				var number = GetStringValue(draw, "numero");
-				if(string.IsNullOrWhiteSpace(number) || number == "--")
+				var sourceKey = ToSourceKey(drawLabelMatch.Groups[1].Value);
+				if(!sourceKeyToLottery.TryGetValue(sourceKey, out var scrapingLottery))
 					continue;
 
-				var description = lotteries.First(x => x.Order == scrapingLottery.Order).Name;
-				var reventado = GetStringValue(draw, "in_reventado");
-				var isBusted = Constants.BustedList.Contains(reventado) || reventado == "1";
-				var awardLine = CreateAwardLine(scrapingLottery.Order, description, number, isBusted, papers);
+				var number = FindNextNumber(textLines, index);
+				if(string.IsNullOrWhiteSpace(number))
+					continue;
 
+				var description = orderToName.TryGetValue(scrapingLottery.Order, out var name) ? name : string.Empty;
+				var awardLine = CreateAwardLine(scrapingLottery.Order, description, number, false, papers);
 				if(awardLine != null)
 					awardLines.Add(awardLine);
 			}
 
-			return awardLines;
-		}
-
-		private static JsonElement GetTodayResult(string jsonContent)
-		{
-			using var doc = JsonDocument.Parse(jsonContent);
-
-			if(doc.RootElement.ValueKind != JsonValueKind.Array)
-				return default;
-
-			foreach(var result in doc.RootElement.EnumerateArray())
-			{
-				if(!result.TryGetProperty("dia", out var dayElement))
-					continue;
-
-				var dayText = dayElement.GetString();
-				if(DateTime.TryParse(dayText, CultureInfo.InvariantCulture, DateTimeStyles.None, out var day) && day.Date == DateTime.Today)
-					return result.Clone();
-			}
-
-			return default;
+			return awardLines
+				.GroupBy(x => x.Order)
+				.Select(x => x.First())
+				.ToList();
 		}
 
 		private static bool HasJpsSourceKey(ScrapingLottery scrapingLottery)
@@ -113,19 +73,42 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				.Replace("ñ", "n");
 		}
 
-		private static string GetStringValue(JsonElement element, string propertyName)
+		private static string ToSourceKey(string drawLabel)
 		{
-			if(!element.TryGetProperty(propertyName, out var property))
-				return string.Empty;
+			return NormalizeSourceKey(drawLabel).StartsWith("mediodia") ? "manana" : NormalizeSourceKey(drawLabel);
+		}
 
-			return property.ValueKind switch
+		private static List<string> ExtractTextLines(HtmlDocument doc)
+		{
+			return doc.DocumentNode
+				.Descendants()
+				.Where(x => !x.HasChildNodes)
+				.Select(x => Clean(x.InnerText))
+				.Where(x => !string.IsNullOrWhiteSpace(x))
+				.ToList();
+		}
+
+		private static string FindNextNumber(List<string> textLines, int startIndex)
+		{
+			for(var index = startIndex; index < textLines.Count; index++)
 			{
-				JsonValueKind.Number => property.GetRawText(),
-				JsonValueKind.String => property.GetString() ?? string.Empty,
-				JsonValueKind.True => "1",
-				JsonValueKind.False => "0",
-				_ => string.Empty
-			};
+				if(index > startIndex && DrawLabel.IsMatch(textLines[index]))
+					return string.Empty;
+
+				var candidates = Regex.Matches(textLines[index], @"\b\d{2}\b").Select(x => x.Value).ToList();
+				if(candidates.Count > 0)
+					return candidates[0];
+
+				if(TwoDigits.IsMatch(textLines[index]))
+					return textLines[index];
+			}
+
+			return string.Empty;
+		}
+
+		private static string Clean(string? value)
+		{
+			return Regex.Replace(HtmlEntity.DeEntitize(value ?? string.Empty).Replace('\u00A0', ' '), @"\s+", " ").Trim();
 		}
 	}
 }
