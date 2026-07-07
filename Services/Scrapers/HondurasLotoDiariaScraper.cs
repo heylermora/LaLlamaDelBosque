@@ -1,13 +1,16 @@
 ﻿using HtmlAgilityPack;
 using LaLlamaDelBosque.Models;
-using LaLlamaDelBosque.Utils;
+using System.Text.RegularExpressions;
 
 namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class HondurasLotoDiariaScraper: BaseScraper
 	{
+		private static readonly Regex SorteoHour = new(@"SORTEO\s+(\d{1,2}):00\s*([AP])\.?\s*M\.?", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		private static readonly Regex DrawNumber = new(@"\b(\d)\s+(\d)\s+(\d)\b", RegexOptions.Compiled);
+
 		public HondurasLotoDiariaScraper(HttpClient httpClient)
-			: base(httpClient, "https://www.yelu.hn/lottery/results/la-diaria")
+			: base(httpClient, "https://loto.hn/?pag=diaria")
 		{
 		}
 
@@ -15,49 +18,89 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		{
 			var awardLines = new List<AwardLine>();
 
+			var hourToLottery = scrapingLotteries
+				.Where(x => string.IsNullOrWhiteSpace(x.Type) && x.Name.Contains("Diaria", StringComparison.OrdinalIgnoreCase))
+				.GroupBy(x => x.Hour.Trim().ToUpperInvariant())
+				.ToDictionary(x => x.Key, x => x.First());
+
+			if(hourToLottery.Count == 0)
+				return awardLines;
+
+			var orderToName = lotteries
+				.GroupBy(x => x.Order)
+				.ToDictionary(x => x.Key, x => x.First().Name);
+
 			var doc = new HtmlDocument();
 			doc.LoadHtml(htmlContent);
 
-			var dateNode = doc.DocumentNode.SelectSingleNode("//div[@class='lotto_title']/b");
-			var extractedDate = DateTime.Parse(dateNode?.InnerText.Trim().Split('-')[0]
-								?? throw new InvalidOperationException("No se pudo extraer la fecha."));
-
-			if(extractedDate.Date != DateTime.Today)
-				return awardLines;
-
-			var lotteryNodes = doc.DocumentNode.SelectNodes("//div[@class='lotto_numbers']/div[@class='lotto_numbers']");
-
-			if(lotteryNodes != null)
+			var textLines = ExtractTextLines(doc);
+			for(var index = 0; index < textLines.Count; index++)
 			{
-				foreach(var lotteryNode in lotteryNodes)
+				var hourMatch = SorteoHour.Match(textLines[index]);
+				if(!hourMatch.Success)
+					continue;
+
+				var hourKey = $"{int.Parse(hourMatch.Groups[1].Value)}:00 {hourMatch.Groups[2].Value.ToUpperInvariant()}M";
+				if(!hourToLottery.TryGetValue(hourKey, out var matchedLottery))
+					continue;
+
+				var numberText = FindNumberText(textLines, index + 1);
+				if(string.IsNullOrWhiteSpace(numberText))
+					continue;
+
+				var number = numberText[..2];
+				var order = matchedLottery.Order;
+				var description = orderToName.TryGetValue(order, out var name) ? name : string.Empty;
+				var awardLine = CreateAwardLine(order, description, number, false, papers);
+
+				if(awardLine != null)
+					awardLines.Add(awardLine);
+			}
+
+			return awardLines;
+		}
+
+		private static List<string> ExtractTextLines(HtmlDocument doc)
+		{
+			return doc.DocumentNode
+				.Descendants()
+				.Where(x => !x.HasChildNodes)
+				.Select(x => Clean(x.InnerText))
+				.Where(x => !string.IsNullOrWhiteSpace(x))
+				.ToList();
+		}
+
+		private static string FindNumberText(List<string> textLines, int startIndex)
+		{
+			var digits = new List<string>();
+
+			for(var index = startIndex; index < textLines.Count; index++)
+			{
+				if(SorteoHour.IsMatch(textLines[index]))
+					return string.Empty;
+
+				var numberMatch = DrawNumber.Match(textLines[index]);
+				if(numberMatch.Success)
+					return $"{numberMatch.Groups[1].Value}{numberMatch.Groups[2].Value}{numberMatch.Groups[3].Value}";
+
+				if(Regex.IsMatch(textLines[index], @"^\d$"))
 				{
-					var titleNode = lotteryNode.SelectSingleNode(".//div[@class='numbers_title']");
-
-					if(titleNode != null)
-					{
-						var order = scrapingLotteries.First(x => x.Name == titleNode?.InnerText.Trim()).Order;
-						var description = lotteries.First(x => x.Order == order).Name;
-
-						var numberNode = lotteryNode.SelectSingleNode(".//div[contains(@class, 'lotto_no_r bbb1')]");
-						var bustedNode = lotteryNode.SelectSingleNode(".//div[contains(@class, 'lotto_no_r bbb5')]");
-						if(numberNode != null && bustedNode != null)
-						{
-							var number = numberNode.InnerText.Trim();
-							var bustedValue = bustedNode.InnerText.Trim();
-
-							papers = papers.Where(x => x.Lottery == description && x.DrawDate.ToShortDateString() == DateTime.Today.ToShortDateString() && x.Numbers.Any(x => x.Value == number)).ToList();
-
-							var isBusted = Constants.BustedList.Contains(bustedValue);
-							var awardLine = CreateAwardLine(order, description, number, isBusted, papers);
-							if(awardLine != null)
-							{
-								awardLines.Add(awardLine);
-							}
-						}
-					}
+					digits.Add(textLines[index]);
+					if(digits.Count == 3)
+						return string.Join(string.Empty, digits);
+				}
+				else if(digits.Count > 0)
+				{
+					digits.Clear();
 				}
 			}
-			return awardLines;
+
+			return string.Empty;
+		}
+
+		private static string Clean(string? value)
+		{
+			return Regex.Replace(HtmlEntity.DeEntitize(value ?? string.Empty).Replace('\u00A0', ' '), @"\s+", " ").Trim();
 		}
 	}
 }

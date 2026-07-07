@@ -1,63 +1,143 @@
 ﻿using HtmlAgilityPack;
 using LaLlamaDelBosque.Models;
-using LaLlamaDelBosque.Utils;
+using System.Text.RegularExpressions;
 
 namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class JpsNuevosTiemposScraper: BaseScraper
 	{
+		private static readonly Regex HourLine = new(@"^(\d{1,2})(?::(\d{2}))?\s*([AP])\.?\s*M\.?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
+
 		public JpsNuevosTiemposScraper(HttpClient httpClient)
-			: base(httpClient, "https://www.jpsloteria.com/loteria-resultados")
+			: base(httpClient, "https://nicatiempos.com/")
 		{
 		}
 
 		protected override List<AwardLine> ProcessHtml(string htmlContent, List<ScrapingLottery> scrapingLotteries, List<Lottery> lotteries, List<Paper> papers)
 		{
 			var awardLines = new List<AwardLine>();
+			var sourceKeyToLottery = scrapingLotteries
+				.Where(HasJpsSourceKey)
+				.GroupBy(x => NormalizeSourceKey(x.SourceKey))
+				.ToDictionary(x => x.Key, x => x.First());
+
+			if(sourceKeyToLottery.Count == 0)
+				return awardLines;
+
+			var orderToName = lotteries
+				.GroupBy(x => x.Order)
+				.ToDictionary(x => x.Key, x => x.First().Name);
 
 			var doc = new HtmlDocument();
 			doc.LoadHtml(htmlContent);
+			var textLines = ExtractTextLines(doc);
 
-			var extractedDate = DateTime.Parse(doc.DocumentNode.SelectSingleNode("//time[@datetime]")?.GetAttributeValue("datetime", "")
-					?? throw new InvalidOperationException("No se pudo extraer la fecha."));
-
-			if(extractedDate.Date != DateTime.Today)
-				return awardLines;
-
-			var extractedData = new List<(int Order, string Description, string Number, bool IsBusted)>();
-
-			var tableNode = doc.DocumentNode.SelectSingleNode("//table[contains(@class, 'numeros-md-mov numeros-gr-esc')]");
-
-			if(tableNode != null)
+			for(var index = 0; index < textLines.Count; index++)
 			{
-				var rowNodes = tableNode.SelectNodes(".//tr | .//td[span[contains(text(), 'Noche')]]");
+				var hourMatch = HourLine.Match(textLines[index]);
+				if(!hourMatch.Success)
+					continue;
 
-				if(rowNodes != null)
-				{
-					foreach(var row in rowNodes)
-					{
-						var cells = row.Name == "tr"
-									   ? row.SelectNodes(".//td")
-									   : new HtmlNodeCollection(row.ParentNode) { row, row.NextSibling, row.NextSibling?.NextSibling, row.NextSibling?.NextSibling?.NextSibling };
+				var sourceKey = ToSourceKey(hourMatch);
+				if(string.IsNullOrWhiteSpace(sourceKey) || !sourceKeyToLottery.TryGetValue(sourceKey, out var scrapingLottery))
+					continue;
 
-						if(cells != null && cells.Count == 4)
-						{
-							var order = scrapingLotteries.First(x => x.Name == cells[0]?.InnerText.Trim()).Order;
-							var description = lotteries.First(x => x.Order == order).Name;
-							var number = cells[1]?.InnerText.Trim() ?? "";
-							if(string.IsNullOrEmpty(number) || number == "--") continue;
+				if(!IsCostaRicaDraw(textLines, index + 1))
+					continue;
 
-							var isBusted = Constants.BustedList.Contains(cells[2]?.InnerText.Trim() ?? "");
-							var awardLine = CreateAwardLine(order, description, number, isBusted, papers);
-							if(awardLine != null)
-							{
-								awardLines.Add(awardLine);
-							}
-						}
-					}
-				}
+				var number = FindNextNumber(textLines, index + 1);
+				if(string.IsNullOrWhiteSpace(number))
+					continue;
+
+				var description = orderToName.TryGetValue(scrapingLottery.Order, out var name) ? name : string.Empty;
+				var awardLine = CreateAwardLine(scrapingLottery.Order, description, number, false, papers);
+				if(awardLine != null)
+					awardLines.Add(awardLine);
 			}
-			return awardLines;
+
+			return awardLines
+				.GroupBy(x => x.Order)
+				.Select(x => x.First())
+				.ToList();
+		}
+
+		private static bool HasJpsSourceKey(ScrapingLottery scrapingLottery)
+		{
+			var sourceKey = NormalizeSourceKey(scrapingLottery.SourceKey);
+			return sourceKey is "manana" or "tarde" or "noche";
+		}
+
+		private static string NormalizeSourceKey(string sourceKey)
+		{
+			return sourceKey
+				.Trim()
+				.ToLowerInvariant()
+				.Replace("ñ", "n");
+		}
+
+		private static string ToSourceKey(Match hourMatch)
+		{
+			var hour = int.Parse(hourMatch.Groups[1].Value);
+			var minutes = string.IsNullOrWhiteSpace(hourMatch.Groups[2].Value) ? 0 : int.Parse(hourMatch.Groups[2].Value);
+			var period = hourMatch.Groups[3].Value.ToUpperInvariant();
+
+			return (hour, minutes, period) switch
+			{
+				(1, 0, "P") => "manana",
+				(4, 30, "P") => "tarde",
+				(7, 30, "P") => "noche",
+				_ => string.Empty
+			};
+		}
+
+		private static bool IsCostaRicaDraw(List<string> textLines, int startIndex)
+		{
+			for(var index = startIndex; index < textLines.Count; index++)
+			{
+				if(HourLine.IsMatch(textLines[index]))
+					return false;
+
+				if(textLines[index].Contains("Nuevos Tiempos", StringComparison.OrdinalIgnoreCase)
+					|| textLines[index].Contains("Costa Rica", StringComparison.OrdinalIgnoreCase)
+					|| textLines[index].Contains("CR", StringComparison.OrdinalIgnoreCase))
+					return true;
+			}
+
+			return false;
+		}
+
+		private static List<string> ExtractTextLines(HtmlDocument doc)
+		{
+			return doc.DocumentNode
+				.Descendants()
+				.Where(x => !x.HasChildNodes)
+				.Select(x => Clean(x.InnerText))
+				.Where(x => !string.IsNullOrWhiteSpace(x))
+				.ToList();
+		}
+
+		private static string FindNextNumber(List<string> textLines, int startIndex)
+		{
+			for(var index = startIndex; index < textLines.Count; index++)
+			{
+				if(HourLine.IsMatch(textLines[index]))
+					return string.Empty;
+
+				var candidates = Regex.Matches(textLines[index], @"\b\d{2}\b").Select(x => x.Value).ToList();
+				if(candidates.Count > 0)
+					return candidates[0];
+
+				if(TwoDigits.IsMatch(textLines[index]))
+					return textLines[index];
+			}
+
+			return string.Empty;
+		}
+
+		private static string Clean(string? value)
+		{
+			return Regex.Replace(HtmlEntity.DeEntitize(value ?? string.Empty).Replace('\u00A0', ' '), @"\s+", " ").Trim();
 		}
 	}
 }
