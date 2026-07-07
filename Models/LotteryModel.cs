@@ -28,6 +28,7 @@ namespace LaLlamaDelBosque.Models
         public int Order { get; set; }
         public string Name { get; set; } = "";
         public string Hour { get; set; } = "";
+        public string SourceKey { get; set; } = "";
     }
 
     public class Number

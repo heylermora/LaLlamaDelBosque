@@ -20,6 +20,8 @@ namespace LaLlamaDelBosque.Services
             _papers = GetPapers();
 
             _httpClient = new HttpClient();
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0");
+            _httpClient.DefaultRequestHeaders.Accept.ParseAdd("text/html,application/json");
         }
 
         public async Task<Award> Add()
