@@ -7,12 +7,13 @@ namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class NicaraguaLotoDiariaScraper: BaseScraper
 	{
-		private static readonly Regex HourLine = new(@"^(\d{1,2}):00\s*([AP])\.?\s*M\.?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		private static readonly Regex HourLine = new(@"^(\d{1,2})(?::00)?\s*([AP])\.?\s*M\.?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		private static readonly Regex DrawNumber = new(@"\b(\d)\s+(\d)\b", RegexOptions.Compiled);
+		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
 		private static readonly Regex MultiXRegex = new(@"\b(JG|2X|3X|5X|7X|R)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
 		public NicaraguaLotoDiariaScraper(HttpClient httpClient)
-			: base(httpClient, "https://tiemposhoy.com/nica-hoy")
+			: base(httpClient, "https://nicatiempos.com/")
 		{
 		}
 
@@ -99,6 +100,12 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 				if(string.IsNullOrWhiteSpace(number))
 				{
+					if(TwoDigits.IsMatch(textLines[index]))
+					{
+						number = textLines[index];
+						continue;
+					}
+
 					var numberMatch = DrawNumber.Match(textLines[index]);
 					if(numberMatch.Success)
 					{

@@ -6,11 +6,11 @@ namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class JpsNuevosTiemposScraper: BaseScraper
 	{
-		private static readonly Regex DrawLabel = new(@"\b(Mediod[ií]a|Tarde|Noche)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		private static readonly Regex HourLine = new(@"^(\d{1,2})(?::(\d{2}))?\s*([AP])\.?\s*M\.?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
 
 		public JpsNuevosTiemposScraper(HttpClient httpClient)
-			: base(httpClient, "https://www.jps.go.cr/resultados")
+			: base(httpClient, "https://nicatiempos.com/")
 		{
 		}
 
@@ -35,15 +35,18 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 			for(var index = 0; index < textLines.Count; index++)
 			{
-				var drawLabelMatch = DrawLabel.Match(textLines[index]);
-				if(!drawLabelMatch.Success)
+				var hourMatch = HourLine.Match(textLines[index]);
+				if(!hourMatch.Success)
 					continue;
 
-				var sourceKey = ToSourceKey(drawLabelMatch.Groups[1].Value);
-				if(!sourceKeyToLottery.TryGetValue(sourceKey, out var scrapingLottery))
+				var sourceKey = ToSourceKey(hourMatch);
+				if(string.IsNullOrWhiteSpace(sourceKey) || !sourceKeyToLottery.TryGetValue(sourceKey, out var scrapingLottery))
 					continue;
 
-				var number = FindNextNumber(textLines, index);
+				if(!IsCostaRicaDraw(textLines, index + 1))
+					continue;
+
+				var number = FindNextNumber(textLines, index + 1);
 				if(string.IsNullOrWhiteSpace(number))
 					continue;
 
@@ -73,9 +76,35 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				.Replace("ñ", "n");
 		}
 
-		private static string ToSourceKey(string drawLabel)
+		private static string ToSourceKey(Match hourMatch)
 		{
-			return NormalizeSourceKey(drawLabel).StartsWith("mediodia") ? "manana" : NormalizeSourceKey(drawLabel);
+			var hour = int.Parse(hourMatch.Groups[1].Value);
+			var minutes = string.IsNullOrWhiteSpace(hourMatch.Groups[2].Value) ? 0 : int.Parse(hourMatch.Groups[2].Value);
+			var period = hourMatch.Groups[3].Value.ToUpperInvariant();
+
+			return (hour, minutes, period) switch
+			{
+				(1, 0, "P") => "manana",
+				(4, 30, "P") => "tarde",
+				(7, 30, "P") => "noche",
+				_ => string.Empty
+			};
+		}
+
+		private static bool IsCostaRicaDraw(List<string> textLines, int startIndex)
+		{
+			for(var index = startIndex; index < textLines.Count; index++)
+			{
+				if(HourLine.IsMatch(textLines[index]))
+					return false;
+
+				if(textLines[index].Contains("Nuevos Tiempos", StringComparison.OrdinalIgnoreCase)
+					|| textLines[index].Contains("Costa Rica", StringComparison.OrdinalIgnoreCase)
+					|| textLines[index].Contains("CR", StringComparison.OrdinalIgnoreCase))
+					return true;
+			}
+
+			return false;
 		}
 
 		private static List<string> ExtractTextLines(HtmlDocument doc)
@@ -92,7 +121,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		{
 			for(var index = startIndex; index < textLines.Count; index++)
 			{
-				if(index > startIndex && DrawLabel.IsMatch(textLines[index]))
+				if(HourLine.IsMatch(textLines[index]))
 					return string.Empty;
 
 				var candidates = Regex.Matches(textLines[index], @"\b\d{2}\b").Select(x => x.Value).ToList();
