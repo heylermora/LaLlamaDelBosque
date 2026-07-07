@@ -12,6 +12,9 @@
     var dateTitle = DateTime.TryParse(selectedDate, out var parsedShiftDate)
         ? parsedShiftDate.ToString("dd-MMM", System.Globalization.CultureInfo.InvariantCulture)
         : selectedDate;
+    var cashClose = ViewBag.CashClose as CashRegisterClose ?? new CashRegisterClose();
+    var providerRows = Math.Max(11, cashClose.Providers.Count);
+    var canCloseShift = (bool)(ViewBag.AllPaymentsVerified ?? false);
 }
 
 <div class="container py-3">
@@ -126,7 +129,19 @@
                                 <td class="sheet-number">@(index + 1)</td>
                                 <td class="sheet-money">@(row is null ? "" : row.Value.ToCRC())</td>
                                 <td>@(row?.Title ?? "")</td>
-                                <td class="sheet-check">@(row is null ? "" : "✓")</td>
+                                <td class="sheet-check">
+                                    @if(row is not null)
+                                    {
+                                        <form asp-controller="Note" asp-action="ToggleVerified" method="post" class="m-0">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@row.Id" />
+                                            <input type="hidden" name="shiftDate" value="@selectedDate" />
+                                            <button type="submit" class="sheet-check-button @(row.IsVerified ? "is-checked" : "")" aria-label="Marcar pago comprobado">
+                                                @(row.IsVerified ? "✓" : "")
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
                             </tr>
                         }
                     </tbody>
@@ -140,6 +155,93 @@
                     </tfoot>
                 </table>
             </div>
+        </div>
+    </div>
+
+
+    @if(TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="alert alert-danger border-0 shadow-sm" role="alert">@errorMessage</div>
+    }
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex flex-column flex-lg-row justify-content-between gap-2 mb-3">
+                <div>
+                    <h2 class="h5 mb-1">Caja / cambio de turno</h2>
+                    <p class="text-muted mb-0">Los checks deben estar completos y la caja debe cuadrar para permitir el cambio de personal.</p>
+                </div>
+                @if(canCloseShift)
+                {
+                    <span class="badge text-bg-success align-self-start">Pagos comprobados</span>
+                }
+                else
+                {
+                    <span class="badge text-bg-danger align-self-start">@ViewBag.PendingVerificationCount sin comprobar</span>
+                }
+            </div>
+
+            <form asp-controller="Note" asp-action="SaveCashClose" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="shiftDate" value="@selectedDate" />
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Caja inicial</label>
+                        <input name="initialCash" class="form-control" inputmode="decimal" value="@cashClose.InitialCash" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Efectivo recibido</label>
+                        <input name="cashReceived" class="form-control" inputmode="decimal" value="@cashClose.CashReceived" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Caja final contada</label>
+                        <input name="finalCash" class="form-control" inputmode="decimal" value="@cashClose.FinalCash" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Banco</label>
+                        <input name="bankDeposit" class="form-control" inputmode="decimal" value="@cashClose.BankDeposit" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Pago premios</label>
+                        <input name="prizePayments" class="form-control" inputmode="decimal" value="@cashClose.PrizePayments" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Cuentas por cobrar</label>
+                        <input name="accountsReceivable" class="form-control" inputmode="decimal" value="@cashClose.AccountsReceivable" />
+                    </div>
+                </div>
+
+                <div class="row g-4 mt-1">
+                    <div class="col-lg-7">
+                        <h3 class="h6 text-uppercase text-muted">Proveedores (gastos)</h3>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead><tr><th>Proveedor</th><th style="width: 180px;">Monto</th></tr></thead>
+                                <tbody>
+                                    @for(var index = 0; index < providerRows; index++)
+                                    {
+                                        var provider = index < cashClose.Providers.Count ? cashClose.Providers[index] : new ProviderExpense();
+                                        <tr>
+                                            <td><input name="providerNames" class="form-control form-control-sm" value="@provider.Name" placeholder="Proveedor @(index + 1)" /></td>
+                                            <td><input name="providerAmounts" class="form-control form-control-sm" inputmode="decimal" value="@provider.Amount" /></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="list-group shadow-sm">
+                            <div class="list-group-item d-flex justify-content-between"><span>SINPEs comprobados</span><strong>@(((double)ViewBag.SinpeTotal).ToCRC())</strong></div>
+                            <div class="list-group-item d-flex justify-content-between"><span>Tarjetas comprobadas</span><strong>@(((double)ViewBag.CardTotal).ToCRC())</strong></div>
+                            <div class="list-group-item d-flex justify-content-between"><span>Suma proveedores</span><strong>@cashClose.ProviderTotal.ToCRC()</strong></div>
+                            <div class="list-group-item d-flex justify-content-between"><span>Caja esperada</span><strong>@cashClose.ExpectedCash.ToCRC()</strong></div>
+                            <div class="list-group-item d-flex justify-content-between @(cashClose.IsBalanced ? "list-group-item-success" : "list-group-item-warning")"><span>Diferencia</span><strong>@cashClose.Difference.ToCRC()</strong></div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 mt-3" disabled="@(!canCloseShift)">Guardar caja y cambiar turno</button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -167,7 +269,10 @@
                                 <div class="small text-muted text-uppercase">Cliente</div>
                                 <h5 class="card-title mb-0">@item.Title</h5>
                             </div>
-                            <span class="badge @badgeClass align-self-start">@item.PaymentMethod</span>
+                            <div class="d-flex flex-column align-items-end gap-1">
+                                <span class="badge @badgeClass align-self-start">@item.PaymentMethod</span>
+                                <span class="badge @(item.IsVerified ? "text-bg-success" : "text-bg-warning")">@(item.IsVerified ? "Comprobado" : "Pendiente")</span>
+                            </div>
                         </div>
                         <div class="d-flex justify-content-between align-items-end">
                             <div>
@@ -252,6 +357,19 @@
     .payment-sheet .sheet-total-value,
     .payment-sheet .sheet-check {
         text-align: center;
+    }
+
+    .sheet-check-button {
+        width: 1.5rem;
+        height: 1.5rem;
+        border: 1px solid #111;
+        background: #fff;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .sheet-check-button.is-checked {
+        background: #63be7b;
     }
 </style>
 
