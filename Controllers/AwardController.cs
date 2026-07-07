@@ -26,7 +26,9 @@ namespace LaLlamaDelBosque.Controllers
         // GET: CreditController
         public ActionResult Index()
         {
-            var award = _awards.Awards.OrderByDescending(x => x.Date);
+            var award = _awards.Awards.OrderByDescending(x => x.Date).ToList();
+            var lotteries = GetLotteries();
+            ViewBag.AvailableAwardLotteries = award.ToDictionary(x => x.Id, x => GetAvailableAwardLotteries(x, lotteries));
             return View(award);
         }
 
@@ -138,12 +140,15 @@ namespace LaLlamaDelBosque.Controllers
             try
             {
                 var award = _awards.Awards.FirstOrDefault(x => x.Id == awardId);
-                if(award is not null && double.Parse(collection["AwardLine.amount"]) >= 0)
+                var selectedDescription = collection["AwardLine.Description"].FirstOrDefault() ?? collection["AwardLine.description"].FirstOrDefault() ?? string.Empty;
+                var selectedLottery = GetLotteries().FirstOrDefault(x => x.Name.Equals(selectedDescription, StringComparison.OrdinalIgnoreCase));
+
+                if(award is not null && selectedLottery is not null && !award.AwardLines.Any(x => x.Description.Equals(selectedLottery.Name, StringComparison.OrdinalIgnoreCase)) && double.Parse(collection["AwardLine.amount"]) >= 0)
                 {
                     var awardLine = new AwardLine()
                     {
-                        Order = award?.AwardLines.LastOrDefault()?.Order + 1 ?? 1,
-                        Description = collection["AwardLine.description"],
+                        Order = selectedLottery.Order,
+                        Description = selectedLottery.Name,
                         Number = collection["AwardLine.number"],
                         Amount = double.Parse(collection["AwardLine.amount"]),
                         Busted = double.Parse(collection["AwardLine.busted"]),
@@ -167,6 +172,39 @@ namespace LaLlamaDelBosque.Controllers
         {
             var award = JsonFile.Read("Awards", new AwardModel());
             return award;
+        }
+
+        private static List<Lottery> GetLotteries()
+        {
+            var lotteries = JsonFile.Read("Lotteries", new LotteryModel());
+            return lotteries.Lotteries;
+        }
+
+        private static List<Lottery> GetAvailableAwardLotteries(Award award, List<Lottery> lotteries)
+        {
+            var awardDate = award.Date.Date;
+            var existingDescriptions = award.AwardLines
+                .Select(x => x.Description)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            return lotteries
+                .Where(x => IsLotteryDrawPassed(x, awardDate) && !existingDescriptions.Contains(x.Name))
+                .OrderBy(x => x.Hour)
+                .ToList();
+        }
+
+        private static bool IsLotteryDrawPassed(Lottery lottery, DateTime awardDate)
+        {
+            if(!(lottery.Days?.Contains(awardDate.DayOfWeek.ToString()) ?? true))
+                return false;
+
+            if(awardDate.Date < DateTime.Today)
+                return true;
+
+            if(awardDate.Date > DateTime.Today)
+                return false;
+
+            return lottery.Hour <= DateTime.Now.TimeOfDay;
         }
 
         private void SetAwards(AwardModel? awards)

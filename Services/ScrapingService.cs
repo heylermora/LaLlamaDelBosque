@@ -20,6 +20,9 @@ namespace LaLlamaDelBosque.Services
             _papers = GetPapers();
 
             _httpClient = new HttpClient();
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36");
+            _httpClient.DefaultRequestHeaders.Accept.ParseAdd("text/html,application/json");
+            _httpClient.DefaultRequestHeaders.AcceptLanguage.ParseAdd("es-CR,es;q=0.9,en;q=0.8");
         }
 
         public async Task<Award> Add()

@@ -9,6 +9,7 @@
 
 @{
     ViewData["Title"] = "Premios";
+    var availableAwardLotteries = ViewBag.AvailableAwardLotteries as Dictionary<int, List<Lottery>> ?? new Dictionary<int, List<Lottery>>();
 }
 
 <div class="container py-2">
@@ -90,7 +91,7 @@
                 </div>
 
                 <div class="d-flex flex-wrap gap-2">
-                    <a href="https://www.jpsloteria.com/loteria-resultados"
+                    <a href="https://nicatiempos.com/"
                            target="_blank"
                            class="btn btn-sm btn-outline-dark rounded-pill px-3">
                         Tica
@@ -100,7 +101,7 @@
                            class="btn btn-sm btn-outline-dark rounded-pill px-3">
                         Nica
                     </a>
-                    <a href="https://www.yelu.hn/lottery/results/la-diaria"
+                    <a href="https://loto.hn/?pag=diaria"
                            target="_blank"
                            class="btn btn-sm btn-outline-dark rounded-pill px-3">
                         Hondureña
@@ -267,10 +268,12 @@
                                                 <td colspan="10" class="bg-light">
                                                     @{
                                                         var maxOrder = item.AwardLines.Any() ? item.AwardLines.Max(al => al.Order) : 0;
+                                                        var availableLotteriesForAward = availableAwardLotteries.TryGetValue(item.Id, out var configuredLotteries) ? configuredLotteries : new List<Lottery>();
                                                         var awardConnectionModel = new AwardConnectionModel()
                                                         {
                                                             AwardId = item.Id,
-                                                            AwardLine = new AwardLine() { Order = maxOrder + 1 }
+                                                            AwardLine = new AwardLine() { Order = maxOrder + 1 },
+                                                            AvailableLotteries = availableLotteriesForAward
                                                         };
                                                     }
                                                     <partial name="_Add" model="@awardConnectionModel"></partial>
