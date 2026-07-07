@@ -9,6 +9,7 @@
 
 @{
     ViewData["Title"] = "Premios";
+    var availableAwardLotteries = ViewBag.AvailableAwardLotteries as Dictionary<int, List<Lottery>> ?? new Dictionary<int, List<Lottery>>();
 }
 
 <div class="container py-2">
@@ -267,10 +268,12 @@
                                                 <td colspan="10" class="bg-light">
                                                     @{
                                                         var maxOrder = item.AwardLines.Any() ? item.AwardLines.Max(al => al.Order) : 0;
+                                                        var availableLotteriesForAward = availableAwardLotteries.TryGetValue(item.Id, out var configuredLotteries) ? configuredLotteries : new List<Lottery>();
                                                         var awardConnectionModel = new AwardConnectionModel()
                                                         {
                                                             AwardId = item.Id,
-                                                            AwardLine = new AwardLine() { Order = maxOrder + 1 }
+                                                            AwardLine = new AwardLine() { Order = maxOrder + 1 },
+                                                            AvailableLotteries = availableLotteriesForAward
                                                         };
                                                     }
                                                     <partial name="_Add" model="@awardConnectionModel"></partial>
