@@ -24,18 +24,20 @@ namespace LaLlamaDelBosque.Controllers
         }
 
         // GET: Schedule/Turn
-        public ActionResult Turn()
+        public ActionResult Turn(DateTime? shiftDate)
         {
+            var selectedDate = shiftDate?.Date ?? DateTime.Today;
             var schedules = _schedules.Schedules.Where(x =>
                 !x.IsCompleted &&
-                x.CreatedDate.Day == DateTime.Today.Day);
+                x.CreatedDate.Date == selectedDate);
 
             foreach(var schedule in schedules)
             {
                 schedule.FinishDate = DateTime.Now;
             }
 
-            return View(schedules);
+            ViewBag.ShiftDate = selectedDate.ToString("yyyy-MM-dd");
+            return View(schedules.OrderBy(s => s.CreatedDate));
         }
 
         // POST: Schedule/Turn
@@ -48,7 +50,7 @@ namespace LaLlamaDelBosque.Controllers
                 _schedules.Schedules.First(x => x.Id == id).FinishDate = DateTime.Now;
                 SetSchedules(_schedules);
             }
-            return RedirectToAction(nameof(Turn));
+            return RedirectToAction(nameof(Turn), new { shiftDate = schedule.CreatedDate.ToString("yyyy-MM-dd") });
         }
 
         // GET: Schedule/Create

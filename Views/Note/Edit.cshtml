@@ -1,40 +1,54 @@
 ﻿@model LaLlamaDelBosque.Models.Note
 
 @{
-    ViewData["Title"] = "Editar Nota";
+    ViewData["Title"] = "Editar pago";
 }
 
-<h1 class="display-6">@ViewData["Title"]</h1>
+<div class="container py-3">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h1 class="display-6 mb-1">@ViewData["Title"]</h1>
+                    <p class="text-muted mb-4">Ajusta el cliente, monto, método o día de turno.</p>
 
-<hr />
-
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <input asp-for="Id" type="hidden" />
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Title" class="control-label">Cliente</label>
-                <input asp-for="Title" class="form-control" />
-                <span asp-validation-for="Title" class="text-danger"></span>
+                    <form asp-action="Edit">
+                        <input asp-for="Id" type="hidden" />
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        <div class="mb-3">
+                            <label asp-for="Title" class="form-label">Cliente</label>
+                            <input asp-for="Title" class="form-control form-control-lg" />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Value" class="form-label">Monto</label>
+                                <input asp-for="Value" class="form-control form-control-lg" inputmode="decimal" />
+                                <span asp-validation-for="Value" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="PaymentMethod" class="form-label">Método</label>
+                                <select asp-for="PaymentMethod" asp-items="Html.GetEnumSelectList<NotePaymentMethod>()" class="form-select form-select-lg"></select>
+                                <span asp-validation-for="PaymentMethod" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <label asp-for="ShiftDate" class="form-label">Turno / día</label>
+                            <input asp-for="ShiftDate" type="date" class="form-control form-control-lg" />
+                            <span asp-validation-for="ShiftDate" class="text-danger"></span>
+                        </div>
+                        <hr />
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a asp-action="Index" asp-route-shiftDate="@Model.ShiftDate.ToString("yyyy-MM-dd")" class="btn btn-outline-secondary">Volver</a>
+                            <input type="submit" value="Guardar cambios" class="btn btn-primary btn-lg" />
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="form-group">
-                <label asp-for="Value" class="control-label">Valor</label>
-                <input asp-for="Value" class="form-control" />
-                <span asp-validation-for="Value" class="text-danger"></span>
-            </div>
-            <hr />
-            <div class="form-group">
-                <input type="submit" value="Editar" class="btn btn-primary" />
-                &nbsp;&nbsp;&nbsp;
-                <a asp-action="Index" style="color: var(--dark);">Volver</a>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }

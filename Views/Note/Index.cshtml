@@ -4,33 +4,246 @@
 @using LaLlamaDelBosque.Utils
 
 @{
-    ViewData["Title"] = "Notas de pedidos";
+    ViewData["Title"] = "Pagos del turno";
+    var selectedDate = ViewBag.ShiftDate as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+    NotePaymentMethod? selectedMethod = ViewBag.PaymentMethod as NotePaymentMethod?;
+    var paymentRows = Model.ToList();
+    var spreadsheetRows = Math.Max(28, paymentRows.Count);
+    var dateTitle = DateTime.TryParse(selectedDate, out var parsedShiftDate)
+        ? parsedShiftDate.ToString("dd-MMM", System.Globalization.CultureInfo.InvariantCulture)
+        : selectedDate;
+    var cashClose = ViewBag.CashClose as CashRegisterClose ?? new CashRegisterClose();
+    var providerRows = Math.Max(11, cashClose.Providers.Count);
+    var canCloseShift = (bool)(ViewBag.AllPaymentsVerified ?? false);
 }
 
 <div class="container py-3">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
         <div>
             <h1 class="display-6 mb-1">@ViewData["Title"]</h1>
-            <p class="text-muted mb-0">Administra los SINPEs o apuntes rápidos de clientes.</p>
+            <p class="text-muted mb-0">Control diario de SINPEs y tarjetas, pensado para reemplazar el Excel del cierre de turno.</p>
         </div>
 
-        <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2"
+        <button type="button" class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2"
                 onclick="location.href='@Url.Action("Create", "Note")'">
             <span class="material-icons">add_circle</span>
-            Crear nota
+            Registrar pago
         </button>
     </div>
 
-    <form asp-controller="Note" asp-action="Index" method="get" class="mb-3">
-        <div class="input-group shadow-sm">
-            <input type="search" name="searchText" class="form-control" value="@ViewBag.SearchText" placeholder="Buscar por cliente..." />
-            <button class="btn btn-outline-primary" type="submit">Buscar</button>
-            @if(!string.IsNullOrWhiteSpace(ViewBag.SearchText as string))
-            {
-                <a class="btn btn-outline-secondary" asp-controller="Note" asp-action="Index">Limpiar</a>
-            }
+    <form asp-controller="Note" asp-action="Index" method="get" class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Turno / día</label>
+                    <input type="date" name="shiftDate" class="form-control" value="@selectedDate" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Buscar cliente</label>
+                    <input type="search" name="searchText" class="form-control" value="@ViewBag.SearchText" placeholder="Nombre del cliente..." />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Método</label>
+                    <select name="paymentMethod" class="form-select">
+                        <option value="">Todos</option>
+                        @if(selectedMethod == NotePaymentMethod.SINPE)
+                        {
+                            <option value="SINPE" selected>SINPE</option>
+                        }
+                        else
+                        {
+                            <option value="SINPE">SINPE</option>
+                        }
+                        @if(selectedMethod == NotePaymentMethod.Tarjeta)
+                        {
+                            <option value="Tarjeta" selected>Tarjeta</option>
+                        }
+                        else
+                        {
+                            <option value="Tarjeta">Tarjeta</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button class="btn btn-dark" type="submit">Ver turno</button>
+                </div>
+            </div>
         </div>
     </form>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="small text-muted text-uppercase">Total SINPE</div>
+                    <div class="h3 mb-0 text-primary">@(((double)ViewBag.SinpeTotal).ToCRC())</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="small text-muted text-uppercase">Total Tarjeta</div>
+                    <div class="h3 mb-0 text-success">@(((double)ViewBag.CardTotal).ToCRC())</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 bg-dark text-white">
+                <div class="card-body">
+                    <div class="small text-white-50 text-uppercase">Total del turno</div>
+                    <div class="h3 mb-0">@(((double)ViewBag.GrandTotal).ToCRC())</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+                <div>
+                    <h2 class="h5 mb-1">Planilla del turno</h2>
+                    <p class="text-muted mb-0">Vista tipo Excel para revisar rápidamente montos, nombres y confirmación.</p>
+                </div>
+                <span class="badge text-bg-success fs-6">@dateTitle</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle payment-sheet mb-0">
+                    <thead>
+                        <tr>
+                            <th class="sheet-date" colspan="4">@dateTitle</th>
+                        </tr>
+                        <tr>
+                            <th class="sheet-number"></th>
+                            <th>monto</th>
+                            <th>Nombre</th>
+                            <th>Si</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for(var index = 0; index < spreadsheetRows; index++)
+                        {
+                            var row = index < paymentRows.Count ? paymentRows[index] : null;
+                            <tr>
+                                <td class="sheet-number">@(index + 1)</td>
+                                <td class="sheet-money">@(row is null ? "" : row.Value.ToCRC())</td>
+                                <td>@(row?.Title ?? "")</td>
+                                <td class="sheet-check">
+                                    @if(row is not null)
+                                    {
+                                        <form asp-controller="Note" asp-action="ToggleVerified" method="post" class="m-0">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@row.Id" />
+                                            <input type="hidden" name="shiftDate" value="@selectedDate" />
+                                            <button type="submit" class="sheet-check-button @(row.IsVerified ? "is-checked" : "")" aria-label="Marcar pago comprobado">
+                                                @(row.IsVerified ? "✓" : "")
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td class="sheet-total-fill"></td>
+                            <td class="sheet-total-label">TOTAL</td>
+                            <td class="sheet-total-value">@(((double)ViewBag.GrandTotal).ToCRC())</td>
+                            <td class="sheet-total-fill"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    @if(TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="alert alert-danger border-0 shadow-sm" role="alert">@errorMessage</div>
+    }
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex flex-column flex-lg-row justify-content-between gap-2 mb-3">
+                <div>
+                    <h2 class="h5 mb-1">Caja / cambio de turno</h2>
+                    <p class="text-muted mb-0">Los checks deben estar completos y la caja debe cuadrar para permitir el cambio de personal.</p>
+                </div>
+                @if(canCloseShift)
+                {
+                    <span class="badge text-bg-success align-self-start">Pagos comprobados</span>
+                }
+                else
+                {
+                    <span class="badge text-bg-danger align-self-start">@ViewBag.PendingVerificationCount sin comprobar</span>
+                }
+            </div>
+
+            <form asp-controller="Note" asp-action="SaveCashClose" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="shiftDate" value="@selectedDate" />
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Caja inicial</label>
+                        <input name="initialCash" class="form-control" inputmode="decimal" value="@cashClose.InitialCash" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Efectivo recibido</label>
+                        <input name="cashReceived" class="form-control" inputmode="decimal" value="@cashClose.CashReceived" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Caja final contada</label>
+                        <input name="finalCash" class="form-control" inputmode="decimal" value="@cashClose.FinalCash" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Banco</label>
+                        <input name="bankDeposit" class="form-control" inputmode="decimal" value="@cashClose.BankDeposit" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Pago premios</label>
+                        <input name="prizePayments" class="form-control" inputmode="decimal" value="@cashClose.PrizePayments" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Cuentas por cobrar</label>
+                        <input name="accountsReceivable" class="form-control" inputmode="decimal" value="@cashClose.AccountsReceivable" />
+                    </div>
+                </div>
+
+                <div class="row g-4 mt-1">
+                    <div class="col-lg-7">
+                        <h3 class="h6 text-uppercase text-muted">Proveedores (gastos)</h3>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead><tr><th>Proveedor</th><th style="width: 180px;">Monto</th></tr></thead>
+                                <tbody>
+                                    @for(var index = 0; index < providerRows; index++)
+                                    {
+                                        var provider = index < cashClose.Providers.Count ? cashClose.Providers[index] : new ProviderExpense();
+                                        <tr>
+                                            <td><input name="providerNames" class="form-control form-control-sm" value="@provider.Name" placeholder="Proveedor @(index + 1)" /></td>
+                                            <td><input name="providerAmounts" class="form-control form-control-sm" inputmode="decimal" value="@provider.Amount" /></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="list-group shadow-sm">
+                            <div class="list-group-item d-flex justify-content-between"><span>SINPEs comprobados</span><strong>@(((double)ViewBag.SinpeTotal).ToCRC())</strong></div>
+                            <div class="list-group-item d-flex justify-content-between"><span>Tarjetas comprobadas</span><strong>@(((double)ViewBag.CardTotal).ToCRC())</strong></div>
+                            <div class="list-group-item d-flex justify-content-between"><span>Suma proveedores</span><strong>@cashClose.ProviderTotal.ToCRC()</strong></div>
+                            <div class="list-group-item d-flex justify-content-between"><span>Caja esperada</span><strong>@cashClose.ExpectedCash.ToCRC()</strong></div>
+                            <div class="list-group-item d-flex justify-content-between @(cashClose.IsBalanced ? "list-group-item-success" : "list-group-item-warning")"><span>Diferencia</span><strong>@cashClose.Difference.ToCRC()</strong></div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 mt-3" disabled="@(!canCloseShift)">Guardar caja y cambiar turno</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 
     @if(TempData["SuccessMessage"] is string successMessage)
     {
@@ -40,37 +253,44 @@
     @if(!Model.Any())
     {
         <div class="alert alert-info border-0 shadow-sm" role="alert">
-            No hay notas registradas todavía. Cree una nota para empezar.
+            No hay pagos registrados para este turno. Cambia el día o registra el primer SINPE/tarjeta.
         </div>
     }
 
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
         @foreach(var item in Model)
         {
+            var badgeClass = item.PaymentMethod == NotePaymentMethod.SINPE ? "text-bg-primary" : "text-bg-success";
             <div class="col">
-                <div class="card h-100 shadow-sm" id="note-card-@item.Id">
+                <div class="card h-100 border-0 shadow-sm" id="note-card-@item.Id">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between gap-3">
+                        <div class="d-flex justify-content-between gap-3 mb-3">
                             <div>
                                 <div class="small text-muted text-uppercase">Cliente</div>
-                                <h5 class="card-title mb-1">@item.Title</h5>
+                                <h5 class="card-title mb-0">@item.Title</h5>
                             </div>
-                            <span class="badge text-bg-primary align-self-start">@item.Value.ToCRC()</span>
+                            <div class="d-flex flex-column align-items-end gap-1">
+                                <span class="badge @badgeClass align-self-start">@item.PaymentMethod</span>
+                                <span class="badge @(item.IsVerified ? "text-bg-success" : "text-bg-warning")">@(item.IsVerified ? "Comprobado" : "Pendiente")</span>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-end">
+                            <div>
+                                <div class="small text-muted">Turno</div>
+                                <div>@item.ShiftDate.ToShortDateString()</div>
+                            </div>
+                            <div class="h4 mb-0">@item.Value.ToCRC()</div>
                         </div>
                     </div>
                     <div class="card-footer bg-white border-0 pt-0">
-                        <div class="btn-group w-100" role="group" aria-label="Acciones de nota">
-                            <button type="button" class="btn btn-outline-dark"
-                                    onclick="location.href='@Url.Action("Edit", "Note", new { id = item.Id })'">
+                        <div class="btn-group w-100" role="group" aria-label="Acciones de pago">
+                            <button type="button" class="btn btn-outline-dark" onclick="location.href='@Url.Action("Edit", "Note", new { id = item.Id })'">
                                 <span class="material-icons">edit</span>
                             </button>
-                            <button type="button" class="btn btn-outline-danger"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#deleteNoteModal-@item.Id">
+                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteNoteModal-@item.Id">
                                 <span class="material-icons">delete</span>
                             </button>
-                            <button type="button" class="btn btn-outline-primary"
-                                    onclick="copyNoteAsImage('@item.Id')">
+                            <button type="button" class="btn btn-outline-primary" onclick="copyNoteAsImage('@item.Id')">
                                 <span class="material-icons">image</span>
                             </button>
                         </div>
@@ -82,7 +302,7 @@
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content border-0 shadow">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="deleteNoteModalLabel-@item.Id">Eliminar nota</h5>
+                            <h5 class="modal-title" id="deleteNoteModalLabel-@item.Id">Eliminar pago</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
@@ -96,15 +316,62 @@
 </div>
 
 <div class="modal fade" id="copySuccessModal" tabindex="-1" aria-labelledby="copySuccessModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-body text-center py-4">
-                <span class="material-icons text-success mb-2" style="font-size: 32px;">check_circle</span>
-                <h6 class="mb-0" id="copySuccessModalLabel">¡Imagen copiada!</h6>
-            </div>
-        </div>
-    </div>
+    <div class="modal-dialog modal-sm modal-dialog-centered"><div class="modal-content border-0 shadow"><div class="modal-body text-center py-4"><span class="material-icons text-success mb-2" style="font-size: 32px;">check_circle</span><h6 class="mb-0" id="copySuccessModalLabel">¡Imagen copiada!</h6></div></div></div>
 </div>
+
+<style>
+    .payment-sheet {
+        max-width: 420px;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+    }
+
+    .payment-sheet th,
+    .payment-sheet td {
+        border: 1px solid #111;
+        padding: 0.18rem 0.45rem;
+    }
+
+    .payment-sheet .sheet-date,
+    .payment-sheet thead th,
+    .payment-sheet .sheet-number,
+    .payment-sheet .sheet-total-fill {
+        background: #63be7b;
+        color: #000;
+        font-weight: 700;
+        text-align: center;
+    }
+
+    .payment-sheet tbody td:not(.sheet-number),
+    .payment-sheet .sheet-total-label,
+    .payment-sheet .sheet-total-value {
+        background: #d9ead3;
+    }
+
+    .payment-sheet .sheet-money,
+    .payment-sheet .sheet-total-value {
+        white-space: nowrap;
+    }
+
+    .payment-sheet .sheet-total-label,
+    .payment-sheet .sheet-total-value,
+    .payment-sheet .sheet-check {
+        text-align: center;
+    }
+
+    .sheet-check-button {
+        width: 1.5rem;
+        height: 1.5rem;
+        border: 1px solid #111;
+        background: #fff;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .sheet-check-button.is-checked {
+        background: #63be7b;
+    }
+</style>
 
 @section Scripts {
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -112,20 +379,14 @@
         function copyNoteAsImage(id) {
             const card = document.getElementById('note-card-' + id);
             if (!card) return;
-
             html2canvas(card).then(function(canvas) {
                 canvas.toBlob(function(blob) {
                     if (!blob || !navigator.clipboard || !navigator.clipboard.write) return;
-
-                    navigator.clipboard.write([
-                        new ClipboardItem({ "image/png": blob })
-                    ]).then(function() {
+                    navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]).then(function() {
                         const modal = new bootstrap.Modal(document.getElementById('copySuccessModal'));
                         modal.show();
                         setTimeout(function() { modal.hide(); }, 1800);
-                    }).catch(function(error) {
-                        console.error('Error al copiar la nota como imagen:', error);
-                    });
+                    }).catch(function(error) { console.error('Error al copiar la nota como imagen:', error); });
                 });
             });
         }
