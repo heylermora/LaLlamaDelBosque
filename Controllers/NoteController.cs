@@ -55,6 +55,7 @@ namespace LaLlamaDelBosque.Controllers
             ViewBag.CashClose = selectedClose ?? new CashRegisterClose { ShiftDate = selectedDate };
             ViewBag.DailyClosings = dailyClosings;
             ViewBag.SelectedCloseId = selectedClose?.Id;
+            ViewBag.Collaborators = Constants.CurrentCollaborators;
             ViewBag.ClosingDates = _cashRegister.CashClosings
                 .Select(c => c.ShiftDate.Date)
                 .Distinct()
@@ -171,6 +172,12 @@ namespace LaLlamaDelBosque.Controllers
         {
             var shiftDate = DateTime.Parse(collection["shiftDate"]);
             _ = int.TryParse(collection["closeId"], out var closeId);
+            var closedBy = collection["closedBy"].ToString().Trim();
+            if(!Constants.CurrentCollaborators.Contains(closedBy, StringComparer.OrdinalIgnoreCase))
+            {
+                TempData["ErrorMessage"] = "Seleccione la colaboradora responsable del cierre.";
+                return RedirectToAction(nameof(Index), new { shiftDate = shiftDate.ToString("yyyy-MM-dd"), closeId = closeId > 0 ? closeId : null });
+            }
             var shiftPayments = _notes.Notes.Where(n => n.ShiftDate.Date == shiftDate.Date).ToList();
             if(shiftPayments.Any(n => !n.IsVerified))
             {
@@ -200,6 +207,7 @@ namespace LaLlamaDelBosque.Controllers
             cashClose.AccountsReceivable = ParseMoney(collection["accountsReceivable"]);
             cashClose.ProviderInitialCash = ParseMoney(collection["providerInitialCash"]);
             cashClose.ProviderFinalCash = ParseMoney(collection["providerFinalCash"]);
+            cashClose.ClosedBy = Constants.CurrentCollaborators.First(name => name.Equals(closedBy, StringComparison.OrdinalIgnoreCase));
             cashClose.Providers = BuildProviders(collection);
 
             if(!cashClose.IsBalanced)
