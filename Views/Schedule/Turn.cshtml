@@ -2,10 +2,18 @@
 
 @model IEnumerable<LaLlamaDelBosque.Models.Schedule>
 @using LaLlamaDelBosque.Utils
+@using System.Globalization
 
 @{
     ViewData["Title"] = "Turnos";
     var selectedDate = ViewBag.ShiftDate as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+    var date = DateTime.TryParse(selectedDate, out var parsedDate) ? parsedDate : DateTime.Today;
+    var month = new DateTime(date.Year, date.Month, 1);
+    var previousMonth = month.AddMonths(-1).ToString("yyyy-MM-dd");
+    var nextMonth = month.AddMonths(1).ToString("yyyy-MM-dd");
+    var calendarStart = month.AddDays(-(int)month.DayOfWeek);
+    var dailyClosings = ViewBag.DailyClosings as List<CashRegisterClose> ?? new List<CashRegisterClose>();
+    var closingCounts = ViewBag.ClosingCounts as Dictionary<DateTime, int> ?? new Dictionary<DateTime, int>();
 }
 
 <div class="container py-3">
@@ -77,4 +85,54 @@
             }
         </div>
     }
+
+    <section class="card border-0 shadow-sm mt-4">
+        <div class="card-body p-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+                <div>
+                    <h2 class="h5 mb-1">Historial de cierres de caja</h2>
+                    <p class="text-muted small mb-0">Seleccione un día y luego el cierre que desea consultar o editar.</p>
+                </div>
+                <div class="btn-group">
+                    <a class="btn btn-outline-secondary" asp-action="Turn" asp-route-shiftDate="@previousMonth">‹</a>
+                    <span class="btn btn-light disabled text-capitalize">@month.ToString("MMMM yyyy", new CultureInfo("es-CR"))</span>
+                    <a class="btn btn-outline-secondary" asp-action="Turn" asp-route-shiftDate="@nextMonth">›</a>
+                </div>
+            </div>
+
+            <div class="closing-calendar mb-4">
+                <div class="calendar-weekdays">
+                    @foreach(var dayName in new[] { "Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb" }) { <span>@dayName</span> }
+                </div>
+                <div class="calendar-days">
+                    @for(var index = 0; index < 42; index++) {
+                        var day = calendarStart.AddDays(index);
+                        var closeCount = closingCounts.GetValueOrDefault(day.Date);
+                        <a asp-action="Turn" asp-route-shiftDate="@day.ToString("yyyy-MM-dd")" class="calendar-day @(day.Month != month.Month ? "outside" : "") @(closeCount > 0 ? "closed" : "") @(day.Date == date.Date ? "selected" : "")">
+                            <span>@day.Day</span>
+                            @if(closeCount > 0) { <small>@closeCount @(closeCount == 1 ? "cierre" : "cierres")</small> }
+                        </a>
+                    }
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h3 class="h6 mb-0">Cierres del @date.ToString("dd MMMM yyyy", new CultureInfo("es-CR"))</h3>
+                <a class="btn btn-sm btn-success" asp-controller="Note" asp-action="Index" asp-route-shiftDate="@selectedDate">+ Crear cierre</a>
+            </div>
+            @if(!dailyClosings.Any()) {
+                <p class="text-muted mb-0">No hay cierres guardados para este día.</p>
+            } else {
+                <div class="list-group">
+                    @foreach(var close in dailyClosings) {
+                        var closeTime = close.ClosedAt == default ? $"Cierre #{close.Id}" : close.ClosedAt.ToString("hh:mm tt", CultureInfo.InvariantCulture);
+                        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" asp-controller="Note" asp-action="Index" asp-route-shiftDate="@selectedDate" asp-route-closeId="@close.Id">
+                            <span><strong>@closeTime</strong><span class="text-muted ms-2">@(string.IsNullOrWhiteSpace(close.ClosedBy) ? "Sin responsable" : close.ClosedBy)</span></span>
+                            <span class="badge text-bg-dark">Ver o editar</span>
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    </section>
 </div>
