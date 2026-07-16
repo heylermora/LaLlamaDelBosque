@@ -1,394 +1,79 @@
-﻿<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-
 @model IEnumerable<LaLlamaDelBosque.Models.Note>
 @using LaLlamaDelBosque.Utils
-
+@using System.Globalization
 @{
-    ViewData["Title"] = "Pagos del turno";
+    ViewData["Title"] = "Operaciones";
     var selectedDate = ViewBag.ShiftDate as string ?? DateTime.Today.ToString("yyyy-MM-dd");
-    NotePaymentMethod? selectedMethod = ViewBag.PaymentMethod as NotePaymentMethod?;
-    var paymentRows = Model.ToList();
-    var spreadsheetRows = Math.Max(28, paymentRows.Count);
-    var dateTitle = DateTime.TryParse(selectedDate, out var parsedShiftDate)
-        ? parsedShiftDate.ToString("dd-MMM", System.Globalization.CultureInfo.InvariantCulture)
-        : selectedDate;
-    var cashClose = ViewBag.CashClose as CashRegisterClose ?? new CashRegisterClose();
-    var providerRows = Math.Max(11, cashClose.Providers.Count);
-    var canCloseShift = (bool)(ViewBag.AllPaymentsVerified ?? false);
+    var date = DateTime.TryParse(selectedDate, out var parsed) ? parsed : DateTime.Today;
+    var payments = Model.ToList();
+    var sinpes = payments.Where(x => x.PaymentMethod == NotePaymentMethod.SINPE).ToList();
+    var cards = payments.Where(x => x.PaymentMethod == NotePaymentMethod.Tarjeta).ToList();
+    var cashClose = ViewBag.CashClose as CashRegisterClose ?? new CashRegisterClose { ShiftDate = date };
+    var closingDates = ViewBag.ClosingDates as List<DateTime> ?? new List<DateTime>();
+    var month = new DateTime(date.Year, date.Month, 1);
+    var calendarStart = month.AddDays(-(int)month.DayOfWeek);
+    var canClose = (bool)(ViewBag.AllPaymentsVerified ?? true);
 }
 
-<div class="container py-3">
-    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
-        <div>
-            <h1 class="display-6 mb-1">@ViewData["Title"]</h1>
-            <p class="text-muted mb-0">Control diario de SINPEs y tarjetas, pensado para reemplazar el Excel del cierre de turno.</p>
-        </div>
+<div class="container-fluid operations-page py-3">
+    <header class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-4">
+        <div><span class="text-uppercase text-success fw-semibold small">Control de caja</span><h1 class="display-6 mb-1">Operaciones</h1><p class="text-muted mb-0">Registre todo directamente en las tablas. Los totales se calculan automáticamente.</p></div>
+        <form method="get" class="d-flex gap-2 align-items-end">
+            <div><label class="form-label small fw-semibold mb-1">Día del turno</label><input type="date" name="shiftDate" value="@selectedDate" class="form-control" /></div>
+            <button class="btn btn-dark" type="submit">Ver día</button>
+        </form>
+    </header>
 
-        <button type="button" class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2"
-                onclick="location.href='@Url.Action("Create", "Note")'">
-            <span class="material-icons">add_circle</span>
-            Registrar pago
-        </button>
-    </div>
+    @if(TempData["ErrorMessage"] is string error) { <div class="alert alert-danger">@error</div> }
+    @if(TempData["SuccessMessage"] is string success) { <div class="alert alert-success">@success</div> }
 
-    <form asp-controller="Note" asp-action="Index" method="get" class="card border-0 shadow-sm mb-4">
-        <div class="card-body">
-            <div class="row g-3 align-items-end">
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold">Turno / día</label>
-                    <input type="date" name="shiftDate" class="form-control" value="@selectedDate" />
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold">Buscar cliente</label>
-                    <input type="search" name="searchText" class="form-control" value="@ViewBag.SearchText" placeholder="Nombre del cliente..." />
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold">Método</label>
-                    <select name="paymentMethod" class="form-select">
-                        <option value="">Todos</option>
-                        @if(selectedMethod == NotePaymentMethod.SINPE)
-                        {
-                            <option value="SINPE" selected>SINPE</option>
-                        }
-                        else
-                        {
-                            <option value="SINPE">SINPE</option>
-                        }
-                        @if(selectedMethod == NotePaymentMethod.Tarjeta)
-                        {
-                            <option value="Tarjeta" selected>Tarjeta</option>
-                        }
-                        else
-                        {
-                            <option value="Tarjeta">Tarjeta</option>
-                        }
-                    </select>
-                </div>
-                <div class="col-md-2 d-grid">
-                    <button class="btn btn-dark" type="submit">Ver turno</button>
-                </div>
+    <form asp-action="SavePayments" method="post" id="payments-form" class="card border-0 shadow-sm mb-4">
+        @Html.AntiForgeryToken()<input type="hidden" name="shiftDate" value="@selectedDate" />
+        <div class="card-header bg-white border-0 pt-4 px-4"><div class="d-flex justify-content-between align-items-center"><div><h2 class="h5 mb-1">Movimientos del día</h2><p class="text-muted small mb-0">Seleccione una pestaña, agregue filas y guarde una sola vez.</p></div><span class="badge text-bg-success">@date.ToString("dd MMM yyyy", new CultureInfo("es-CR"))</span></div></div>
+        <div class="card-body px-4">
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#sinpe-pane" type="button">SINPE <span class="badge text-bg-primary ms-1" id="sinpe-count">@sinpes.Count</span></button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#card-pane" type="button">Tarjeta <span class="badge text-bg-success ms-1" id="card-count">@cards.Count</span></button></li>
+            </ul>
+            <div class="tab-content border border-top-0 rounded-bottom p-3">
+                @foreach(var setup in new[] { (Key: "sinpe", Pane: "sinpe-pane", Rows: sinpes, Active: true), (Key: "card", Pane: "card-pane", Rows: cards, Active: false) }) {
+                    <div class="tab-pane fade @(setup.Active ? "show active" : "")" id="@setup.Pane">
+                        <div class="table-responsive"><table class="table align-middle operation-table mb-2"><thead><tr><th>Cliente / referencia</th><th class="money-column">Monto</th><th class="check-column">Comprobado</th><th class="action-column"></th></tr></thead><tbody id="@setup.Key-rows">
+                        @foreach(var item in setup.Rows) { <tr><td><input type="hidden" name="@(setup.Key)Ids" value="@item.Id"/><input class="form-control" name="@(setup.Key)Titles" value="@item.Title" placeholder="Nombre o referencia" required /></td><td><input class="form-control money-input" name="@(setup.Key)Amounts" value="@item.Value.ToString(CultureInfo.InvariantCulture)" inputmode="decimal" min="0" type="number" step="0.01" required /></td><td class="text-center"><input class="form-check-input" name="@(setup.Key)Verified" value="@item.Id" type="checkbox" checked="@item.IsVerified" /></td><td><button type="button" class="btn btn-sm btn-outline-danger remove-row" title="Eliminar fila"><span class="material-icons">delete</span></button></td></tr> }
+                        </tbody><tfoot><tr><td class="fw-bold">Total</td><td class="fw-bold tab-total" id="@setup.Key-total">₡0</td><td colspan="2"></td></tr></tfoot></table></div>
+                        <button type="button" class="btn btn-outline-primary add-payment" data-prefix="@setup.Key"><span class="material-icons align-middle">add</span> Agregar fila</button>
+                    </div>
+                }
             </div>
+        </div>
+        <div class="card-footer bg-white border-0 px-4 pb-4 text-end"><button class="btn btn-primary btn-lg px-4" type="submit"><span class="material-icons align-middle me-1">save</span> Guardar movimientos</button></div>
+    </form>
+
+    <form asp-action="SaveCashClose" method="post" class="card border-0 shadow-sm mb-4" id="close-form">
+        @Html.AntiForgeryToken()<input type="hidden" name="shiftDate" value="@selectedDate" />
+        <div class="card-body p-4"><div class="d-flex justify-content-between gap-2 mb-3"><div><h2 class="h5 mb-1">Resumen y cierre de caja</h2><p class="text-muted small mb-0">Este resumen incluye todos los movimientos del día.</p></div><span class="badge @(canClose ? "text-bg-success" : "text-bg-warning") align-self-start">@(canClose ? "Listo para cerrar" : $"{ViewBag.PendingVerificationCount} pendientes")</span></div>
+            <div class="row g-4"><div class="col-xl-7"><div class="row g-3">
+                @foreach(var field in new[] { ("initialCash","Caja inicial",cashClose.InitialCash), ("cashReceived","Efectivo recibido",cashClose.CashReceived), ("finalCash","Caja final contada",cashClose.FinalCash), ("bankDeposit","Depósito bancario",cashClose.BankDeposit), ("prizePayments","Pago de premios",cashClose.PrizePayments), ("accountsReceivable","Cuentas por cobrar",cashClose.AccountsReceivable) }) { <div class="col-md-4"><label class="form-label small fw-semibold">@field.Item2</label><input name="@field.Item1" class="form-control close-money" type="number" min="0" step="0.01" value="@field.Item3.ToString(CultureInfo.InvariantCulture)" /></div> }
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-4 mb-2"><div><h3 class="h6 mb-0">Proveedores</h3><span class="text-muted small">Agregue únicamente los gastos realizados.</span></div><button type="button" class="btn btn-sm btn-outline-primary" id="add-provider"><span class="material-icons align-middle">add</span> Agregar proveedor</button></div>
+            <div class="table-responsive"><table class="table align-middle"><thead><tr><th>Proveedor</th><th class="money-column">Monto</th><th class="action-column"></th></tr></thead><tbody id="provider-rows">
+                @foreach(var provider in cashClose.Providers) { <tr><td><input name="providerNames" class="form-control" value="@provider.Name" placeholder="Nombre del proveedor" required /></td><td><input name="providerAmounts" class="form-control provider-amount" type="number" min="0" step="0.01" value="@provider.Amount.ToString(CultureInfo.InvariantCulture)" required /></td><td><button type="button" class="btn btn-sm btn-outline-danger remove-row"><span class="material-icons">delete</span></button></td></tr> }
+            </tbody></table></div></div>
+            <aside class="col-xl-5"><div class="summary-panel rounded-3 p-3"><div class="summary-line"><span>Total SINPE</span><strong id="summary-sinpe">@(((double)ViewBag.SinpeTotal).ToCRC())</strong></div><div class="summary-line"><span>Total Tarjeta</span><strong id="summary-card">@(((double)ViewBag.CardTotal).ToCRC())</strong></div><div class="summary-line total"><span>Total movimientos</span><strong id="summary-grand">@(((double)ViewBag.GrandTotal).ToCRC())</strong></div><div class="summary-line"><span>Proveedores</span><strong id="summary-providers">@cashClose.ProviderTotal.ToCRC()</strong></div><hr/><div class="summary-line"><span>Caja esperada</span><strong id="summary-expected">@cashClose.ExpectedCash.ToCRC()</strong></div><div class="summary-line"><span>Diferencia</span><strong id="summary-difference">@cashClose.Difference.ToCRC()</strong></div></div><button type="submit" class="btn btn-success btn-lg w-100 mt-3" disabled="@(!canClose)"><span class="material-icons align-middle me-1">lock</span> Guardar cierre</button></aside></div>
         </div>
     </form>
 
-    <div class="row g-3 mb-4">
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="small text-muted text-uppercase">Total SINPE</div>
-                    <div class="h3 mb-0 text-primary">@(((double)ViewBag.SinpeTotal).ToCRC())</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="small text-muted text-uppercase">Total Tarjeta</div>
-                    <div class="h3 mb-0 text-success">@(((double)ViewBag.CardTotal).ToCRC())</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100 bg-dark text-white">
-                <div class="card-body">
-                    <div class="small text-white-50 text-uppercase">Total del turno</div>
-                    <div class="h3 mb-0">@(((double)ViewBag.GrandTotal).ToCRC())</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
-                <div>
-                    <h2 class="h5 mb-1">Planilla del turno</h2>
-                    <p class="text-muted mb-0">Vista tipo Excel para revisar rápidamente montos, nombres y confirmación.</p>
-                </div>
-                <span class="badge text-bg-success fs-6">@dateTitle</span>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-sm align-middle payment-sheet mb-0">
-                    <thead>
-                        <tr>
-                            <th class="sheet-date" colspan="4">@dateTitle</th>
-                        </tr>
-                        <tr>
-                            <th class="sheet-number"></th>
-                            <th>monto</th>
-                            <th>Nombre</th>
-                            <th>Si</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for(var index = 0; index < spreadsheetRows; index++)
-                        {
-                            var row = index < paymentRows.Count ? paymentRows[index] : null;
-                            <tr>
-                                <td class="sheet-number">@(index + 1)</td>
-                                <td class="sheet-money">@(row is null ? "" : row.Value.ToCRC())</td>
-                                <td>@(row?.Title ?? "")</td>
-                                <td class="sheet-check">
-                                    @if(row is not null)
-                                    {
-                                        <form asp-controller="Note" asp-action="ToggleVerified" method="post" class="m-0">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@row.Id" />
-                                            <input type="hidden" name="shiftDate" value="@selectedDate" />
-                                            <button type="submit" class="sheet-check-button @(row.IsVerified ? "is-checked" : "")" aria-label="Marcar pago comprobado">
-                                                @(row.IsVerified ? "✓" : "")
-                                            </button>
-                                        </form>
-                                    }
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <td class="sheet-total-fill"></td>
-                            <td class="sheet-total-label">TOTAL</td>
-                            <td class="sheet-total-value">@(((double)ViewBag.GrandTotal).ToCRC())</td>
-                            <td class="sheet-total-fill"></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
-    </div>
-
-
-    @if(TempData["ErrorMessage"] is string errorMessage)
-    {
-        <div class="alert alert-danger border-0 shadow-sm" role="alert">@errorMessage</div>
-    }
-
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body">
-            <div class="d-flex flex-column flex-lg-row justify-content-between gap-2 mb-3">
-                <div>
-                    <h2 class="h5 mb-1">Caja / cambio de turno</h2>
-                    <p class="text-muted mb-0">Los checks deben estar completos y la caja debe cuadrar para permitir el cambio de personal.</p>
-                </div>
-                @if(canCloseShift)
-                {
-                    <span class="badge text-bg-success align-self-start">Pagos comprobados</span>
-                }
-                else
-                {
-                    <span class="badge text-bg-danger align-self-start">@ViewBag.PendingVerificationCount sin comprobar</span>
-                }
-            </div>
-
-            <form asp-controller="Note" asp-action="SaveCashClose" method="post">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="shiftDate" value="@selectedDate" />
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label">Caja inicial</label>
-                        <input name="initialCash" class="form-control" inputmode="decimal" value="@cashClose.InitialCash" />
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Efectivo recibido</label>
-                        <input name="cashReceived" class="form-control" inputmode="decimal" value="@cashClose.CashReceived" />
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Caja final contada</label>
-                        <input name="finalCash" class="form-control" inputmode="decimal" value="@cashClose.FinalCash" />
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Banco</label>
-                        <input name="bankDeposit" class="form-control" inputmode="decimal" value="@cashClose.BankDeposit" />
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Pago premios</label>
-                        <input name="prizePayments" class="form-control" inputmode="decimal" value="@cashClose.PrizePayments" />
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Cuentas por cobrar</label>
-                        <input name="accountsReceivable" class="form-control" inputmode="decimal" value="@cashClose.AccountsReceivable" />
-                    </div>
-                </div>
-
-                <div class="row g-4 mt-1">
-                    <div class="col-lg-7">
-                        <h3 class="h6 text-uppercase text-muted">Proveedores (gastos)</h3>
-                        <div class="table-responsive">
-                            <table class="table table-sm align-middle">
-                                <thead><tr><th>Proveedor</th><th style="width: 180px;">Monto</th></tr></thead>
-                                <tbody>
-                                    @for(var index = 0; index < providerRows; index++)
-                                    {
-                                        var provider = index < cashClose.Providers.Count ? cashClose.Providers[index] : new ProviderExpense();
-                                        <tr>
-                                            <td><input name="providerNames" class="form-control form-control-sm" value="@provider.Name" placeholder="Proveedor @(index + 1)" /></td>
-                                            <td><input name="providerAmounts" class="form-control form-control-sm" inputmode="decimal" value="@provider.Amount" /></td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="col-lg-5">
-                        <div class="list-group shadow-sm">
-                            <div class="list-group-item d-flex justify-content-between"><span>SINPEs comprobados</span><strong>@(((double)ViewBag.SinpeTotal).ToCRC())</strong></div>
-                            <div class="list-group-item d-flex justify-content-between"><span>Tarjetas comprobadas</span><strong>@(((double)ViewBag.CardTotal).ToCRC())</strong></div>
-                            <div class="list-group-item d-flex justify-content-between"><span>Suma proveedores</span><strong>@cashClose.ProviderTotal.ToCRC()</strong></div>
-                            <div class="list-group-item d-flex justify-content-between"><span>Caja esperada</span><strong>@cashClose.ExpectedCash.ToCRC()</strong></div>
-                            <div class="list-group-item d-flex justify-content-between @(cashClose.IsBalanced ? "list-group-item-success" : "list-group-item-warning")"><span>Diferencia</span><strong>@cashClose.Difference.ToCRC()</strong></div>
-                        </div>
-                        <button type="submit" class="btn btn-success w-100 mt-3" disabled="@(!canCloseShift)">Guardar caja y cambiar turno</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    @if(TempData["SuccessMessage"] is string successMessage)
-    {
-        <div class="alert alert-success border-0 shadow-sm" role="alert">@successMessage</div>
-    }
-
-    @if(!Model.Any())
-    {
-        <div class="alert alert-info border-0 shadow-sm" role="alert">
-            No hay pagos registrados para este turno. Cambia el día o registra el primer SINPE/tarjeta.
-        </div>
-    }
-
-    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
-        @foreach(var item in Model)
-        {
-            var badgeClass = item.PaymentMethod == NotePaymentMethod.SINPE ? "text-bg-primary" : "text-bg-success";
-            <div class="col">
-                <div class="card h-100 border-0 shadow-sm" id="note-card-@item.Id">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between gap-3 mb-3">
-                            <div>
-                                <div class="small text-muted text-uppercase">Cliente</div>
-                                <h5 class="card-title mb-0">@item.Title</h5>
-                            </div>
-                            <div class="d-flex flex-column align-items-end gap-1">
-                                <span class="badge @badgeClass align-self-start">@item.PaymentMethod</span>
-                                <span class="badge @(item.IsVerified ? "text-bg-success" : "text-bg-warning")">@(item.IsVerified ? "Comprobado" : "Pendiente")</span>
-                            </div>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-end">
-                            <div>
-                                <div class="small text-muted">Turno</div>
-                                <div>@item.ShiftDate.ToShortDateString()</div>
-                            </div>
-                            <div class="h4 mb-0">@item.Value.ToCRC()</div>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-white border-0 pt-0">
-                        <div class="btn-group w-100" role="group" aria-label="Acciones de pago">
-                            <button type="button" class="btn btn-outline-dark" onclick="location.href='@Url.Action("Edit", "Note", new { id = item.Id })'">
-                                <span class="material-icons">edit</span>
-                            </button>
-                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteNoteModal-@item.Id">
-                                <span class="material-icons">delete</span>
-                            </button>
-                            <button type="button" class="btn btn-outline-primary" onclick="copyNoteAsImage('@item.Id')">
-                                <span class="material-icons">image</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal fade" id="deleteNoteModal-@item.Id" tabindex="-1" aria-labelledby="deleteNoteModalLabel-@item.Id" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content border-0 shadow">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="deleteNoteModalLabel-@item.Id">Eliminar pago</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <partial name="_Delete" model="item"></partial>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        }
-    </div>
-</div>
-
-<div class="modal fade" id="copySuccessModal" tabindex="-1" aria-labelledby="copySuccessModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-sm modal-dialog-centered"><div class="modal-content border-0 shadow"><div class="modal-body text-center py-4"><span class="material-icons text-success mb-2" style="font-size: 32px;">check_circle</span><h6 class="mb-0" id="copySuccessModalLabel">¡Imagen copiada!</h6></div></div></div>
+    <section class="card border-0 shadow-sm"><div class="card-body p-4"><div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3"><div><h2 class="h5 mb-1">Historial de cierres</h2><p class="text-muted small mb-0">Los días marcados tienen un cierre guardado. Seleccione uno para consultarlo.</p></div><div class="btn-group"><a class="btn btn-outline-secondary" href="?shiftDate=@month.AddMonths(-1).ToString("yyyy-MM-dd")">‹</a><span class="btn btn-light disabled text-capitalize">@month.ToString("MMMM yyyy", new CultureInfo("es-CR"))</span><a class="btn btn-outline-secondary" href="?shiftDate=@month.AddMonths(1).ToString("yyyy-MM-dd")">›</a></div></div>
+        <div class="closing-calendar"><div class="calendar-weekdays">@foreach(var dayName in new[]{"Dom","Lun","Mar","Mié","Jue","Vie","Sáb"}) { <span>@dayName</span> }</div><div class="calendar-days">@for(var i=0;i<42;i++){ var day=calendarStart.AddDays(i); var hasClose=closingDates.Contains(day.Date); <a href="?shiftDate=@day.ToString("yyyy-MM-dd")" class="calendar-day @(day.Month != month.Month ? "outside" : "") @(hasClose ? "closed" : "") @(day.Date == date.Date ? "selected" : "")"><span>@day.Day</span>@if(hasClose){<small>Cerrado</small>}</a> }</div></div>
+    </div></section>
 </div>
 
 <style>
-    .payment-sheet {
-        max-width: 420px;
-        border-collapse: collapse;
-        font-size: 0.95rem;
-    }
-
-    .payment-sheet th,
-    .payment-sheet td {
-        border: 1px solid #111;
-        padding: 0.18rem 0.45rem;
-    }
-
-    .payment-sheet .sheet-date,
-    .payment-sheet thead th,
-    .payment-sheet .sheet-number,
-    .payment-sheet .sheet-total-fill {
-        background: #63be7b;
-        color: #000;
-        font-weight: 700;
-        text-align: center;
-    }
-
-    .payment-sheet tbody td:not(.sheet-number),
-    .payment-sheet .sheet-total-label,
-    .payment-sheet .sheet-total-value {
-        background: #d9ead3;
-    }
-
-    .payment-sheet .sheet-money,
-    .payment-sheet .sheet-total-value {
-        white-space: nowrap;
-    }
-
-    .payment-sheet .sheet-total-label,
-    .payment-sheet .sheet-total-value,
-    .payment-sheet .sheet-check {
-        text-align: center;
-    }
-
-    .sheet-check-button {
-        width: 1.5rem;
-        height: 1.5rem;
-        border: 1px solid #111;
-        background: #fff;
-        font-weight: 700;
-        line-height: 1;
-    }
-
-    .sheet-check-button.is-checked {
-        background: #63be7b;
-    }
+.operations-page{max-width:1400px}.operation-table{min-width:650px}.money-column{width:180px}.check-column{width:120px;text-align:center}.action-column{width:55px}.material-icons{font-size:19px;vertical-align:middle}.summary-panel{background:#f3f7f4;border:1px solid #dce8df}.summary-line{display:flex;justify-content:space-between;padding:.65rem .25rem}.summary-line.total{background:#173c2a;color:#fff;margin:.35rem -.4rem;padding:.8rem .65rem;border-radius:.5rem}.calendar-weekdays,.calendar-days{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.calendar-weekdays span{text-align:center;font-size:.75rem;font-weight:700;color:#6c757d;padding:.4rem}.calendar-day{min-height:70px;border:1px solid #e2e5e3;border-radius:.5rem;padding:.45rem;text-decoration:none;color:#212529;display:flex;flex-direction:column}.calendar-day:hover{border-color:#198754;background:#f4fbf7}.calendar-day.outside{opacity:.35}.calendar-day.closed{background:#e6f4eb;border-color:#68ad7e}.calendar-day.closed small{color:#157347;font-weight:600;margin-top:auto}.calendar-day.selected{outline:2px solid #212529}@media(max-width:600px){.calendar-day{min-height:48px;padding:.3rem}.calendar-day small{display:none}}
 </style>
-
-@section Scripts {
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <script type="text/javascript">
-        function copyNoteAsImage(id) {
-            const card = document.getElementById('note-card-' + id);
-            if (!card) return;
-            html2canvas(card).then(function(canvas) {
-                canvas.toBlob(function(blob) {
-                    if (!blob || !navigator.clipboard || !navigator.clipboard.write) return;
-                    navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]).then(function() {
-                        const modal = new bootstrap.Modal(document.getElementById('copySuccessModal'));
-                        modal.show();
-                        setTimeout(function() { modal.hide(); }, 1800);
-                    }).catch(function(error) { console.error('Error al copiar la nota como imagen:', error); });
-                });
-            });
-        }
-    </script>
-}
+@section Scripts {<script>
+(()=>{const money=n=>new Intl.NumberFormat('es-CR',{style:'currency',currency:'CRC',maximumFractionDigits:2}).format(Number(n)||0);const sum=s=>[...document.querySelectorAll(s)].reduce((a,e)=>a+(Number(e.value)||0),0);
+function recalc(){const sinpe=sum('#sinpe-rows .money-input'),card=sum('#card-rows .money-input'),providers=sum('.provider-amount');document.querySelector('#sinpe-total').textContent=money(sinpe);document.querySelector('#card-total').textContent=money(card);document.querySelector('#summary-sinpe').textContent=money(sinpe);document.querySelector('#summary-card').textContent=money(card);document.querySelector('#summary-grand').textContent=money(sinpe+card);document.querySelector('#summary-providers').textContent=money(providers);const initial=Number(document.querySelector('[name=initialCash]').value)||0,received=Number(document.querySelector('[name=cashReceived]').value)||0,prizes=Number(document.querySelector('[name=prizePayments]').value)||0,final=Number(document.querySelector('[name=finalCash]').value)||0,expected=initial+received-providers-prizes;document.querySelector('#summary-expected').textContent=money(expected);document.querySelector('#summary-difference').textContent=money(final-expected)}
+function paymentRow(prefix){const tr=document.createElement('tr'),key='new-'+Date.now()+'-'+Math.random();tr.innerHTML=`<td><input type="hidden" name="${prefix}Ids" value="${key}"><input class="form-control" name="${prefix}Titles" placeholder="Nombre o referencia" required></td><td><input class="form-control money-input" name="${prefix}Amounts" type="number" min="0" step="0.01" inputmode="decimal" required></td><td class="text-center"><input class="form-check-input" name="${prefix}Verified" value="${key}" type="checkbox"></td><td><button type="button" class="btn btn-sm btn-outline-danger remove-row"><span class="material-icons">delete</span></button></td>`;return tr}
+document.querySelectorAll('.add-payment').forEach(b=>b.addEventListener('click',()=>{document.querySelector('#'+b.dataset.prefix+'-rows').append(paymentRow(b.dataset.prefix));recalc()}));document.querySelector('#add-provider').addEventListener('click',()=>{const tr=document.createElement('tr');tr.innerHTML='<td><input name="providerNames" class="form-control" placeholder="Nombre del proveedor" required></td><td><input name="providerAmounts" class="form-control provider-amount" type="number" min="0" step="0.01" required></td><td><button type="button" class="btn btn-sm btn-outline-danger remove-row"><span class="material-icons">delete</span></button></td>';document.querySelector('#provider-rows').append(tr)});document.addEventListener('click',e=>{const b=e.target.closest('.remove-row');if(b){b.closest('tr').remove();recalc()}});document.addEventListener('input',e=>{if(e.target.matches('.money-input,.provider-amount,.close-money'))recalc()});recalc()})();
+</script>}

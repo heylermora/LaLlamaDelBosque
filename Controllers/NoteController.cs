@@ -37,13 +37,42 @@ namespace LaLlamaDelBosque.Controllers
             ViewBag.SearchText = searchText;
             ViewBag.ShiftDate = selectedDate.ToString("yyyy-MM-dd");
             ViewBag.PaymentMethod = paymentMethod;
-            ViewBag.SinpeTotal = filteredNotes.Where(n => n.PaymentMethod == NotePaymentMethod.SINPE).Sum(n => n.Value);
-            ViewBag.CardTotal = filteredNotes.Where(n => n.PaymentMethod == NotePaymentMethod.Tarjeta).Sum(n => n.Value);
-            ViewBag.GrandTotal = filteredNotes.Sum(n => n.Value);
+            // The close summary must always represent the complete shift, even when the
+            // user is temporarily filtering the table.
+            ViewBag.SinpeTotal = dayNotes.Where(n => n.PaymentMethod == NotePaymentMethod.SINPE).Sum(n => n.Value);
+            ViewBag.CardTotal = dayNotes.Where(n => n.PaymentMethod == NotePaymentMethod.Tarjeta).Sum(n => n.Value);
+            ViewBag.GrandTotal = dayNotes.Sum(n => n.Value);
             ViewBag.PendingVerificationCount = dayNotes.Count(n => !n.IsVerified);
             ViewBag.AllPaymentsVerified = dayNotes.All(n => n.IsVerified);
             ViewBag.CashClose = _cashRegister.CashClosings.FirstOrDefault(c => c.ShiftDate.Date == selectedDate) ?? new CashRegisterClose { ShiftDate = selectedDate };
+            ViewBag.ClosingDates = _cashRegister.CashClosings
+                .Select(c => c.ShiftDate.Date)
+                .Distinct()
+                .OrderByDescending(date => date)
+                .ToList();
             return View(filteredNotes);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SavePayments(IFormCollection collection)
+        {
+            if(!DateTime.TryParse(collection["shiftDate"], out var shiftDate))
+                return BadRequest("La fecha del turno no es válida.");
+
+            var submitted = new List<Note>();
+            submitted.AddRange(BuildPayments(collection, "sinpe", NotePaymentMethod.SINPE, shiftDate.Date));
+            submitted.AddRange(BuildPayments(collection, "card", NotePaymentMethod.Tarjeta, shiftDate.Date));
+
+            var nextId = _notes.Notes.Any() ? _notes.Notes.Max(note => note.Id) + 1 : 1;
+            foreach(var note in submitted.Where(note => note.Id <= 0))
+                note.Id = nextId++;
+
+            _notes.Notes.RemoveAll(note => note.ShiftDate.Date == shiftDate.Date);
+            _notes.Notes.AddRange(submitted);
+            SetNotes(_notes);
+            TempData["SuccessMessage"] = "Movimientos guardados correctamente.";
+            return RedirectToAction(nameof(Index), new { shiftDate = shiftDate.ToString("yyyy-MM-dd") });
         }
 
         [HttpGet]
@@ -187,6 +216,37 @@ namespace LaLlamaDelBosque.Controllers
             }
 
             return providers;
+        }
+
+        private static List<Note> BuildPayments(IFormCollection collection, string prefix, NotePaymentMethod method, DateTime shiftDate)
+        {
+            var ids = collection[$"{prefix}Ids"];
+            var titles = collection[$"{prefix}Titles"];
+            var amounts = collection[$"{prefix}Amounts"];
+            var verifiedIds = collection[$"{prefix}Verified"].Select(value => value ?? "").ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var payments = new List<Note>();
+
+            for(var index = 0; index < Math.Max(ids.Count, Math.Max(titles.Count, amounts.Count)); index++)
+            {
+                var title = index < titles.Count ? titles[index]?.Trim() ?? "" : "";
+                var amount = index < amounts.Count ? ParseMoney(amounts[index]) : 0;
+                if(string.IsNullOrWhiteSpace(title) && amount <= 0)
+                    continue;
+
+                var idText = index < ids.Count ? ids[index] ?? "0" : "0";
+                _ = int.TryParse(idText, out var id);
+                payments.Add(new Note
+                {
+                    Id = id,
+                    Title = title,
+                    Value = amount,
+                    PaymentMethod = method,
+                    ShiftDate = shiftDate,
+                    IsVerified = verifiedIds.Contains(idText)
+                });
+            }
+
+            return payments;
         }
 
         private static double ParseMoney(string? value)
