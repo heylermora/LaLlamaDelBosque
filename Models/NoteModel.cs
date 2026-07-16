@@ -23,12 +23,16 @@ namespace LaLlamaDelBosque.Models
         public double BankDeposit { get; set; }
         public double PrizePayments { get; set; }
         public double AccountsReceivable { get; set; }
+        public double ProviderInitialCash { get; set; }
+        public double ProviderFinalCash { get; set; }
         public List<ProviderExpense> Providers { get; set; } = new List<ProviderExpense>();
 
         public double ProviderTotal => Math.Round(Providers.Sum(p => p.Amount), 2);
-        public double ExpectedCash => Math.Round(InitialCash + CashReceived - ProviderTotal - PrizePayments, 2);
+        public double ExpectedCash => Math.Round(InitialCash + CashReceived - PrizePayments, 2);
         public double Difference => Math.Round(FinalCash - ExpectedCash, 2);
-        public bool IsBalanced => Math.Abs(Difference) < 0.01;
+        public double ExpectedProviderCash => Math.Round(ProviderInitialCash - ProviderTotal, 2);
+        public double ProviderDifference => Math.Round(ProviderFinalCash - ExpectedProviderCash, 2);
+        public bool IsBalanced => Math.Abs(Difference) < 0.01 && Math.Abs(ProviderDifference) < 0.01;
     }
 
     public class ProviderExpense

@@ -19,7 +19,10 @@
         const cashReceived = Number(document.querySelector('[name=cashReceived]').value) || 0;
         const prizePayments = Number(document.querySelector('[name=prizePayments]').value) || 0;
         const finalCash = Number(document.querySelector('[name=finalCash]').value) || 0;
-        const expectedCash = initialCash + cashReceived - providerTotal - prizePayments;
+        const providerInitialCash = Number(document.querySelector('[name=providerInitialCash]').value) || 0;
+        const providerFinalCash = Number(document.querySelector('[name=providerFinalCash]').value) || 0;
+        const expectedCash = initialCash + cashReceived - prizePayments;
+        const expectedProviderCash = providerInitialCash - providerTotal;
 
         document.querySelector('#sinpe-total').textContent = formatMoney(sinpeTotal);
         document.querySelector('#card-total').textContent = formatMoney(cardTotal);
@@ -29,6 +32,8 @@
         document.querySelector('#summary-providers').textContent = formatMoney(providerTotal);
         document.querySelector('#summary-expected').textContent = formatMoney(expectedCash);
         document.querySelector('#summary-difference').textContent = formatMoney(finalCash - expectedCash);
+        document.querySelector('#summary-provider-expected').textContent = formatMoney(expectedProviderCash);
+        document.querySelector('#summary-provider-difference').textContent = formatMoney(providerFinalCash - expectedProviderCash);
     }
 
     function createPaymentRow(prefix) {

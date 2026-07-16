@@ -181,11 +181,13 @@ namespace LaLlamaDelBosque.Controllers
             cashClose.BankDeposit = ParseMoney(collection["bankDeposit"]);
             cashClose.PrizePayments = ParseMoney(collection["prizePayments"]);
             cashClose.AccountsReceivable = ParseMoney(collection["accountsReceivable"]);
+            cashClose.ProviderInitialCash = ParseMoney(collection["providerInitialCash"]);
+            cashClose.ProviderFinalCash = ParseMoney(collection["providerFinalCash"]);
             cashClose.Providers = BuildProviders(collection);
 
             if(!cashClose.IsBalanced)
             {
-                TempData["ErrorMessage"] = $"La caja no cuadra. Diferencia: {cashClose.Difference.ToCRC()}. Revise efectivo, premios y proveedores.";
+                TempData["ErrorMessage"] = $"El cierre no cuadra. Diferencia de caja: {cashClose.Difference.ToCRC()}. Diferencia de proveedores: {cashClose.ProviderDifference.ToCRC()}.";
                 return RedirectToAction(nameof(Index), new { shiftDate = shiftDate.ToString("yyyy-MM-dd") });
             }
 
