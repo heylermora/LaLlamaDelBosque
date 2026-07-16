@@ -576,3 +576,110 @@ span.material-icons.star {
         font-size: 1.1rem;
         color: var(--primary-strong);
     }
+
+/* Operations */
+.operations-page {
+    max-width: 1400px;
+}
+
+.operation-table {
+    min-width: 650px;
+}
+
+.money-column {
+    width: 180px;
+}
+
+.check-column {
+    width: 120px;
+    text-align: center;
+}
+
+.action-column {
+    width: 55px;
+}
+
+.operations-page .material-icons {
+    font-size: 19px;
+    vertical-align: middle;
+}
+
+.summary-panel {
+    background: #f3f7f4;
+    border: 1px solid #dce8df;
+}
+
+.summary-line {
+    display: flex;
+    justify-content: space-between;
+    padding: .65rem .25rem;
+}
+
+.summary-line.total {
+    margin: .35rem -.4rem;
+    padding: .8rem .65rem;
+    color: #fff;
+    background: #173c2a;
+    border-radius: .5rem;
+}
+
+.calendar-weekdays,
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+}
+
+.calendar-weekdays span {
+    padding: .4rem;
+    color: #6c757d;
+    font-size: .75rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.calendar-day {
+    display: flex;
+    min-height: 70px;
+    padding: .45rem;
+    color: #212529;
+    text-decoration: none;
+    border: 1px solid #e2e5e3;
+    border-radius: .5rem;
+    flex-direction: column;
+}
+
+.calendar-day:hover {
+    background: #f4fbf7;
+    border-color: #198754;
+}
+
+.calendar-day.outside {
+    opacity: .35;
+}
+
+.calendar-day.closed {
+    background: #e6f4eb;
+    border-color: #68ad7e;
+}
+
+.calendar-day.closed small {
+    margin-top: auto;
+    color: #157347;
+    font-weight: 600;
+}
+
+.calendar-day.selected {
+    outline: 2px solid #212529;
+}
+
+@media (max-width: 600px) {
+    .calendar-day {
+        min-height: 48px;
+        padding: .3rem;
+    }
+
+    .calendar-day small {
+        display: none;
+    }
+}

@@ -37,6 +37,14 @@ namespace LaLlamaDelBosque.Controllers
             }
 
             ViewBag.ShiftDate = selectedDate.ToString("yyyy-MM-dd");
+            var cashRegister = JsonFile.Read<CashRegisterModel>("CashRegister", new CashRegisterModel());
+            ViewBag.DailyClosings = cashRegister.CashClosings
+                .Where(close => close.ShiftDate.Date == selectedDate)
+                .OrderBy(close => close.ClosedAt == default ? close.ShiftDate : close.ClosedAt)
+                .ToList();
+            ViewBag.ClosingCounts = cashRegister.CashClosings
+                .GroupBy(close => close.ShiftDate.Date)
+                .ToDictionary(group => group.Key, group => group.Count());
             return View(schedules.OrderBy(s => s.CreatedDate));
         }
 

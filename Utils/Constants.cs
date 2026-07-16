@@ -12,6 +12,8 @@
 
 		public static readonly List<string> BustedList = new() { "R", "3X", "5X", "7X" };
 
+        public static readonly IReadOnlyList<string> CurrentCollaborators = new[] { "Arlyn", "Tamara" };
+
         public static readonly Dictionary<string, double> NicaBustedMultipliers = new(StringComparer.OrdinalIgnoreCase)
 		{
 			{ "R", 200 },
