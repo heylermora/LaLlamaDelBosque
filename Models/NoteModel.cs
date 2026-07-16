@@ -16,6 +16,7 @@ namespace LaLlamaDelBosque.Models
     {
         public int Id { get; set; }
         public DateTime ShiftDate { get; set; } = DateTime.Today;
+        public DateTime ClosedAt { get; set; }
 
         public double InitialCash { get; set; }
         public double CashReceived { get; set; }
