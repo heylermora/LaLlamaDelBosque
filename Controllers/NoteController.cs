@@ -15,12 +15,15 @@ namespace LaLlamaDelBosque.Controllers
         {
             _notes = GetNotes();
             _cashRegister = GetCashRegister();
+            MigrateLegacyPaymentAssignments();
         }
 
-        public IActionResult Index(string? searchText, DateTime? shiftDate, NotePaymentMethod? paymentMethod)
+        public IActionResult Index(string? searchText, DateTime? shiftDate, NotePaymentMethod? paymentMethod, int? closeId)
         {
             var selectedDate = shiftDate?.Date ?? DateTime.Today;
-            var dayNotes = _notes.Notes.Where(n => n.ShiftDate.Date == selectedDate).ToList();
+            var dayNotes = _notes.Notes
+                .Where(note => note.ShiftDate.Date == selectedDate && note.CashCloseId == closeId)
+                .ToList();
             var notes = dayNotes.AsEnumerable();
 
             if(!string.IsNullOrWhiteSpace(searchText))
@@ -37,13 +40,52 @@ namespace LaLlamaDelBosque.Controllers
             ViewBag.SearchText = searchText;
             ViewBag.ShiftDate = selectedDate.ToString("yyyy-MM-dd");
             ViewBag.PaymentMethod = paymentMethod;
-            ViewBag.SinpeTotal = filteredNotes.Where(n => n.PaymentMethod == NotePaymentMethod.SINPE).Sum(n => n.Value);
-            ViewBag.CardTotal = filteredNotes.Where(n => n.PaymentMethod == NotePaymentMethod.Tarjeta).Sum(n => n.Value);
-            ViewBag.GrandTotal = filteredNotes.Sum(n => n.Value);
+            // The close summary must always represent the complete shift, even when the
+            // user is temporarily filtering the table.
+            ViewBag.SinpeTotal = dayNotes.Where(n => n.PaymentMethod == NotePaymentMethod.SINPE).Sum(n => n.Value);
+            ViewBag.CardTotal = dayNotes.Where(n => n.PaymentMethod == NotePaymentMethod.Tarjeta).Sum(n => n.Value);
+            ViewBag.GrandTotal = dayNotes.Sum(n => n.Value);
             ViewBag.PendingVerificationCount = dayNotes.Count(n => !n.IsVerified);
             ViewBag.AllPaymentsVerified = dayNotes.All(n => n.IsVerified);
-            ViewBag.CashClose = _cashRegister.CashClosings.FirstOrDefault(c => c.ShiftDate.Date == selectedDate) ?? new CashRegisterClose { ShiftDate = selectedDate };
+            var dailyClosings = _cashRegister.CashClosings
+                .Where(close => close.ShiftDate.Date == selectedDate)
+                .OrderBy(close => close.ClosedAt == default ? close.ShiftDate : close.ClosedAt)
+                .ToList();
+            var selectedClose = closeId.HasValue
+                ? dailyClosings.FirstOrDefault(close => close.Id == closeId.Value)
+                : null;
+
+            ViewBag.CashClose = selectedClose ?? new CashRegisterClose { ShiftDate = selectedDate };
+            ViewBag.DailyClosings = dailyClosings;
+            ViewBag.SelectedCloseId = selectedClose?.Id;
+            ViewBag.Collaborators = Constants.CurrentCollaborators;
             return View(filteredNotes);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SavePayments(IFormCollection collection)
+        {
+            if(!DateTime.TryParse(collection["shiftDate"], out var shiftDate))
+                return BadRequest("La fecha del turno no es válida.");
+            _ = int.TryParse(collection["closeId"], out var closeId);
+            int? paymentCloseId = closeId > 0 ? closeId : null;
+            if(paymentCloseId.HasValue && !_cashRegister.CashClosings.Any(close => close.Id == paymentCloseId && close.ShiftDate.Date == shiftDate.Date))
+                return NotFound();
+
+            var submitted = new List<Note>();
+            submitted.AddRange(BuildPayments(collection, "sinpe", NotePaymentMethod.SINPE, shiftDate.Date, paymentCloseId));
+            submitted.AddRange(BuildPayments(collection, "card", NotePaymentMethod.Tarjeta, shiftDate.Date, paymentCloseId));
+
+            var nextId = _notes.Notes.Any() ? _notes.Notes.Max(note => note.Id) + 1 : 1;
+            foreach(var note in submitted.Where(note => note.Id <= 0))
+                note.Id = nextId++;
+
+            _notes.Notes.RemoveAll(note => note.ShiftDate.Date == shiftDate.Date && note.CashCloseId == paymentCloseId);
+            _notes.Notes.AddRange(submitted);
+            SetNotes(_notes);
+            TempData["SuccessMessage"] = "Movimientos guardados correctamente.";
+            return RedirectToAction(nameof(Index), new { shiftDate = shiftDate.ToString("yyyy-MM-dd"), closeId = paymentCloseId });
         }
 
         [HttpGet]
@@ -128,20 +170,36 @@ namespace LaLlamaDelBosque.Controllers
         public IActionResult SaveCashClose(IFormCollection collection)
         {
             var shiftDate = DateTime.Parse(collection["shiftDate"]);
-            var shiftPayments = _notes.Notes.Where(n => n.ShiftDate.Date == shiftDate.Date).ToList();
+            _ = int.TryParse(collection["closeId"], out var closeId);
+            var closedBy = collection["closedBy"].ToString().Trim();
+            if(!Constants.CurrentCollaborators.Contains(closedBy, StringComparer.OrdinalIgnoreCase))
+            {
+                TempData["ErrorMessage"] = "Seleccione la colaboradora responsable del cierre.";
+                return RedirectToAction(nameof(Index), new { shiftDate = shiftDate.ToString("yyyy-MM-dd"), closeId = closeId > 0 ? closeId : null });
+            }
+            int? paymentCloseId = closeId > 0 ? closeId : null;
+            var shiftPayments = _notes.Notes
+                .Where(note => note.ShiftDate.Date == shiftDate.Date && note.CashCloseId == paymentCloseId)
+                .ToList();
             if(shiftPayments.Any(n => !n.IsVerified))
             {
                 TempData["ErrorMessage"] = "No puede hacer cambio de turno: hay pagos SINPE/Tarjeta sin check de comprobación.";
-                return RedirectToAction(nameof(Index), new { shiftDate = shiftDate.ToString("yyyy-MM-dd") });
+                return RedirectToAction(nameof(Index), new { shiftDate = shiftDate.ToString("yyyy-MM-dd"), closeId = closeId > 0 ? closeId : null });
             }
 
-            var cashClose = _cashRegister.CashClosings.FirstOrDefault(c => c.ShiftDate.Date == shiftDate.Date);
+            var cashClose = closeId > 0
+                ? _cashRegister.CashClosings.FirstOrDefault(close => close.Id == closeId && close.ShiftDate.Date == shiftDate.Date)
+                : null;
+            if(closeId > 0 && cashClose is null)
+                return NotFound();
+
             if(cashClose is null)
             {
                 cashClose = new CashRegisterClose
                 {
                     Id = _cashRegister.CashClosings.Any() ? _cashRegister.CashClosings.Max(c => c.Id) + 1 : 1,
-                    ShiftDate = shiftDate.Date
+                    ShiftDate = shiftDate.Date,
+                    ClosedAt = DateTime.Now
                 };
                 _cashRegister.CashClosings.Add(cashClose);
             }
@@ -152,17 +210,42 @@ namespace LaLlamaDelBosque.Controllers
             cashClose.BankDeposit = ParseMoney(collection["bankDeposit"]);
             cashClose.PrizePayments = ParseMoney(collection["prizePayments"]);
             cashClose.AccountsReceivable = ParseMoney(collection["accountsReceivable"]);
+            cashClose.ProviderInitialCash = ParseMoney(collection["providerInitialCash"]);
+            cashClose.ProviderFinalCash = ParseMoney(collection["providerFinalCash"]);
+            cashClose.ClosedBy = Constants.CurrentCollaborators.First(name => name.Equals(closedBy, StringComparison.OrdinalIgnoreCase));
             cashClose.Providers = BuildProviders(collection);
 
             if(!cashClose.IsBalanced)
             {
-                TempData["ErrorMessage"] = $"La caja no cuadra. Diferencia: {cashClose.Difference.ToCRC()}. Revise efectivo, premios y proveedores.";
-                return RedirectToAction(nameof(Index), new { shiftDate = shiftDate.ToString("yyyy-MM-dd") });
+                TempData["ErrorMessage"] = $"El cierre no cuadra. Diferencia de caja: {cashClose.Difference.ToCRC()}. Diferencia de proveedores: {cashClose.ProviderDifference.ToCRC()}.";
+                return RedirectToAction(nameof(Index), new { shiftDate = shiftDate.ToString("yyyy-MM-dd"), closeId = closeId > 0 ? closeId : null });
             }
 
+            foreach(var payment in shiftPayments)
+                payment.CashCloseId = cashClose.Id;
+
+            SetNotes(_notes);
             SetCashRegister(_cashRegister);
             TempData["SuccessMessage"] = "Caja guardada correctamente. Ya puede hacer el cambio de turno.";
-            return RedirectToAction(nameof(Index), new { shiftDate = shiftDate.ToString("yyyy-MM-dd") });
+            return RedirectToAction(nameof(Index), new { shiftDate = shiftDate.ToString("yyyy-MM-dd"), closeId = cashClose.Id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult DeleteCashClose(int closeId)
+        {
+            var cashClose = _cashRegister.CashClosings.FirstOrDefault(close => close.Id == closeId);
+            if(cashClose is null)
+                return NotFound();
+
+            foreach(var payment in _notes.Notes.Where(note => note.CashCloseId == closeId))
+                payment.CashCloseId = null;
+
+            _cashRegister.CashClosings.Remove(cashClose);
+            SetNotes(_notes);
+            SetCashRegister(_cashRegister);
+            TempData["SuccessMessage"] = "Cierre eliminado. Sus movimientos quedaron disponibles para un nuevo cierre.";
+            return RedirectToAction(nameof(Index), new { shiftDate = cashClose.ShiftDate.ToString("yyyy-MM-dd") });
         }
 
         public IActionResult Search(SearchModel srcModel)
@@ -187,6 +270,38 @@ namespace LaLlamaDelBosque.Controllers
             }
 
             return providers;
+        }
+
+        private static List<Note> BuildPayments(IFormCollection collection, string prefix, NotePaymentMethod method, DateTime shiftDate, int? closeId)
+        {
+            var ids = collection[$"{prefix}Ids"];
+            var titles = collection[$"{prefix}Titles"];
+            var amounts = collection[$"{prefix}Amounts"];
+            var verifiedIds = collection[$"{prefix}Verified"].Select(value => value ?? "").ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var payments = new List<Note>();
+
+            for(var index = 0; index < Math.Max(ids.Count, Math.Max(titles.Count, amounts.Count)); index++)
+            {
+                var title = index < titles.Count ? titles[index]?.Trim() ?? "" : "";
+                var amount = index < amounts.Count ? ParseMoney(amounts[index]) : 0;
+                if(string.IsNullOrWhiteSpace(title) && amount <= 0)
+                    continue;
+
+                var idText = index < ids.Count ? ids[index] ?? "0" : "0";
+                _ = int.TryParse(idText, out var id);
+                payments.Add(new Note
+                {
+                    Id = id,
+                    CashCloseId = closeId,
+                    Title = title,
+                    Value = amount,
+                    PaymentMethod = method,
+                    ShiftDate = shiftDate,
+                    IsVerified = verifiedIds.Contains(idText)
+                });
+            }
+
+            return payments;
         }
 
         private static double ParseMoney(string? value)
@@ -223,6 +338,26 @@ namespace LaLlamaDelBosque.Controllers
         private static void SetCashRegister(CashRegisterModel cashRegister)
         {
             JsonFile.Write<CashRegisterModel>("CashRegister", cashRegister);
+        }
+
+        private void MigrateLegacyPaymentAssignments()
+        {
+            if(_cashRegister.DataVersion >= 1)
+                return;
+
+            foreach(var closingsByDate in _cashRegister.CashClosings.GroupBy(close => close.ShiftDate.Date))
+            {
+                if(closingsByDate.Count() != 1)
+                    continue;
+
+                var closeId = closingsByDate.Single().Id;
+                foreach(var note in _notes.Notes.Where(note => note.ShiftDate.Date == closingsByDate.Key && !note.CashCloseId.HasValue))
+                    note.CashCloseId = closeId;
+            }
+
+            _cashRegister.DataVersion = 1;
+            SetNotes(_notes);
+            SetCashRegister(_cashRegister);
         }
     }
 }

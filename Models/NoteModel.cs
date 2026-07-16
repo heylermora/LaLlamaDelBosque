@@ -9,6 +9,7 @@ namespace LaLlamaDelBosque.Models
 
     public class CashRegisterModel
     {
+        public int DataVersion { get; set; }
         public List<CashRegisterClose> CashClosings { get; set; } = new List<CashRegisterClose>();
     }
 
@@ -16,6 +17,8 @@ namespace LaLlamaDelBosque.Models
     {
         public int Id { get; set; }
         public DateTime ShiftDate { get; set; } = DateTime.Today;
+        public DateTime ClosedAt { get; set; }
+        public string ClosedBy { get; set; } = "";
 
         public double InitialCash { get; set; }
         public double CashReceived { get; set; }
@@ -23,12 +26,16 @@ namespace LaLlamaDelBosque.Models
         public double BankDeposit { get; set; }
         public double PrizePayments { get; set; }
         public double AccountsReceivable { get; set; }
+        public double ProviderInitialCash { get; set; }
+        public double ProviderFinalCash { get; set; }
         public List<ProviderExpense> Providers { get; set; } = new List<ProviderExpense>();
 
         public double ProviderTotal => Math.Round(Providers.Sum(p => p.Amount), 2);
-        public double ExpectedCash => Math.Round(InitialCash + CashReceived - ProviderTotal - PrizePayments, 2);
+        public double ExpectedCash => Math.Round(InitialCash + CashReceived - PrizePayments, 2);
         public double Difference => Math.Round(FinalCash - ExpectedCash, 2);
-        public bool IsBalanced => Math.Abs(Difference) < 0.01;
+        public double ExpectedProviderCash => Math.Round(ProviderInitialCash - ProviderTotal, 2);
+        public double ProviderDifference => Math.Round(ProviderFinalCash - ExpectedProviderCash, 2);
+        public bool IsBalanced => Math.Abs(Difference) < 0.01 && Math.Abs(ProviderDifference) < 0.01;
     }
 
     public class ProviderExpense
@@ -46,6 +53,7 @@ namespace LaLlamaDelBosque.Models
     public class Note
     {
         public int Id { get; set; }
+        public int? CashCloseId { get; set; }
 
         [Required(ErrorMessage = "El campo es requerido")]
         [StringLength(50, ErrorMessage = "La longitud del título debe estar entre {2} y {1}.", MinimumLength = 2)]
