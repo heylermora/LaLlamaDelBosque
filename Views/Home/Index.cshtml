@@ -193,12 +193,14 @@
             </div>
             <div class="modal-body">
                 <ul class="home-updates-list mb-0">
-                    <li><span class="material-icons">schedule</span> Sorteos Nica actualizados: el sorteo de mediodía vuelve a las 11:00 AM y los horarios vigentes quedan 11:00 AM, 3:00 PM y 9:00 PM.</li>
-                    <li><span class="material-icons">event_available</span> Nica 6:00 PM ahora se maneja únicamente para sábados y domingos; entre semana ya no aparece disponible ni se procesa en la actualización automática.</li>
-                    <li><span class="material-icons">sync</span> Actualización de premios con mejor UX: al presionar Actualizar se muestra estado en progreso, se bloquea el botón y se informa si la carga terminó o si falló una fuente externa.</li>
-                    <li><span class="material-icons">warning_amber</span> Si el scraping de premios no se completa correctamente, ahora se muestra una alerta clara para revisar las fuentes oficiales y volver a intentar.</li>
-                    <li><span class="material-icons">notifications_active</span> Recordatorio de cobro quincenal menos invasivo: se muestra una sola vez por ventana de cobro en el navegador.</li>
-                    <li><span class="material-icons">picture_as_pdf</span> PDF de créditos rediseñado para impresión: mejor paginación, tablas compactas, montos formateados y menos riesgo de traslapes.</li>
+                    <li>
+                        <span class="material-icons">sync</span>
+                        Cambio de fuentes para obtener y actualizar los premios.
+                    </li>
+                    <li>
+                        <span class="material-icons">point_of_sale</span>
+                        Inicio del proceso de cierre de caja.
+                    </li>
                 </ul>
             </div>
         </div>
@@ -209,7 +211,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
 
-            const currentVersion = "v2-nica-awards-collections-credit-pdf";
+            const currentVersion = "v3";
             const storageKey = "home_updates_modal_version";
 
             const seenVersion = localStorage.getItem(storageKey);
