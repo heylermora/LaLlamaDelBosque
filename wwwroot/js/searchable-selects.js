@@ -11,10 +11,15 @@
             || text.startsWith("seleccione"));
     }
 
+    function isInitialControlOption(option, index) {
+        return isPlaceholder(option, index)
+            || (index === 0 && option.value.toLocaleUpperCase("es") === "TODOS");
+    }
+
     function sortOptions(select) {
         const sort = container => {
             const options = Array.from(container.children).filter(item => item.tagName === "OPTION");
-            const placeholder = options.length && isPlaceholder(options[0], 0) ? options.shift() : null;
+            const placeholder = options.length && isInitialControlOption(options[0], 0) ? options.shift() : null;
             const ordered = options.sort((left, right) =>
                 collator.compare(left.textContent.trim(), right.textContent.trim()));
             const expected = placeholder ? [placeholder, ...ordered] : ordered;
@@ -104,7 +109,7 @@
             trigger.textContent = selected?.textContent.trim() || "Seleccione una opción";
             trigger.disabled = select.disabled;
             trigger.classList.toggle("searchable-select__placeholder", !selected || isPlaceholder(selected, options.indexOf(selected)));
-            search.hidden = options.filter((option, index) => !isPlaceholder(option, index)).length < minimumOptionsForSearch;
+            search.hidden = options.filter((option, index) => !isInitialControlOption(option, index)).length < minimumOptionsForSearch;
             list.replaceChildren();
 
             options.forEach((option, index) => {
@@ -137,6 +142,12 @@
         trigger.addEventListener("click", () => panel.hidden ? open() : close());
         search.addEventListener("input", () => filterOptions(search.value));
         search.addEventListener("keydown", event => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+
             if (event.key === "ArrowDown") {
                 event.preventDefault();
                 list.querySelector(".searchable-select__option:not([hidden]):not(:disabled)")?.focus();
