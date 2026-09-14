@@ -683,3 +683,27 @@ span.material-icons.star {
         display: none;
     }
 }
+
+/* Selects ordenados y buscables */
+.select-search {
+    position: relative;
+}
+
+.select-search__icon {
+    position: absolute;
+    top: 50%;
+    left: .75rem;
+    z-index: 2;
+    color: var(--bs-secondary-color);
+    font-size: 1.2rem;
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+
+.select-search__input {
+    padding-left: 2.35rem;
+}
+
+.select-search__input::-webkit-search-cancel-button {
+    cursor: pointer;
+}
