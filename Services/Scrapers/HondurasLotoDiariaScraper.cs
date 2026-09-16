@@ -188,7 +188,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			return string.Empty;
 		}
 
-		private static bool ContainsTodaysResults(HtmlDocument document)
+		private bool ContainsTodaysResults(HtmlDocument document)
 		{
 			var title = Clean(document.DocumentNode.SelectSingleNode(
 				"//div[contains(concat(' ', normalize-space(@class), ' '), ' lotto_title ')]//b")?.InnerText);

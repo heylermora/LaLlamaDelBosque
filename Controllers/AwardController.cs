@@ -2,7 +2,6 @@
 using LaLlamaDelBosque.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NuGet.Packaging;
 using Rotativa.AspNetCore;
 using Rotativa.AspNetCore.Options;
 
@@ -60,7 +59,8 @@ namespace LaLlamaDelBosque.Controllers
                 {
 					award.AwardLines.Clear();
 					var awardLines = (await _scrapingService.Add()).AwardLines;
-                    award.AwardLines.AddRange(awardLines);
+					foreach(var awardLine in awardLines)
+						award.AwardLines.Add(awardLine);
                 }
                 SetAwards(_awards);
                 TempData["SuccessMessage"] = $"Actualización completada. Se registraron {award.AwardLines.Count} resultados encontrados en las fuentes.";

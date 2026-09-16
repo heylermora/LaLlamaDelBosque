@@ -33,7 +33,8 @@ namespace LaLlamaDelBosque.Services
 			foreach(var scraper in _scrapers)
 			{
 				var awardLines = await scraper.ScrapeAwards(scrapingLotteries, lotteries, papers);
-				award.AwardLines.AddRange(awardLines);
+				foreach(var awardLine in awardLines)
+					award.AwardLines.Add(awardLine);
 			}
 
 			award.AwardLines = award.AwardLines.OrderBy(x => x.Order).ToList();
