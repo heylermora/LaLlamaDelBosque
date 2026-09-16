@@ -1,5 +1,6 @@
 ﻿using HtmlAgilityPack;
 using LaLlamaDelBosque.Models;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace LaLlamaDelBosque.Services.Scrapers
@@ -11,6 +12,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		private const string NicaTiemposUrl = "https://nicatiempos.com/";
 		private static readonly Regex HourLine = new(@"^(?:Sorteo\s*)?(\d{1,2})(?::(\d{2}))?\s*([AP])\.?\s*M\.?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
+		private static readonly Regex BustedValue = new(@"^(?:R|REV|REVENTADO)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
 		private static readonly IReadOnlyList<ScrapingSource> Sources = new[]
 		{
@@ -27,7 +29,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		protected override IEnumerable<int> GetExpectedOrders(List<ScrapingLottery> scrapingLotteries)
 		{
 			return scrapingLotteries
-				.Where(HasJpsSourceKey)
+				.Where(x => HasJpsSourceKey(x) && IsDrawAvailable(x))
 				.Select(x => x.Order)
 				.Distinct();
 		}
@@ -46,7 +48,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		{
 			var awardLines = new List<AwardLine>();
 			var sourceKeyToLottery = scrapingLotteries
-				.Where(HasJpsSourceKey)
+				.Where(x => HasJpsSourceKey(x) && IsDrawAvailable(x))
 				.GroupBy(x => NormalizeSourceKey(x.SourceKey))
 				.ToDictionary(x => x.Key, x => x.First());
 
@@ -76,12 +78,12 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				if(!source.IsDedicatedCostaRicaPage && !isOfficialJpsPage && !IsCostaRicaDraw(textLines, index + 1))
 					continue;
 
-				var number = FindNextNumber(textLines, index + 1);
-				if(string.IsNullOrWhiteSpace(number))
+				var drawResult = FindNextResult(textLines, index + 1);
+				if(string.IsNullOrWhiteSpace(drawResult.Number))
 					continue;
 
 				var description = orderToName.TryGetValue(scrapingLottery.Order, out var name) ? name : string.Empty;
-				var awardLine = CreateAwardLine(scrapingLottery.Order, description, number, false, papers);
+				var awardLine = CreateAwardLine(scrapingLottery.Order, description, drawResult.Number, drawResult.IsBusted, papers);
 				if(awardLine != null)
 					awardLines.Add(awardLine);
 			}
@@ -175,25 +177,45 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				.ToList();
 		}
 
-		private static string FindNextNumber(List<string> textLines, int startIndex)
+		private static (string Number, bool IsBusted) FindNextResult(List<string> textLines, int startIndex)
 		{
+			var number = string.Empty;
+			var isBusted = false;
+
 			for(var index = startIndex; index < textLines.Count; index++)
 			{
 				if(!string.IsNullOrWhiteSpace(GetSourceKey(textLines[index])))
-					return string.Empty;
+					break;
 
-				if(TwoDigits.IsMatch(textLines[index]))
-					return textLines[index];
-
-				if(Regex.IsMatch(textLines[index], @"\b\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}\b"))
+				if(BustedValue.IsMatch(textLines[index]))
+				{
+					isBusted = true;
 					continue;
+				}
 
-				var candidate = Regex.Match(textLines[index], @"\b\d{2}\b");
-				if(candidate.Success)
-					return candidate.Value;
+				if(string.IsNullOrWhiteSpace(number) && TwoDigits.IsMatch(textLines[index]))
+				{
+					number = textLines[index];
+					continue;
+				}
+
+				if(string.IsNullOrWhiteSpace(number)
+					&& !Regex.IsMatch(textLines[index], @"\b\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}\b")
+					&& !Regex.IsMatch(textLines[index], @"^\d{1,2}:\d{2}\s*[ap]\.?\s*m\.?$", RegexOptions.IgnoreCase))
+				{
+					var candidate = Regex.Match(textLines[index], @"\b\d{2}\b");
+					if(candidate.Success)
+						number = candidate.Value;
+				}
 			}
 
-			return string.Empty;
+			return (number, isBusted);
+		}
+
+		private bool IsDrawAvailable(ScrapingLottery lottery)
+		{
+			return DateTime.TryParseExact(lottery.Hour, new[] { "h:mm tt", "hh:mm tt" }, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out var drawTime)
+				&& drawTime.TimeOfDay.Add(ResultPublicationDelay) <= _timeProvider.GetLocalNow().TimeOfDay;
 		}
 
 		private static string Clean(string? value)

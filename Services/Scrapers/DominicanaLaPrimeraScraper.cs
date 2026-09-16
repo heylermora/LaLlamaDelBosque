@@ -144,7 +144,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				CultureInfo.InvariantCulture,
 				DateTimeStyles.AllowWhiteSpaces,
 				out var drawTime)
-				&& drawTime.TimeOfDay <= _timeProvider.GetLocalNow().TimeOfDay;
+				&& drawTime.TimeOfDay.Add(ResultPublicationDelay) <= _timeProvider.GetLocalNow().TimeOfDay;
 		}
 
 		private static bool IsLaPrimera(ScrapingLottery lottery)

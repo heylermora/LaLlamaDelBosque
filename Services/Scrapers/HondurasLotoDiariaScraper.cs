@@ -11,9 +11,10 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		private const string YeluResultsUrl = "https://www.yelu.hn/lottery/results/la-diaria";
 		private const string OfficialResultsUrl = "https://loto.hn/?pag=diaria";
 		private static readonly CultureInfo HondurasCulture = CultureInfo.GetCultureInfo("es-HN");
-		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
+		private static readonly Regex HondurasNumber = new(@"^\d{2,3}$", RegexOptions.Compiled);
 		private static readonly Regex OfficialDrawHeading = new(@"SORTEO\s+(\d{1,2}):00\s*([AP])\.?\s*M\.?", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		private static readonly Regex OfficialDrawNumber = new(@"\b(\d)\s+(\d)\s+(\d)\b", RegexOptions.Compiled);
+		private static readonly Regex BustedValue = new(@"^(?:R|REV|REVENTADO|3X|5X|7X)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		private static readonly IReadOnlyList<ScrapingSource> Sources = new[]
 		{
 			new ScrapingSource(YeluResultsUrl, "https://www.yelu.hn/"),
@@ -83,10 +84,11 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				if(!configuredLotteries.TryGetValue(Normalize(title), out var configuredLottery))
 					continue;
 
-				var number = Clean(resultNode.SelectSingleNode(
+				var rawNumber = Clean(resultNode.SelectSingleNode(
 					".//*[contains(concat(' ', normalize-space(@class), ' '), ' bbb1 ')]")?.InnerText);
-				if(!TwoDigits.IsMatch(number))
+				if(!HondurasNumber.IsMatch(rawNumber))
 					continue;
+				var number = rawNumber[..2];
 
 				var bustedValue = Clean(resultNode.SelectSingleNode(
 					".//*[contains(concat(' ', normalize-space(@class), ' '), ' bbb5 ')]")?.InnerText).ToUpperInvariant();
@@ -138,14 +140,14 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				if(!hourToLottery.TryGetValue(hour, out var configuredLottery))
 					continue;
 
-				var number = FindOfficialNumber(textLines, index + 1);
-				if(string.IsNullOrWhiteSpace(number))
+				var drawResult = FindOfficialResult(textLines, index + 1);
+				if(string.IsNullOrWhiteSpace(drawResult.Number))
 					continue;
 
 				var description = orderToName.TryGetValue(configuredLottery.Order, out var lotteryName)
 					? lotteryName
 					: string.Empty;
-				var awardLine = CreateAwardLine(configuredLottery.Order, description, number, false, papers);
+				var awardLine = CreateAwardLine(configuredLottery.Order, description, drawResult.Number, drawResult.IsBusted, papers);
 				if(awardLine != null)
 					awardLines.Add(awardLine);
 			}
@@ -163,10 +165,11 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				.ToList();
 		}
 
-		private string FindOfficialNumber(List<string> textLines, int startIndex)
+		private (string Number, bool IsBusted) FindOfficialResult(List<string> textLines, int startIndex)
 		{
 			var digits = new List<string>();
 			var number = string.Empty;
+			var isBusted = false;
 			DateTime? resultDate = null;
 
 			for(var index = startIndex; index < textLines.Count; index++)
@@ -177,6 +180,12 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				if(TryParseResultDate(textLines[index], out var parsedDate))
 				{
 					resultDate = parsedDate.Date;
+					continue;
+				}
+
+				if(BustedValue.IsMatch(textLines[index]))
+				{
+					isBusted = true;
 					continue;
 				}
 
@@ -203,8 +212,8 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			}
 
 			return resultDate.HasValue && resultDate.Value != _timeProvider.GetLocalNow().Date
-				? string.Empty
-				: number;
+				? (string.Empty, false)
+				: (number, isBusted);
 		}
 
 		private bool IsDrawAvailable(ScrapingLottery lottery)
@@ -215,7 +224,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				CultureInfo.InvariantCulture,
 				DateTimeStyles.AllowWhiteSpaces,
 				out var drawTime)
-				&& drawTime.TimeOfDay <= _timeProvider.GetLocalNow().TimeOfDay;
+				&& drawTime.TimeOfDay.Add(ResultPublicationDelay) <= _timeProvider.GetLocalNow().TimeOfDay;
 		}
 
 		private static bool TryParseResultDate(string value, out DateTime resultDate)
