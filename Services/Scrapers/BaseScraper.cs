@@ -9,7 +9,6 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		protected readonly HttpClient _httpClient;
 		protected readonly string _url;
 		protected readonly TimeProvider _timeProvider;
-		protected static readonly TimeSpan ResultPublicationDelay = TimeSpan.FromMinutes(5);
 
 		protected BaseScraper(HttpClient httpClient, string url, TimeProvider timeProvider)
 		{

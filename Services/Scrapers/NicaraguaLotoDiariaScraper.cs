@@ -1,7 +1,6 @@
 ﻿using HtmlAgilityPack;
 using LaLlamaDelBosque.Models;
 using LaLlamaDelBosque.Utils;
-using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace LaLlamaDelBosque.Services.Scrapers
@@ -27,7 +26,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			var awardLines = new List<AwardLine>();
 
 			var hourToLottery = scrapingLotteries
-				.Where(x => x.Type == "NICA" && !string.IsNullOrWhiteSpace(x.Hour) && IsDrawAvailable(x))
+				.Where(x => x.Type == "NICA" && !string.IsNullOrWhiteSpace(x.Hour))
 				.GroupBy(x => x.Hour.Trim().ToUpperInvariant())
 				.ToDictionary(x => x.Key, x => x.First());
 
@@ -42,7 +41,6 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			doc.LoadHtml(htmlContent);
 
 			var textLines = ExtractTextLines(doc);
-			var hasCountrySections = textLines.Any(x => !string.IsNullOrWhiteSpace(GetCountry(x)));
 			for(var index = 0; index < textLines.Count; index++)
 			{
 				var hourMatch = HourLine.Match(textLines[index]);
@@ -51,8 +49,6 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 				var hourKey = $"{int.Parse(hourMatch.Groups[1].Value)}:00 {hourMatch.Groups[2].Value.ToUpperInvariant()}M";
 				if(!hourToLottery.TryGetValue(hourKey, out var matchedLottery))
-					continue;
-				if(hasCountrySections && !IsNicaraguaSection(textLines, index))
 					continue;
 
 				if(matchedLottery.Order == 9 && _timeProvider.GetLocalNow().DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
@@ -81,7 +77,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		{
 			return doc.DocumentNode
 				.Descendants()
-				.Where(x => !x.HasChildNodes && !x.Ancestors("script").Any() && !x.Ancestors("style").Any())
+				.Where(x => !x.HasChildNodes)
 				.Select(x => Clean(x.InnerText))
 				.Where(x => !string.IsNullOrWhiteSpace(x))
 				.ToList();
@@ -136,37 +132,6 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		private static string Clean(string? value)
 		{
 			return Regex.Replace(HtmlEntity.DeEntitize(value ?? string.Empty).Replace('\u00A0', ' '), @"\s+", " ").Trim();
-		}
-
-		private static bool IsNicaraguaSection(List<string> textLines, int headingIndex)
-		{
-			for(var index = headingIndex; index >= 0; index--)
-			{
-				var country = GetCountry(textLines[index]);
-				if(!string.IsNullOrWhiteSpace(country))
-					return country == "nicaragua";
-			}
-
-			return false;
-		}
-
-		private static string GetCountry(string value)
-		{
-			var normalized = Clean(value).ToLowerInvariant();
-			if(normalized is "nica" or "nicaragua" || normalized.Contains("loteria nica", StringComparison.Ordinal))
-				return "nicaragua";
-			if(normalized is "tica" or "costa rica" || normalized.Contains("nuevos tiempos", StringComparison.Ordinal))
-				return "costa-rica";
-			if(normalized.Contains("honduras", StringComparison.Ordinal) || normalized.Contains("la diaria", StringComparison.Ordinal))
-				return "honduras";
-
-			return string.Empty;
-		}
-
-		private bool IsDrawAvailable(ScrapingLottery lottery)
-		{
-			return DateTime.TryParseExact(lottery.Hour, new[] { "h:mm tt", "hh:mm tt" }, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out var drawTime)
-				&& drawTime.TimeOfDay.Add(ResultPublicationDelay) <= _timeProvider.GetLocalNow().TimeOfDay;
 		}
 	}
 }
