@@ -1,61 +1,156 @@
 ﻿using HtmlAgilityPack;
 using LaLlamaDelBosque.Models;
+using System.Globalization;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace LaLlamaDelBosque.Services.Scrapers
 {
-	public class DominicanaLaPrimeraScraper: BaseScraper
+	public class DominicanaLaPrimeraScraper: MultiSourceScraper
 	{
+		private const string LoteriasDominicanasUrl = "https://loteriasdominicanas.com/";
+		private const string ConectateUrl = "https://www.conectate.com.do/loterias/la-primera/";
+		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
+		private static readonly IReadOnlyList<ScrapingSource> Sources = new[]
+		{
+			new ScrapingSource(LoteriasDominicanasUrl, "https://loteriasdominicanas.com/"),
+			new ScrapingSource(ConectateUrl, "https://www.conectate.com.do/")
+		};
+
 		public DominicanaLaPrimeraScraper(HttpClient httpClient, TimeProvider timeProvider)
-			: base(httpClient, "https://www.yelu.do/leidsa/results/la-primera", timeProvider)
+			: base(httpClient, Sources, timeProvider)
 		{
 		}
 
-		protected override List<AwardLine> ProcessHtml(string htmlContent, List<ScrapingLottery> scrapingLotteries, List<Lottery> lotteries, List<Paper> papers)
+		protected override IEnumerable<int> GetExpectedOrders(List<ScrapingLottery> scrapingLotteries)
 		{
+			return scrapingLotteries.Where(IsLaPrimera).Select(x => x.Order).Distinct();
+		}
+
+		protected override string GetAllSourcesFailedMessage()
+		{
+			return "No fue posible obtener los resultados de La Primera desde ninguna de las fuentes configuradas.";
+		}
+
+		protected override List<AwardLine> ProcessHtml(
+			string htmlContent,
+			List<ScrapingLottery> scrapingLotteries,
+			List<Lottery> lotteries,
+			List<Paper> papers,
+			ScrapingSource source)
+		{
+			var drawToLottery = scrapingLotteries
+				.Where(IsLaPrimera)
+				.GroupBy(GetConfiguredDrawKey)
+				.ToDictionary(x => x.Key, x => x.First());
+			var orderToName = lotteries
+				.GroupBy(x => x.Order)
+				.ToDictionary(x => x.Key, x => x.First().Name);
+			var document = new HtmlDocument();
+			document.LoadHtml(htmlContent);
+			var textLines = ExtractTextLines(document);
 			var awardLines = new List<AwardLine>();
 
-			var doc = new HtmlDocument();
-			doc.LoadHtml(htmlContent);
-
-			var dateNode = doc.DocumentNode.SelectSingleNode("//div[@class='lotto_title']/b");
-			var extractedDate = DateTime.Parse(dateNode?.InnerText.Trim().Split('-')[0]
-								?? throw new InvalidOperationException("No se pudo extraer la fecha."));
-
-			if(extractedDate.Date != _timeProvider.GetLocalNow().Date)
-				return awardLines;
-
-			var lotteryNodes = doc.DocumentNode.SelectNodes("//div[@class='lotto_numbers']")
-				.Where(node => node.SelectNodes(".//div[contains(@class, 'lotto_numbers')]") == null
-					|| !node.SelectNodes(".//div[contains(@class, 'lotto_numbers')]").Any())
-				.ToList();
-
-			if(lotteryNodes != null)
+			for(var index = 0; index < textLines.Count; index++)
 			{
-				foreach(var lotteryNode in lotteryNodes)
-				{
-					var titleNode = lotteryNode.SelectSingleNode(".//div[@class='numbers_title']");
+				var drawKey = GetDrawKey(textLines[index]);
+				if(string.IsNullOrWhiteSpace(drawKey) && Normalize(textLines[index]).Contains("primera", StringComparison.Ordinal))
+					drawKey = GetDrawKey(string.Join(" ", textLines.Skip(index).Take(3)));
+				if(string.IsNullOrWhiteSpace(drawKey) || !drawToLottery.TryGetValue(drawKey, out var configuredLottery))
+					continue;
 
-					if(titleNode != null)
-					{
-						var order = scrapingLotteries.First(x => x.Name == titleNode?.InnerText.Trim()).Order;
-						var description = lotteries.First(x => x.Order == order).Name;
+				var number = FindNextNumber(textLines, index + 1);
+				if(string.IsNullOrWhiteSpace(number))
+					continue;
 
-						var resultNode = lotteryNode.SelectSingleNode(".//div[contains(@class, 'lotto_no_r bbb1')]");
-						if(resultNode != null)
-						{
-							var number = resultNode.InnerText.Trim();
-
-							var awardLine = CreateAwardLine(order, description, number, false, papers);
-							if(awardLine != null)
-							{
-								awardLines.Add(awardLine);
-							}
-						}
-					}
-				}
+				var description = orderToName.TryGetValue(configuredLottery.Order, out var lotteryName)
+					? lotteryName
+					: string.Empty;
+				var awardLine = CreateAwardLine(configuredLottery.Order, description, number, false, papers);
+				if(awardLine != null)
+					awardLines.Add(awardLine);
 			}
 
-			return awardLines;
+			return awardLines
+				.GroupBy(x => x.Order)
+				.Select(x => x.First())
+				.ToList();
+		}
+
+		private static List<string> ExtractTextLines(HtmlDocument document)
+		{
+			return document.DocumentNode
+				.Descendants()
+				.Where(x => !x.HasChildNodes && !x.Ancestors("script").Any() && !x.Ancestors("style").Any())
+				.Select(x => Clean(x.InnerText))
+				.Where(x => !string.IsNullOrWhiteSpace(x))
+				.ToList();
+		}
+
+		private static string FindNextNumber(List<string> textLines, int startIndex)
+		{
+			for(var index = startIndex; index < textLines.Count && index < startIndex + 30; index++)
+			{
+				if(!string.IsNullOrWhiteSpace(GetDrawKey(textLines[index])))
+					return string.Empty;
+
+				if(IsDate(textLines[index]))
+					continue;
+
+				if(TwoDigits.IsMatch(textLines[index]))
+					return textLines[index];
+
+				var separatedDigits = Regex.Match(textLines[index], @"(?:^|\D)(\d)\s+(\d)(?:\s+\d)?(?:\D|$)");
+				if(separatedDigits.Success)
+					return $"{separatedDigits.Groups[1].Value}{separatedDigits.Groups[2].Value}";
+			}
+
+			return string.Empty;
+		}
+
+		private static bool IsLaPrimera(ScrapingLottery lottery)
+		{
+			return lottery.Type.Equals("LA PRIMERA", StringComparison.OrdinalIgnoreCase);
+		}
+
+		private static string GetConfiguredDrawKey(ScrapingLottery lottery)
+		{
+			if(!string.IsNullOrWhiteSpace(lottery.SourceKey))
+				return Normalize(lottery.SourceKey);
+
+			return Normalize(lottery.Name).Contains("noche", StringComparison.Ordinal) ? "noche" : "dia";
+		}
+
+		private static string GetDrawKey(string value)
+		{
+			var normalized = Normalize(value);
+			if(!normalized.Contains("primera", StringComparison.Ordinal))
+				return string.Empty;
+
+			if(normalized.Contains("noche", StringComparison.Ordinal))
+				return "noche";
+			if(normalized.Contains("dia", StringComparison.Ordinal))
+				return "dia";
+
+			return string.Empty;
+		}
+
+		private static bool IsDate(string value)
+		{
+			return DateTime.TryParse(value, CultureInfo.GetCultureInfo("es-DO"), DateTimeStyles.AllowWhiteSpaces, out _)
+				|| Regex.IsMatch(value, @"\b\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}\b");
+		}
+
+		private static string Normalize(string value)
+		{
+			var decomposed = Clean(value).ToLowerInvariant().Normalize(NormalizationForm.FormD);
+			return new string(decomposed.Where(x => CharUnicodeInfo.GetUnicodeCategory(x) != UnicodeCategory.NonSpacingMark).ToArray())
+				.Normalize(NormalizationForm.FormC);
+		}
+
+		private static string Clean(string? value)
+		{
+			return Regex.Replace(HtmlEntity.DeEntitize(value ?? string.Empty).Replace('\u00A0', ' '), @"\s+", " ").Trim();
 		}
 	}
 }

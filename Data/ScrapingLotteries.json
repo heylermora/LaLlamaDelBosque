@@ -4,7 +4,8 @@
       "Type": "LA PRIMERA",
       "Order": 1,
       "Name": "Lotería La Primera Día Resultado",
-      "Hour": "10:00 AM"
+      "Hour": "10:00 AM",
+      "SourceKey": "dia"
     },
     {
       "Type": "NICA",
@@ -48,7 +49,8 @@
       "Type": "LA PRIMERA",
       "Order": 8,
       "Name": "Lotería La Primera Noche Resultado",
-      "Hour": "6:00 PM"
+      "Hour": "6:00 PM",
+      "SourceKey": "noche"
     },
     {
       "Type": "NICA",
