@@ -13,11 +13,10 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		private static readonly CultureInfo HondurasCulture = CultureInfo.GetCultureInfo("es-HN");
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
 		private static readonly Regex OfficialDrawHeading = new(@"SORTEO\s+(\d{1,2}):00\s*([AP])\.?\s*M\.?", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		private static readonly Regex OfficialDrawNumber = new(@"\b(\d)\s+(\d)\s+(\d)\b", RegexOptions.Compiled);
 		private static readonly IReadOnlyList<ScrapingSource> Sources = new[]
 		{
-			new ScrapingSource(YeluResultsUrl, "https://www.yelu.hn/"),
-			new ScrapingSource(OfficialResultsUrl, "https://loto.hn/")
+			new ScrapingSource(OfficialResultsUrl, "https://loto.hn/"),
+			new ScrapingSource(YeluResultsUrl, "https://www.yelu.hn/")
 		};
 
 		public HondurasLotoDiariaScraper(HttpClient httpClient, TimeProvider timeProvider)
@@ -125,12 +124,20 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				.ToDictionary(x => x.Key, x => x.First().Name);
 			var document = new HtmlDocument();
 			document.LoadHtml(htmlContent);
-			var textLines = ExtractTextLines(document);
-			var awardLines = new List<AwardLine>();
 
-			for(var index = 0; index < textLines.Count; index++)
+			if(!ContainsOfficialResultsForToday(document))
+				return new List<AwardLine>();
+
+			var drawNodes = document.DocumentNode.SelectNodes(
+				"//div[contains(concat(' ', normalize-space(@class), ' '), ' sorteo ')][.//h3]");
+			if(drawNodes == null)
+				return new List<AwardLine>();
+
+			var awardLines = new List<AwardLine>();
+			foreach(var drawNode in drawNodes)
 			{
-				var headingMatch = OfficialDrawHeading.Match(textLines[index]);
+				var heading = Clean(drawNode.SelectSingleNode(".//h3")?.InnerText);
+				var headingMatch = OfficialDrawHeading.Match(heading);
 				if(!headingMatch.Success)
 					continue;
 
@@ -138,10 +145,16 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				if(!hourToLottery.TryGetValue(hour, out var configuredLottery))
 					continue;
 
-				var number = FindOfficialNumber(textLines, index + 1);
-				if(string.IsNullOrWhiteSpace(number))
+				var digitNodes = drawNode.SelectNodes(
+					".//span[contains(concat(' ', normalize-space(@class), ' '), ' num ') and not(contains(concat(' ', normalize-space(@class), ' '), ' extra '))]");
+				if(digitNodes == null || digitNodes.Count < 2)
 					continue;
 
+				var digits = digitNodes.Take(2).Select(x => Clean(x.InnerText)).ToList();
+				if(digits.Any(x => !Regex.IsMatch(x, @"^\d$")))
+					continue;
+
+				var number = string.Concat(digits);
 				var description = orderToName.TryGetValue(configuredLottery.Order, out var lotteryName)
 					? lotteryName
 					: string.Empty;
@@ -153,58 +166,23 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			return awardLines;
 		}
 
-		private static List<string> ExtractTextLines(HtmlDocument document)
+		private bool ContainsOfficialResultsForToday(HtmlDocument document)
 		{
-			return document.DocumentNode
-				.Descendants()
-				.Where(x => !x.HasChildNodes && !x.Ancestors("script").Any() && !x.Ancestors("style").Any())
-				.Select(x => Clean(x.InnerText))
-				.Where(x => !string.IsNullOrWhiteSpace(x))
-				.ToList();
-		}
+			var today = _timeProvider.GetLocalNow().Date;
+			var activeDay = Clean(document.DocumentNode.SelectSingleNode(
+				"//div[contains(concat(' ', normalize-space(@class), ' '), ' calendario-real ')]//td[contains(concat(' ', normalize-space(@class), ' '), ' activo ')]")?.InnerText);
+			var calendarCells = document.DocumentNode.SelectNodes(
+				"//div[contains(concat(' ', normalize-space(@class), ' '), ' calendario-real ')]//tbody//td")?.ToList() ?? new List<HtmlNode>();
+			var firstDayIndex = calendarCells.FindIndex(x => Clean(x.InnerText) == "1");
+			var lastDay = DateTime.DaysInMonth(today.Year, today.Month).ToString(CultureInfo.InvariantCulture);
+			var calendarMatchesCurrentMonth = firstDayIndex == (int)new DateTime(today.Year, today.Month, 1).DayOfWeek
+				&& calendarCells.Any(x => Clean(x.InnerText) == lastDay);
+			var containsCurrentYear = document.DocumentNode.SelectNodes("//select[@id='filtro-ano']/option")?
+				.Any(x => Clean(x.InnerText) == today.Year.ToString(CultureInfo.InvariantCulture)) == true;
 
-		private string FindOfficialNumber(List<string> textLines, int startIndex)
-		{
-			var digits = new List<string>();
-			var number = string.Empty;
-			DateTime? resultDate = null;
-
-			for(var index = startIndex; index < textLines.Count; index++)
-			{
-				if(OfficialDrawHeading.IsMatch(textLines[index]))
-					break;
-
-				if(TryParseResultDate(textLines[index], out var parsedDate))
-				{
-					resultDate = parsedDate.Date;
-					continue;
-				}
-
-				if(!string.IsNullOrWhiteSpace(number))
-					continue;
-
-				var numberMatch = OfficialDrawNumber.Match(textLines[index]);
-				if(numberMatch.Success)
-				{
-					number = $"{numberMatch.Groups[1].Value}{numberMatch.Groups[2].Value}";
-					continue;
-				}
-
-				if(Regex.IsMatch(textLines[index], @"^\d$"))
-				{
-					digits.Add(textLines[index]);
-					if(digits.Count == 2)
-						number = string.Join(string.Empty, digits);
-				}
-				else if(digits.Count > 0)
-				{
-					digits.Clear();
-				}
-			}
-
-			return resultDate.HasValue && resultDate.Value != _timeProvider.GetLocalNow().Date
-				? string.Empty
-				: number;
+			return activeDay == today.Day.ToString(CultureInfo.InvariantCulture)
+				&& calendarMatchesCurrentMonth
+				&& containsCurrentYear;
 		}
 
 		private bool IsDrawAvailable(ScrapingLottery lottery)
@@ -216,14 +194,6 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				DateTimeStyles.AllowWhiteSpaces,
 				out var drawTime)
 				&& drawTime.TimeOfDay <= _timeProvider.GetLocalNow().TimeOfDay;
-		}
-
-		private static bool TryParseResultDate(string value, out DateTime resultDate)
-		{
-			resultDate = default;
-			var dateMatch = Regex.Match(value, @"\b(?:\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}|\d{1,2}\s+de\s+[a-záéíóúñ]+\s+(?:de\s+)?\d{4})\b", RegexOptions.IgnoreCase);
-			return dateMatch.Success
-				&& DateTime.TryParse(dateMatch.Value, HondurasCulture, DateTimeStyles.AllowWhiteSpaces, out resultDate);
 		}
 
 		private bool ContainsTodaysResults(HtmlDocument document)
