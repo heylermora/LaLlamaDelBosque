@@ -27,7 +27,10 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 		protected override IEnumerable<int> GetExpectedOrders(List<ScrapingLottery> scrapingLotteries)
 		{
-			return scrapingLotteries.Where(IsHonduranLottery).Select(x => x.Order).Distinct();
+			return scrapingLotteries
+				.Where(x => IsHonduranLottery(x) && IsDrawAvailable(x))
+				.Select(x => x.Order)
+				.Distinct();
 		}
 
 		protected override string GetAllSourcesFailedMessage()
@@ -60,7 +63,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				return new List<AwardLine>();
 
 			var configuredLotteries = scrapingLotteries
-				.Where(IsHonduranLottery)
+				.Where(x => IsHonduranLottery(x) && IsDrawAvailable(x))
 				.GroupBy(x => Normalize(x.Name))
 				.ToDictionary(x => x.Key, x => x.First());
 			var orderToName = lotteries
@@ -114,7 +117,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			List<Paper> papers)
 		{
 			var hourToLottery = scrapingLotteries
-				.Where(IsHonduranLottery)
+				.Where(x => IsHonduranLottery(x) && IsDrawAvailable(x))
 				.GroupBy(x => NormalizeHour(x.Hour))
 				.ToDictionary(x => x.Key, x => x.First());
 			var orderToName = lotteries
@@ -160,24 +163,38 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				.ToList();
 		}
 
-		private static string FindOfficialNumber(List<string> textLines, int startIndex)
+		private string FindOfficialNumber(List<string> textLines, int startIndex)
 		{
 			var digits = new List<string>();
+			var number = string.Empty;
+			DateTime? resultDate = null;
 
 			for(var index = startIndex; index < textLines.Count; index++)
 			{
 				if(OfficialDrawHeading.IsMatch(textLines[index]))
-					return string.Empty;
+					break;
+
+				if(TryParseResultDate(textLines[index], out var parsedDate))
+				{
+					resultDate = parsedDate.Date;
+					continue;
+				}
+
+				if(!string.IsNullOrWhiteSpace(number))
+					continue;
 
 				var numberMatch = OfficialDrawNumber.Match(textLines[index]);
 				if(numberMatch.Success)
-					return $"{numberMatch.Groups[1].Value}{numberMatch.Groups[2].Value}";
+				{
+					number = $"{numberMatch.Groups[1].Value}{numberMatch.Groups[2].Value}";
+					continue;
+				}
 
 				if(Regex.IsMatch(textLines[index], @"^\d$"))
 				{
 					digits.Add(textLines[index]);
 					if(digits.Count == 2)
-						return string.Join(string.Empty, digits);
+						number = string.Join(string.Empty, digits);
 				}
 				else if(digits.Count > 0)
 				{
@@ -185,7 +202,28 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				}
 			}
 
-			return string.Empty;
+			return resultDate.HasValue && resultDate.Value != _timeProvider.GetLocalNow().Date
+				? string.Empty
+				: number;
+		}
+
+		private bool IsDrawAvailable(ScrapingLottery lottery)
+		{
+			return DateTime.TryParseExact(
+				lottery.Hour,
+				new[] { "h:mm tt", "hh:mm tt" },
+				CultureInfo.InvariantCulture,
+				DateTimeStyles.AllowWhiteSpaces,
+				out var drawTime)
+				&& drawTime.TimeOfDay <= _timeProvider.GetLocalNow().TimeOfDay;
+		}
+
+		private static bool TryParseResultDate(string value, out DateTime resultDate)
+		{
+			resultDate = default;
+			var dateMatch = Regex.Match(value, @"\b(?:\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}|\d{1,2}\s+de\s+[a-záéíóúñ]+\s+(?:de\s+)?\d{4})\b", RegexOptions.IgnoreCase);
+			return dateMatch.Success
+				&& DateTime.TryParse(dateMatch.Value, HondurasCulture, DateTimeStyles.AllowWhiteSpaces, out resultDate);
 		}
 
 		private bool ContainsTodaysResults(HtmlDocument document)
