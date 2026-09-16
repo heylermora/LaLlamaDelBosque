@@ -24,7 +24,10 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 		protected override IEnumerable<int> GetExpectedOrders(List<ScrapingLottery> scrapingLotteries)
 		{
-			return scrapingLotteries.Where(IsLaPrimera).Select(x => x.Order).Distinct();
+			return scrapingLotteries
+				.Where(x => IsLaPrimera(x) && IsDrawAvailable(x))
+				.Select(x => x.Order)
+				.Distinct();
 		}
 
 		protected override string GetAllSourcesFailedMessage()
@@ -40,7 +43,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			ScrapingSource source)
 		{
 			var drawToLottery = scrapingLotteries
-				.Where(IsLaPrimera)
+				.Where(x => IsLaPrimera(x) && IsDrawAvailable(x))
 				.GroupBy(GetConfiguredDrawKey)
 				.ToDictionary(x => x.Key, x => x.First());
 			var orderToName = lotteries
@@ -89,31 +92,59 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				.ToList();
 		}
 
-		private static string FindNextNumber(List<string> textLines, int startIndex)
+		private string FindNextNumber(List<string> textLines, int startIndex)
 		{
+			var number = string.Empty;
+			DateTime? resultDate = null;
+
 			for(var index = startIndex; index < textLines.Count && index < startIndex + 30; index++)
 			{
 				if(!string.IsNullOrWhiteSpace(GetDrawKey(textLines[index])))
-					return string.Empty;
+					break;
+
+				if(TryParseResultDate(textLines[index], out var parsedDate))
+				{
+					resultDate = parsedDate.Date;
+					continue;
+				}
+
+				if(!string.IsNullOrWhiteSpace(number))
+					continue;
 
 				if(TwoDigits.IsMatch(textLines[index]))
-					return textLines[index];
-
-				if(IsDate(textLines[index]))
+				{
+					number = textLines[index];
 					continue;
+				}
 				if(Regex.IsMatch(textLines[index], @"^\d{1,2}:\d{2}\s*[ap]\.?\s*m\.?$", RegexOptions.IgnoreCase))
 					continue;
 
 				var twoDigitNumber = Regex.Match(textLines[index], @"\b\d{2}\b");
 				if(twoDigitNumber.Success)
-					return twoDigitNumber.Value;
+				{
+					number = twoDigitNumber.Value;
+					continue;
+				}
 
 				var separatedDigits = Regex.Match(textLines[index], @"(?:^|\D)(\d)\s+(\d)(?:\s+\d)?(?:\D|$)");
 				if(separatedDigits.Success)
-					return $"{separatedDigits.Groups[1].Value}{separatedDigits.Groups[2].Value}";
+					number = $"{separatedDigits.Groups[1].Value}{separatedDigits.Groups[2].Value}";
 			}
 
-			return string.Empty;
+			return resultDate.HasValue && resultDate.Value != _timeProvider.GetLocalNow().Date
+				? string.Empty
+				: number;
+		}
+
+		private bool IsDrawAvailable(ScrapingLottery lottery)
+		{
+			return DateTime.TryParseExact(
+				lottery.Hour,
+				new[] { "h:mm tt", "hh:mm tt" },
+				CultureInfo.InvariantCulture,
+				DateTimeStyles.AllowWhiteSpaces,
+				out var drawTime)
+				&& drawTime.TimeOfDay <= _timeProvider.GetLocalNow().TimeOfDay;
 		}
 
 		private static bool IsLaPrimera(ScrapingLottery lottery)
@@ -145,10 +176,12 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			return string.Empty;
 		}
 
-		private static bool IsDate(string value)
+		private static bool TryParseResultDate(string value, out DateTime resultDate)
 		{
-			return Regex.IsMatch(value, @"\b\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}\b")
-				|| Regex.IsMatch(value, @"\b\d{1,2}\s+de\s+[a-záéíóúñ]+\s+(?:de\s+)?\d{4}\b", RegexOptions.IgnoreCase);
+			resultDate = default;
+			var dateMatch = Regex.Match(value, @"\b(?:\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}|\d{1,2}\s+de\s+[a-záéíóúñ]+\s+(?:de\s+)?\d{4})\b", RegexOptions.IgnoreCase);
+			return dateMatch.Success
+				&& DateTime.TryParse(dateMatch.Value, CultureInfo.GetCultureInfo("es-DO"), DateTimeStyles.AllowWhiteSpaces, out resultDate);
 		}
 
 		private static string Normalize(string value)
