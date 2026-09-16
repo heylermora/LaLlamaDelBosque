@@ -10,8 +10,8 @@ namespace LaLlamaDelBosque.Services.Scrapers
 	{
 		private readonly IReadOnlyList<ScrapingSource> _sources;
 
-		protected MultiSourceScraper(HttpClient httpClient, IReadOnlyList<ScrapingSource> sources)
-			: base(httpClient, GetPrimaryUrl(sources))
+		protected MultiSourceScraper(HttpClient httpClient, IReadOnlyList<ScrapingSource> sources, TimeProvider timeProvider)
+			: base(httpClient, GetPrimaryUrl(sources), timeProvider)
 		{
 			_sources = sources;
 		}

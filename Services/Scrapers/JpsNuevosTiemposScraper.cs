@@ -19,8 +19,8 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			new ScrapingSource(NicaTiemposUrl, "https://nicatiempos.com/")
 		};
 
-		public JpsNuevosTiemposScraper(HttpClient httpClient)
-			: base(httpClient, Sources)
+		public JpsNuevosTiemposScraper(HttpClient httpClient, TimeProvider timeProvider)
+			: base(httpClient, Sources, timeProvider)
 		{
 		}
 

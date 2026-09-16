@@ -1,4 +1,5 @@
 ﻿using LaLlamaDelBosque.Models;
+using LaLlamaDelBosque.Interfaces;
 using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,9 +11,13 @@ namespace LaLlamaDelBosque.Controllers
     {
         private readonly NoteModel _notes;
         private readonly CashRegisterModel _cashRegister;
+        private readonly IJsonRepository _repository;
+        private readonly TimeProvider _timeProvider;
 
-        public NoteController()
+        public NoteController(IJsonRepository repository, TimeProvider timeProvider)
         {
+            _repository = repository;
+            _timeProvider = timeProvider;
             _notes = GetNotes();
             _cashRegister = GetCashRegister();
             MigrateLegacyPaymentAssignments();
@@ -20,7 +25,7 @@ namespace LaLlamaDelBosque.Controllers
 
         public IActionResult Index(string? searchText, DateTime? shiftDate, NotePaymentMethod? paymentMethod, int? closeId)
         {
-            var selectedDate = shiftDate?.Date ?? DateTime.Today;
+            var selectedDate = shiftDate?.Date ?? _timeProvider.GetLocalNow().Date;
             var dayNotes = _notes.Notes
                 .Where(note => note.ShiftDate.Date == selectedDate && note.CashCloseId == closeId)
                 .ToList();
@@ -91,7 +96,7 @@ namespace LaLlamaDelBosque.Controllers
         [HttpGet]
         public IActionResult Create()
         {
-            return View(new Note { ShiftDate = DateTime.Today });
+            return View(new Note { ShiftDate = _timeProvider.GetLocalNow().Date });
         }
 
         [HttpPost]
@@ -199,7 +204,7 @@ namespace LaLlamaDelBosque.Controllers
                 {
                     Id = _cashRegister.CashClosings.Any() ? _cashRegister.CashClosings.Max(c => c.Id) + 1 : 1,
                     ShiftDate = shiftDate.Date,
-                    ClosedAt = DateTime.Now
+                    ClosedAt = _timeProvider.GetLocalNow().DateTime
                 };
                 _cashRegister.CashClosings.Add(cashClose);
             }
@@ -315,29 +320,29 @@ namespace LaLlamaDelBosque.Controllers
                 : 0;
         }
 
-        private static NoteModel GetNotes()
+        private NoteModel GetNotes()
         {
-            var notes = JsonFile.Read<NoteModel>("Notes", new NoteModel());
+            var notes = _repository.Read<NoteModel>("Notes", new NoteModel());
             foreach(var note in notes.Notes.Where(n => n.ShiftDate == default))
             {
-                note.ShiftDate = DateTime.Today;
+                note.ShiftDate = _timeProvider.GetLocalNow().Date;
             }
             return notes;
         }
 
-        private static void SetNotes(NoteModel notes)
+        private void SetNotes(NoteModel notes)
         {
-            JsonFile.Write<NoteModel>("Notes", notes);
+            _repository.Write<NoteModel>("Notes", notes);
         }
 
-        private static CashRegisterModel GetCashRegister()
+        private CashRegisterModel GetCashRegister()
         {
-            return JsonFile.Read<CashRegisterModel>("CashRegister", new CashRegisterModel());
+            return _repository.Read<CashRegisterModel>("CashRegister", new CashRegisterModel());
         }
 
-        private static void SetCashRegister(CashRegisterModel cashRegister)
+        private void SetCashRegister(CashRegisterModel cashRegister)
         {
-            JsonFile.Write<CashRegisterModel>("CashRegister", cashRegister);
+            _repository.Write<CashRegisterModel>("CashRegister", cashRegister);
         }
 
         private void MigrateLegacyPaymentAssignments()

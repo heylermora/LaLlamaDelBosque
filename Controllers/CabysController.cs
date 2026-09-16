@@ -1,14 +1,21 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using LaLlamaDelBosque.Interfaces;
+using Microsoft.AspNetCore.Mvc;
 
 namespace LaLlamaDelBosque.Controllers
 {
     public class CabysController: Controller
     {
+		private readonly IJsonRepository _repository;
+
+		public CabysController(IJsonRepository repository)
+		{
+			_repository = repository;
+		}
+
         [HttpGet]
         public IActionResult GetCabysProducts()
         {
-            var cabysJsonPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "ListaCabys.json");
-            var cabysJson = System.IO.File.ReadAllText(cabysJsonPath);
+            var cabysJson = _repository.ReadText("ListaCabys");
             return Content(cabysJson, "application/json");
         }
     }

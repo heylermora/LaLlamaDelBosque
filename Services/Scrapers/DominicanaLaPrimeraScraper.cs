@@ -1,61 +1,199 @@
 ﻿using HtmlAgilityPack;
 using LaLlamaDelBosque.Models;
+using System.Globalization;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace LaLlamaDelBosque.Services.Scrapers
 {
-	public class DominicanaLaPrimeraScraper: BaseScraper
+	public class DominicanaLaPrimeraScraper: MultiSourceScraper
 	{
-		public DominicanaLaPrimeraScraper(HttpClient httpClient)
-			: base(httpClient, "https://www.yelu.do/leidsa/results/la-primera")
+		private const string LaPrimeraOfficialUrl = "https://laprimera.do/";
+		private const string EnLoteriaUrl = "https://enloteria.com/loterias/la-primera";
+		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
+		private static readonly IReadOnlyList<ScrapingSource> Sources = new[]
+		{
+			new ScrapingSource(LaPrimeraOfficialUrl, "https://laprimera.do/"),
+			new ScrapingSource(EnLoteriaUrl, "https://enloteria.com/")
+		};
+
+		public DominicanaLaPrimeraScraper(HttpClient httpClient, TimeProvider timeProvider)
+			: base(httpClient, Sources, timeProvider)
 		{
 		}
 
-		protected override List<AwardLine> ProcessHtml(string htmlContent, List<ScrapingLottery> scrapingLotteries, List<Lottery> lotteries, List<Paper> papers)
+		protected override IEnumerable<int> GetExpectedOrders(List<ScrapingLottery> scrapingLotteries)
 		{
+			return scrapingLotteries
+				.Where(x => IsLaPrimera(x) && IsDrawAvailable(x))
+				.Select(x => x.Order)
+				.Distinct();
+		}
+
+		protected override string GetAllSourcesFailedMessage()
+		{
+			return "No fue posible obtener los resultados de La Primera desde ninguna de las fuentes configuradas.";
+		}
+
+		protected override List<AwardLine> ProcessHtml(
+			string htmlContent,
+			List<ScrapingLottery> scrapingLotteries,
+			List<Lottery> lotteries,
+			List<Paper> papers,
+			ScrapingSource source)
+		{
+			var drawToLottery = scrapingLotteries
+				.Where(x => IsLaPrimera(x) && IsDrawAvailable(x))
+				.GroupBy(GetConfiguredDrawKey)
+				.ToDictionary(x => x.Key, x => x.First());
+			var orderToName = lotteries
+				.GroupBy(x => x.Order)
+				.ToDictionary(x => x.Key, x => x.First().Name);
+			var document = new HtmlDocument();
+			document.LoadHtml(htmlContent);
+			var textLines = ExtractTextLines(document);
 			var awardLines = new List<AwardLine>();
 
-			var doc = new HtmlDocument();
-			doc.LoadHtml(htmlContent);
-
-			var dateNode = doc.DocumentNode.SelectSingleNode("//div[@class='lotto_title']/b");
-			var extractedDate = DateTime.Parse(dateNode?.InnerText.Trim().Split('-')[0]
-								?? throw new InvalidOperationException("No se pudo extraer la fecha."));
-
-			if(extractedDate.Date != DateTime.Today)
-				return awardLines;
-
-			var lotteryNodes = doc.DocumentNode.SelectNodes("//div[@class='lotto_numbers']")
-				.Where(node => node.SelectNodes(".//div[contains(@class, 'lotto_numbers')]") == null
-					|| !node.SelectNodes(".//div[contains(@class, 'lotto_numbers')]").Any())
-				.ToList();
-
-			if(lotteryNodes != null)
+			for(var index = 0; index < textLines.Count; index++)
 			{
-				foreach(var lotteryNode in lotteryNodes)
-				{
-					var titleNode = lotteryNode.SelectSingleNode(".//div[@class='numbers_title']");
+				var drawKey = GetDrawKey(textLines[index]);
+				if(string.IsNullOrWhiteSpace(drawKey) && Normalize(textLines[index]).Contains("primera", StringComparison.Ordinal))
+					drawKey = GetDrawKey(string.Join(" ", textLines.Skip(index).Take(3)));
+				if(string.IsNullOrWhiteSpace(drawKey) || !drawToLottery.TryGetValue(drawKey, out var configuredLottery))
+					continue;
 
-					if(titleNode != null)
-					{
-						var order = scrapingLotteries.First(x => x.Name == titleNode?.InnerText.Trim()).Order;
-						var description = lotteries.First(x => x.Order == order).Name;
+				var number = FindNextNumber(textLines, index + 1);
+				if(string.IsNullOrWhiteSpace(number))
+					continue;
 
-						var resultNode = lotteryNode.SelectSingleNode(".//div[contains(@class, 'lotto_no_r bbb1')]");
-						if(resultNode != null)
-						{
-							var number = resultNode.InnerText.Trim();
-
-							var awardLine = CreateAwardLine(order, description, number, false, papers);
-							if(awardLine != null)
-							{
-								awardLines.Add(awardLine);
-							}
-						}
-					}
-				}
+				var description = orderToName.TryGetValue(configuredLottery.Order, out var lotteryName)
+					? lotteryName
+					: string.Empty;
+				var awardLine = CreateAwardLine(configuredLottery.Order, description, number, false, papers);
+				if(awardLine != null)
+					awardLines.Add(awardLine);
 			}
 
-			return awardLines;
+			return awardLines
+				.GroupBy(x => x.Order)
+				.Select(x => x.First())
+				.ToList();
+		}
+
+		private static List<string> ExtractTextLines(HtmlDocument document)
+		{
+			return document.DocumentNode
+				.Descendants()
+				.Where(x => !x.HasChildNodes && !x.Ancestors("script").Any() && !x.Ancestors("style").Any())
+				.SelectMany(x => HtmlEntity.DeEntitize(x.InnerText ?? string.Empty)
+					.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries))
+				.Select(Clean)
+				.Where(x => !string.IsNullOrWhiteSpace(x))
+				.ToList();
+		}
+
+		private string FindNextNumber(List<string> textLines, int startIndex)
+		{
+			var number = string.Empty;
+			DateTime? resultDate = null;
+
+			for(var index = startIndex; index < textLines.Count && index < startIndex + 30; index++)
+			{
+				if(!string.IsNullOrWhiteSpace(GetDrawKey(textLines[index])))
+					break;
+
+				if(TryParseResultDate(textLines[index], out var parsedDate))
+				{
+					resultDate = parsedDate.Date;
+					continue;
+				}
+
+				if(!string.IsNullOrWhiteSpace(number))
+					continue;
+
+				if(TwoDigits.IsMatch(textLines[index]))
+				{
+					number = textLines[index];
+					continue;
+				}
+				if(Regex.IsMatch(textLines[index], @"^\d{1,2}:\d{2}\s*[ap]\.?\s*m\.?$", RegexOptions.IgnoreCase))
+					continue;
+
+				var twoDigitNumber = Regex.Match(textLines[index], @"\b\d{2}\b");
+				if(twoDigitNumber.Success)
+				{
+					number = twoDigitNumber.Value;
+					continue;
+				}
+
+				var separatedDigits = Regex.Match(textLines[index], @"(?:^|\D)(\d)\s+(\d)(?:\s+\d)?(?:\D|$)");
+				if(separatedDigits.Success)
+					number = $"{separatedDigits.Groups[1].Value}{separatedDigits.Groups[2].Value}";
+			}
+
+			return resultDate.HasValue && resultDate.Value != _timeProvider.GetLocalNow().Date
+				? string.Empty
+				: number;
+		}
+
+		private bool IsDrawAvailable(ScrapingLottery lottery)
+		{
+			return DateTime.TryParseExact(
+				lottery.Hour,
+				new[] { "h:mm tt", "hh:mm tt" },
+				CultureInfo.InvariantCulture,
+				DateTimeStyles.AllowWhiteSpaces,
+				out var drawTime)
+				&& drawTime.TimeOfDay <= _timeProvider.GetLocalNow().TimeOfDay;
+		}
+
+		private static bool IsLaPrimera(ScrapingLottery lottery)
+		{
+			return lottery.Type.Equals("LA PRIMERA", StringComparison.OrdinalIgnoreCase);
+		}
+
+		private static string GetConfiguredDrawKey(ScrapingLottery lottery)
+		{
+			if(!string.IsNullOrWhiteSpace(lottery.SourceKey))
+				return Normalize(lottery.SourceKey);
+
+			return Normalize(lottery.Name).Contains("noche", StringComparison.Ordinal) ? "noche" : "dia";
+		}
+
+		private static string GetDrawKey(string value)
+		{
+			var normalized = Normalize(value);
+			if(!normalized.Contains("primera", StringComparison.Ordinal))
+				return string.Empty;
+
+			if(normalized.Contains("noche", StringComparison.Ordinal))
+				return "noche";
+			if(normalized.Contains("dia", StringComparison.Ordinal)
+				|| normalized.Contains("mediodia", StringComparison.Ordinal)
+				|| normalized.Contains("matutina", StringComparison.Ordinal))
+				return "dia";
+
+			return string.Empty;
+		}
+
+		private static bool TryParseResultDate(string value, out DateTime resultDate)
+		{
+			resultDate = default;
+			var dateMatch = Regex.Match(value, @"\b(?:\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}|\d{1,2}\s+de\s+[a-záéíóúñ]+\s+(?:de\s+)?\d{4})\b", RegexOptions.IgnoreCase);
+			return dateMatch.Success
+				&& DateTime.TryParse(dateMatch.Value, CultureInfo.GetCultureInfo("es-DO"), DateTimeStyles.AllowWhiteSpaces, out resultDate);
+		}
+
+		private static string Normalize(string value)
+		{
+			var decomposed = Clean(value).ToLowerInvariant().Normalize(NormalizationForm.FormD);
+			return new string(decomposed.Where(x => CharUnicodeInfo.GetUnicodeCategory(x) != UnicodeCategory.NonSpacingMark).ToArray())
+				.Normalize(NormalizationForm.FormC);
+		}
+
+		private static string Clean(string? value)
+		{
+			return Regex.Replace(HtmlEntity.DeEntitize(value ?? string.Empty).Replace('\u00A0', ' '), @"\s+", " ").Trim();
 		}
 	}
 }

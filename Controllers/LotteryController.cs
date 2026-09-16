@@ -1,5 +1,6 @@
-using LaLlamaDelBosque.Models;
+﻿using LaLlamaDelBosque.Models;
 using LaLlamaDelBosque.Utils;
+using LaLlamaDelBosque.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -16,8 +17,12 @@ namespace LaLlamaDelBosque.Controllers
 		private readonly List<Paper> _papers;
 		private readonly List<Credit> _credits;
 		private readonly List<Award> _awards;
-		public LotteryController()
+		private readonly IJsonRepository _repository;
+		private readonly TimeProvider _timeProvider;
+		public LotteryController(IJsonRepository repository, TimeProvider timeProvider)
 		{
+			_repository = repository;
+			_timeProvider = timeProvider;
 			_lotteries = GetLotteries();
 			_papers = GetPapers();
 			_credits = GetCredits();
@@ -33,8 +38,8 @@ namespace LaLlamaDelBosque.Controllers
 				{
 					Id = id,
 					Lottery = lottery,
-					FromDate = fromDate ?? DateTime.Now,
-					ToDate = toDate ?? DateTime.Now
+					FromDate = fromDate ?? _timeProvider.GetLocalNow().DateTime,
+					ToDate = toDate ?? _timeProvider.GetLocalNow().DateTime
 				};
 
 				_lotteries = _lotteries.OrderBy(l => l.Hour).ToList();
@@ -73,7 +78,7 @@ namespace LaLlamaDelBosque.Controllers
 				TempData.Put<Paper>("Paper", null);
 
 			// Recuperar papelito o crear uno nuevo
-			var paper = TempData.Get<Paper>("Paper") ?? new Paper { CreationDate = DateTime.Now };
+			var paper = TempData.Get<Paper>("Paper") ?? new Paper { CreationDate = _timeProvider.GetLocalNow().DateTime };
 
 			// Parsear la fecha o usar la de creación
 			var date = !string.IsNullOrWhiteSpace(dateString) && DateTime.TryParse(dateString, out var parsedDate)
@@ -242,7 +247,7 @@ namespace LaLlamaDelBosque.Controllers
 								lottery.Hour.Minutes,
 								lottery.Hour.Seconds
 							),
-							CreationDate = DateTime.Now
+							CreationDate = _timeProvider.GetLocalNow().DateTime
 						};
 
 						_papers.Add(newPaper);
@@ -291,7 +296,7 @@ namespace LaLlamaDelBosque.Controllers
 			var paper = papers.First();
 			paper.Lottery = string.Join(", ", papers.Select(p => p.Lottery).Distinct());
 
-			ViewData["Date"] = DateTime.Now.ToShortDateString();
+			ViewData["Date"] = _timeProvider.GetLocalNow().DateTime.ToShortDateString();
 			ViewData["Client"] = _credits.Select(c => c.Client).FirstOrDefault(c => c.Id == paper.ClientId)?.Name;
 			ViewData["Cant"] = papers.Count;
 			ViewData["Ids"] = string.Join(", ", papers.Select(p => "#" + p.Id));
@@ -314,7 +319,7 @@ namespace LaLlamaDelBosque.Controllers
                     return RedirectToAction(nameof(Create), new { cc = true });
                 }
 
-                var paper = TempData.Get<Paper>("Paper") ?? new Paper { CreationDate = DateTime.Now };
+                var paper = TempData.Get<Paper>("Paper") ?? new Paper { CreationDate = _timeProvider.GetLocalNow().DateTime };
 
                 paper.Numbers = sourcePaper.Numbers
                     .Select(n => new Number
@@ -478,45 +483,45 @@ namespace LaLlamaDelBosque.Controllers
             return Json(lotteries);
         }
 
-        private static List<Lottery> GetLotteries()
+        private List<Lottery> GetLotteries()
 		{
-			var lotteries = JsonFile.Read("Lotteries", new LotteryModel());
+			var lotteries = _repository.Read("Lotteries", new LotteryModel());
 			return lotteries.Lotteries;
 		}
 
-		private static List<Paper> GetPapers()
+		private List<Paper> GetPapers()
 		{
-			var papers = JsonFile.Read("Papers", new PaperModel());
+			var papers = _repository.Read("Papers", new PaperModel());
 			return papers.Papers;
 		}
 
-		private static void SetPapers(List<Paper> papers)
+		private void SetPapers(List<Paper> papers)
 		{
 			var paperModel = new PaperModel()
 			{
 				Papers = papers
 			};
-			JsonFile.Write("Papers", paperModel);
+			_repository.Write("Papers", paperModel);
 		}
 
-		private static List<Credit> GetCredits()
+		private List<Credit> GetCredits()
 		{
-			var credits = JsonFile.Read("Credits", new CreditModel());
+			var credits = _repository.Read("Credits", new CreditModel());
 			return credits.Credits.ToList();
 		}
 
-		private static void SetCredits(List<Credit> credits)
+		private void SetCredits(List<Credit> credits)
 		{
 			var creditModel = new CreditModel()
 			{
 				Credits = credits
 			};
-			JsonFile.Write("Credits", creditModel);
+			_repository.Write("Credits", creditModel);
 		}
 
 		private List<Award> GetAwards()
 		{
-			var award = JsonFile.Read("Awards", new AwardModel());
+			var award = _repository.Read("Awards", new AwardModel());
 			return award.Awards.ToList();
 		}
 
@@ -528,7 +533,7 @@ namespace LaLlamaDelBosque.Controllers
 				var creditLine = new CreditLine()
 				{
 					Id = credit?.CreditLines.LastOrDefault()?.Id + 1 ?? 1,
-					CreatedDate = DateTime.Now,
+					CreatedDate = _timeProvider.GetLocalNow().DateTime,
 					Description = "SORTEO: " + lottery,
 					Amount = amount
 				};
@@ -547,10 +552,10 @@ namespace LaLlamaDelBosque.Controllers
 		private void UpdateLotteries(DateTime date)
 		{
 			var drawDate = date.Date;
-			var isToday = drawDate == DateTime.Today;
+			var isToday = drawDate == _timeProvider.GetLocalNow().Date;
 
 			_lotteries = _lotteries
-				.Where(l => (!isToday || l.Hour.Add(TimeSpan.FromMinutes(-10)) > DateTime.Now.TimeOfDay) &&
+				.Where(l => (!isToday || l.Hour.Add(TimeSpan.FromMinutes(-10)) > _timeProvider.GetLocalNow().DateTime.TimeOfDay) &&
 							(l.Days?.Contains(drawDate.DayOfWeek.ToString()) ?? true))
 				.OrderBy(l => l.Hour)
 				.ToList();
