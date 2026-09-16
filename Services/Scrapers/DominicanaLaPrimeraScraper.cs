@@ -8,13 +8,13 @@ namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class DominicanaLaPrimeraScraper: MultiSourceScraper
 	{
-		private const string LoteriasDominicanasUrl = "https://r.jina.ai/http://loteriasdominicanas.com/";
-		private const string ConectateUrl = "https://r.jina.ai/http://www.conectate.com.do/loterias/la-primera/";
+		private const string LaPrimeraOfficialUrl = "https://laprimera.do/";
+		private const string TuAzarUrl = "https://www.tuazar.com/loteria/resultados/la-primera";
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
 		private static readonly IReadOnlyList<ScrapingSource> Sources = new[]
 		{
-			new ScrapingSource(LoteriasDominicanasUrl, "https://r.jina.ai/"),
-			new ScrapingSource(ConectateUrl, "https://r.jina.ai/")
+			new ScrapingSource(LaPrimeraOfficialUrl, "https://laprimera.do/"),
+			new ScrapingSource(TuAzarUrl, "https://www.tuazar.com/")
 		};
 
 		public DominicanaLaPrimeraScraper(HttpClient httpClient, TimeProvider timeProvider)
