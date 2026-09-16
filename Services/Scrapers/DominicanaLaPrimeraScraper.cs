@@ -94,11 +94,17 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				if(!string.IsNullOrWhiteSpace(GetDrawKey(textLines[index])))
 					return string.Empty;
 
-				if(IsDate(textLines[index]))
-					continue;
-
 				if(TwoDigits.IsMatch(textLines[index]))
 					return textLines[index];
+
+				if(IsDate(textLines[index]))
+					continue;
+				if(Regex.IsMatch(textLines[index], @"^\d{1,2}:\d{2}\s*[ap]\.?\s*m\.?$", RegexOptions.IgnoreCase))
+					continue;
+
+				var twoDigitNumber = Regex.Match(textLines[index], @"\b\d{2}\b");
+				if(twoDigitNumber.Success)
+					return twoDigitNumber.Value;
 
 				var separatedDigits = Regex.Match(textLines[index], @"(?:^|\D)(\d)\s+(\d)(?:\s+\d)?(?:\D|$)");
 				if(separatedDigits.Success)
@@ -129,7 +135,9 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 			if(normalized.Contains("noche", StringComparison.Ordinal))
 				return "noche";
-			if(normalized.Contains("dia", StringComparison.Ordinal))
+			if(normalized.Contains("dia", StringComparison.Ordinal)
+				|| normalized.Contains("mediodia", StringComparison.Ordinal)
+				|| normalized.Contains("matutina", StringComparison.Ordinal))
 				return "dia";
 
 			return string.Empty;
@@ -137,8 +145,8 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 		private static bool IsDate(string value)
 		{
-			return DateTime.TryParse(value, CultureInfo.GetCultureInfo("es-DO"), DateTimeStyles.AllowWhiteSpaces, out _)
-				|| Regex.IsMatch(value, @"\b\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}\b");
+			return Regex.IsMatch(value, @"\b\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}\b")
+				|| Regex.IsMatch(value, @"\b\d{1,2}\s+de\s+[a-záéíóúñ]+\s+(?:de\s+)?\d{4}\b", RegexOptions.IgnoreCase);
 		}
 
 		private static string Normalize(string value)
