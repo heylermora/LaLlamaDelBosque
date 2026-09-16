@@ -62,8 +62,15 @@ namespace LaLlamaDelBosque.Controllers
 					foreach(var awardLine in awardLines)
 						award.AwardLines.Add(awardLine);
                 }
-                SetAwards(_awards);
-                TempData["SuccessMessage"] = $"Actualización completada. Se registraron {award.AwardLines.Count} resultados encontrados en las fuentes.";
+				SetAwards(_awards);
+				if(_scrapingService.Warnings.Count > 0)
+				{
+					TempData["WarningMessage"] = $"Se registraron {award.AwardLines.Count} resultados. No se pudieron consultar algunas fuentes: {string.Join(" ", _scrapingService.Warnings)} Los demás resultados sí fueron procesados.";
+				}
+				else
+				{
+					TempData["SuccessMessage"] = $"Actualización completada. Se registraron {award.AwardLines.Count} resultados encontrados en las fuentes.";
+				}
                 return RedirectToAction(nameof(Index));
 			}
 			catch(Exception ex)
