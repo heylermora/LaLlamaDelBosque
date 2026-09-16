@@ -1,73 +1,60 @@
 ﻿using LaLlamaDelBosque.Interfaces;
 using LaLlamaDelBosque.Models;
-using LaLlamaDelBosque.Services.Scrapers;
-using LaLlamaDelBosque.Utils;
-using NuGet.Packaging;
 
 namespace LaLlamaDelBosque.Services
 {
-    public class ScrapingService
-    {
-        private readonly List<ScrapingLottery> _scrapingLotteries;
-        private readonly List<Lottery> _lotteries;
-        private readonly List<Paper> _papers;
-        private readonly HttpClient _httpClient;
+	public sealed class ScrapingService: IScrapingService
+	{
+		private readonly IReadOnlyList<IScraperStrategy> _scrapers;
+		private readonly IJsonRepository _repository;
+		private readonly TimeProvider _timeProvider;
+		private readonly List<string> _warnings = new();
 
-        public ScrapingService()
-        {
-            _scrapingLotteries = GetScrapingLotteries();
-            _lotteries = GetLotteries();
-            _papers = GetPapers();
+		public IReadOnlyList<string> Warnings => _warnings;
 
-            _httpClient = new HttpClient();
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36");
-            _httpClient.DefaultRequestHeaders.Accept.ParseAdd("text/html,application/json");
-            _httpClient.DefaultRequestHeaders.AcceptLanguage.ParseAdd("es-CR,es;q=0.9,en;q=0.8");
-        }
+		public ScrapingService(
+			IEnumerable<IScraperStrategy> scrapers,
+			IJsonRepository repository,
+			TimeProvider timeProvider)
+		{
+			_scrapers = scrapers.ToList();
+			_repository = repository;
+			_timeProvider = timeProvider;
+		}
 
-        public async Task<Award> Add()
-        {
-            var award = new Award()
-            {
-                Date = DateTime.Today,
-                AwardLines = new List<AwardLine>()
-            };
+		public async Task<Award> Add()
+		{
+			_warnings.Clear();
+			var award = new Award
+			{
+				Date = _timeProvider.GetLocalNow().Date,
+				AwardLines = new List<AwardLine>()
+			};
+			var scrapingLotteries = _repository.Read<ScrapingLotteryModel>("ScrapingLotteries").Lotteries;
+			var lotteries = _repository.Read<LotteryModel>("Lotteries").Lotteries;
+			var papers = _repository.Read<PaperModel>("Papers").Papers;
 
-            var scrapers = new List<IScraperStrategy>
-            {
-                new JpsNuevosTiemposScraper(_httpClient),
-                new NicaraguaLotoDiariaScraper(_httpClient),
-                new DominicanaLaPrimeraScraper(_httpClient)
-                // La fuente hondureña dejó de utilizarse.
-                // new HondurasLotoDiariaScraper(_httpClient)
-            };
+			var successfulScrapers = 0;
+			foreach(var scraper in _scrapers)
+			{
+				try
+				{
+					var awardLines = await scraper.ScrapeAwards(scrapingLotteries, lotteries, papers);
+					foreach(var awardLine in awardLines)
+						award.AwardLines.Add(awardLine);
+					successfulScrapers++;
+				}
+				catch(Exception ex)
+				{
+					_warnings.Add(ex.Message);
+				}
+			}
 
-            foreach(var scraper in scrapers)
-            {
-                var awardLines = await scraper.ScrapeAwards(_scrapingLotteries, _lotteries, _papers);
-                award.AwardLines.AddRange(awardLines);
-            }
+			if(successfulScrapers == 0 && _warnings.Count > 0)
+				throw new InvalidOperationException("No fue posible actualizar resultados desde ninguna fuente.", new AggregateException(_warnings.Select(x => new InvalidOperationException(x))));
 
-            award.AwardLines = award.AwardLines.OrderBy(x => x.Order).ToList();
-            return award;
-        }
-
-        private static List<ScrapingLottery> GetScrapingLotteries()
-        {
-            var lotteries = JsonFile.Read("ScrapingLotteries", new ScrapingLotteryModel());
-            return lotteries.Lotteries;
-        }
-
-        private static List<Lottery> GetLotteries()
-        {
-            var lotteries = JsonFile.Read("Lotteries", new LotteryModel());
-            return lotteries.Lotteries;
-        }
-
-        private static List<Paper> GetPapers()
-        {
-            var papers = JsonFile.Read("Papers", new PaperModel());
-            return papers.Papers;
-        }
-    }
+			award.AwardLines = award.AwardLines.OrderBy(x => x.Order).ToList();
+			return award;
+		}
+	}
 }

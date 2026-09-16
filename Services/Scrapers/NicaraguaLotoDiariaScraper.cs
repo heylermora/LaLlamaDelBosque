@@ -12,8 +12,8 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
 		private static readonly Regex MultiXRegex = new(@"\b(JG|2X|3X|5X|7X|R)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-		public NicaraguaLotoDiariaScraper(HttpClient httpClient)
-			: base(httpClient, "https://nicatiempos.com/")
+		public NicaraguaLotoDiariaScraper(HttpClient httpClient, TimeProvider timeProvider)
+			: base(httpClient, "https://nicatiempos.com/", timeProvider)
 		{
 		}
 
@@ -51,7 +51,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				if(!hourToLottery.TryGetValue(hourKey, out var matchedLottery))
 					continue;
 
-				if(matchedLottery.Order == 9 && DateTime.Today.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
+				if(matchedLottery.Order == 9 && _timeProvider.GetLocalNow().DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
 					continue;
 
 				var drawResult = FindDrawResult(textLines, index + 1);

@@ -1,4 +1,5 @@
 ﻿using LaLlamaDelBosque.Models;
+using LaLlamaDelBosque.Interfaces;
 using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,9 +11,11 @@ namespace LaLlamaDelBosque.Controllers
 	public class DepartmentController: Controller
 	{
 		private DepartmentModel _departments;
+		private readonly IJsonRepository _repository;
 
-		public DepartmentController()
+		public DepartmentController(IJsonRepository repository)
 		{
+			_repository = repository;
 			_departments = GetDepartments();
 		}
 
@@ -90,13 +93,13 @@ namespace LaLlamaDelBosque.Controllers
 
 		private DepartmentModel GetDepartments()
 		{
-			var departments = JsonFile.Read("Department", new DepartmentModel());
+			var departments = _repository.Read("Department", new DepartmentModel());
 			return departments;
 		}
 
 		private void SetDepartments(DepartmentModel department)
 		{
-			JsonFile.Write("Department", department);
+			_repository.Write("Department", department);
 		}
 	}
 }
