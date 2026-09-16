@@ -37,8 +37,9 @@ namespace LaLlamaDelBosque.Services
             {
                 new JpsNuevosTiemposScraper(_httpClient),
                 new NicaraguaLotoDiariaScraper(_httpClient),
-                new DominicanaLaPrimeraScraper(_httpClient),
-                new HondurasLotoDiariaScraper(_httpClient)
+                new DominicanaLaPrimeraScraper(_httpClient)
+                // La fuente hondureña dejó de utilizarse.
+                // new HondurasLotoDiariaScraper(_httpClient)
             };
 
             foreach(var scraper in scrapers)

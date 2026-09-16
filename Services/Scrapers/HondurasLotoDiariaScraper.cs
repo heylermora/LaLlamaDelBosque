@@ -4,6 +4,8 @@ using System.Text.RegularExpressions;
 
 namespace LaLlamaDelBosque.Services.Scrapers
 {
+	// Este scraper se conserva únicamente como referencia histórica.
+	// La fuente hondureña ya no forma parte del proceso automático en ScrapingService.
 	public class HondurasLotoDiariaScraper: BaseScraper
 	{
 		private static readonly Regex SorteoHour = new(@"SORTEO\s+(\d{1,2}):00\s*([AP])\.?\s*M\.?", RegexOptions.Compiled | RegexOptions.IgnoreCase);
