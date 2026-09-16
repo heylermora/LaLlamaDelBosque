@@ -1,4 +1,5 @@
 ﻿using LaLlamaDelBosque.Models;
+using LaLlamaDelBosque.Interfaces;
 using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,9 +11,11 @@ namespace LaLlamaDelBosque.Controllers
 	public class FamilyController: Controller
 	{
 		private FamilyModel _families;
+		private readonly IJsonRepository _repository;
 
-		public FamilyController()
+		public FamilyController(IJsonRepository repository)
 		{
+			_repository = repository;
 			_families = GetFamilies();
 		}
 
@@ -90,13 +93,13 @@ namespace LaLlamaDelBosque.Controllers
 
 		private FamilyModel GetFamilies()
 		{
-			var families = JsonFile.Read("Family", new FamilyModel());
+			var families = _repository.Read("Family", new FamilyModel());
 			return families;
 		}
 
 		private void SetFamilies(FamilyModel family)
 		{
-			JsonFile.Write("Family", family);
+			_repository.Write("Family", family);
 		}
 	}
 }

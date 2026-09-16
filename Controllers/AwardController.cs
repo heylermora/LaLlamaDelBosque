@@ -1,6 +1,5 @@
 ﻿using LaLlamaDelBosque.Models;
-using LaLlamaDelBosque.Services;
-using LaLlamaDelBosque.Utils;
+using LaLlamaDelBosque.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NuGet.Packaging;
@@ -13,14 +12,17 @@ namespace LaLlamaDelBosque.Controllers
 
     public class AwardController: Controller
     {
-        private AwardModel _awards;
+        private readonly AwardModel _awards;
+        private readonly IScrapingService _scrapingService;
+        private readonly IJsonRepository _repository;
+        private readonly TimeProvider _timeProvider;
 
-        private ScrapingService _scrapingService;
-
-        public AwardController()
+        public AwardController(IScrapingService scrapingService, IJsonRepository repository, TimeProvider timeProvider)
         {
-            _awards = GetAwards();
-            _scrapingService = new ScrapingService();
+            _scrapingService = scrapingService;
+            _repository = repository;
+            _timeProvider = timeProvider;
+            _awards = _repository.Read<AwardModel>("Awards");
         }
 
         // GET: CreditController
@@ -37,7 +39,7 @@ namespace LaLlamaDelBosque.Controllers
             return new ViewAsPdf("_Report", _awards.Awards.FirstOrDefault(a => a.Id == Id))
             {
                 PageSize = Size.A4,
-                FileName = $"Resumen del {DateTime.Today.ToShortDateString()}.pdf",
+                FileName = $"Resumen del {_timeProvider.GetLocalNow().Date.ToShortDateString()}.pdf",
                 PageMargins = new Margins(10, 20, 10, 20)
             };
         }
@@ -47,7 +49,7 @@ namespace LaLlamaDelBosque.Controllers
         {
 			try
 			{
-				var award = _awards?.Awards?.FirstOrDefault(x => x.Date == DateTime.Today);
+				var award = _awards?.Awards?.FirstOrDefault(x => x.Date == _timeProvider.GetLocalNow().Date);
                 if(award == null)
                 {
                     award = await _scrapingService.Add();
@@ -168,19 +170,13 @@ namespace LaLlamaDelBosque.Controllers
             }
         }
 
-        private AwardModel GetAwards()
+        private List<Lottery> GetLotteries()
         {
-            var award = JsonFile.Read("Awards", new AwardModel());
-            return award;
-        }
-
-        private static List<Lottery> GetLotteries()
-        {
-            var lotteries = JsonFile.Read("Lotteries", new LotteryModel());
+            var lotteries = _repository.Read<LotteryModel>("Lotteries");
             return lotteries.Lotteries;
         }
 
-        private static List<Lottery> GetAvailableAwardLotteries(Award award, List<Lottery> lotteries)
+        private List<Lottery> GetAvailableAwardLotteries(Award award, List<Lottery> lotteries)
         {
             var awardDate = award.Date.Date;
             var existingDescriptions = award.AwardLines
@@ -193,24 +189,25 @@ namespace LaLlamaDelBosque.Controllers
                 .ToList();
         }
 
-        private static bool IsLotteryDrawPassed(Lottery lottery, DateTime awardDate)
+        private bool IsLotteryDrawPassed(Lottery lottery, DateTime awardDate)
         {
             if(!(lottery.Days?.Contains(awardDate.DayOfWeek.ToString()) ?? true))
                 return false;
 
-            if(awardDate.Date < DateTime.Today)
+            var now = _timeProvider.GetLocalNow();
+            if(awardDate.Date < now.Date)
                 return true;
 
-            if(awardDate.Date > DateTime.Today)
+            if(awardDate.Date > now.Date)
                 return false;
 
-            return lottery.Hour <= DateTime.Now.TimeOfDay;
+            return lottery.Hour <= now.TimeOfDay;
         }
 
         private void SetAwards(AwardModel? awards)
         {
             if(awards != null)
-                JsonFile.Write("Awards", awards);
+                _repository.Write("Awards", awards);
         }
     }
 }

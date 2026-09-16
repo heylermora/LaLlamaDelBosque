@@ -1,4 +1,5 @@
 ﻿using LaLlamaDelBosque.Models;
+using LaLlamaDelBosque.Interfaces;
 using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,9 +11,11 @@ namespace LaLlamaDelBosque.Controllers
 	public class SupplierController: Controller
 	{
 		private SupplierModel _suppliers;
+		private readonly IJsonRepository _repository;
 
-		public SupplierController()
+		public SupplierController(IJsonRepository repository)
 		{
+			_repository = repository;
 			_suppliers = GetSuppliers();
 		}
 
@@ -90,13 +93,13 @@ namespace LaLlamaDelBosque.Controllers
 
 		private SupplierModel GetSuppliers()
 		{
-			var suppliers = JsonFile.Read("Supplier", new SupplierModel());
+			var suppliers = _repository.Read("Supplier", new SupplierModel());
 			return suppliers;
 		}
 
 		private void SetSuppliers(SupplierModel supplier)
 		{
-			JsonFile.Write("Supplier", supplier);
+			_repository.Write("Supplier", supplier);
 		}
 	}
 }

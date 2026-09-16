@@ -1,4 +1,5 @@
 ﻿using LaLlamaDelBosque.Models;
+using LaLlamaDelBosque.Interfaces;
 using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics;
@@ -15,9 +16,13 @@ namespace LaLlamaDelBosque.Controllers
         private readonly PaperModel _papers;
         private readonly SummaryModel _summary;
         private readonly AwardModel _awards;
+        private readonly IJsonRepository _repository;
+        private readonly TimeProvider _timeProvider;
 
-        public HomeController()
+        public HomeController(IJsonRepository repository, TimeProvider timeProvider)
         {
+            _repository = repository;
+            _timeProvider = timeProvider;
             _credits = GetCredits();
             _papers = GetPapers();
             _summary = GetSummary();
@@ -26,7 +31,7 @@ namespace LaLlamaDelBosque.Controllers
 
         public IActionResult Index()
         {
-            ViewBag.MissingTodayAwards = !_awards.Awards.Any(a => a.Date.Date == DateTime.Today);
+            ViewBag.MissingTodayAwards = !_awards.Awards.Any(a => a.Date.Date == _timeProvider.GetLocalNow().Date);
             return View(_summary);
         }
 
@@ -54,19 +59,19 @@ namespace LaLlamaDelBosque.Controllers
 
         private CreditModel GetCredits()
         {
-            var credits = JsonFile.Read("Credits", new CreditModel());
+            var credits = _repository.Read("Credits", new CreditModel());
             return credits;
         }
 
-        private static PaperModel GetPapers()
+        private PaperModel GetPapers()
         {
-            var papers = JsonFile.Read("Papers", new PaperModel());
+            var papers = _repository.Read("Papers", new PaperModel());
             return papers;
         }
 
-        private static AwardModel GetAwards()
+        private AwardModel GetAwards()
         {
-            var awards = JsonFile.Read("Awards", new AwardModel());
+            var awards = _repository.Read("Awards", new AwardModel());
             return awards;
         }
 
@@ -91,13 +96,13 @@ namespace LaLlamaDelBosque.Controllers
         private SummaryModel GetAmounts(SummaryModel summary)
         {
             summary.Credit.Receivable = _credits.Credits.Sum(c => c.CreditSummary.Total);
-            summary.Credit.Received = Math.Abs(_credits.Credits.Sum(c => c.CreditLines.Where(cl => cl.Amount < 0 && cl.CreatedDate.ToShortDateString() == DateTime.Today.ToShortDateString()).Sum(cl => cl.Amount)));
+            summary.Credit.Received = Math.Abs(_credits.Credits.Sum(c => c.CreditLines.Where(cl => cl.Amount < 0 && cl.CreatedDate.ToShortDateString() == _timeProvider.GetLocalNow().Date.ToShortDateString()).Sum(cl => cl.Amount)));
             return summary;
         }
 
         private SummaryModel GetLists(SummaryModel summary)
         {
-            var inactiveClients = _credits.Credits.Where(c => DateTime.Compare(c.CreditLines?.LastOrDefault()?.CreatedDate ?? DateTime.Now, DateTime.Today.AddMonths(-2)) < 0).ToList();
+            var inactiveClients = _credits.Credits.Where(c => DateTime.Compare(c.CreditLines?.LastOrDefault()?.CreatedDate ?? _timeProvider.GetLocalNow().DateTime, _timeProvider.GetLocalNow().Date.AddMonths(-2)) < 0).ToList();
 
             var top = inactiveClients.Count == 0 ? 1 : inactiveClients.Count;
 
@@ -113,7 +118,7 @@ namespace LaLlamaDelBosque.Controllers
 
         private SummaryModel GetLotteries(SummaryModel summary)
         {
-            var todayPapers = _papers.Papers.Where(p => p.CreationDate.ToShortDateString() == DateTime.Today.ToShortDateString()).ToList();
+            var todayPapers = _papers.Papers.Where(p => p.CreationDate.ToShortDateString() == _timeProvider.GetLocalNow().Date.ToShortDateString()).ToList();
 
             var totalPapers = todayPapers.Count;
             var totalAmount = todayPapers.Sum(p => p.Numbers.Sum(n => n.Amount));

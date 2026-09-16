@@ -13,6 +13,7 @@
       "Hour": "11:00 AM"
     },
     {
+      "Type": "HONDURAS",
       "Order": 3,
       "Name": "La Diaria 11AM",
       "Hour": "11:00 AM"
@@ -31,6 +32,7 @@
       "Hour": "3:00 PM"
     },
     {
+      "Type": "HONDURAS",
       "Order": 6,
       "Name": "La Diaria 3PM",
       "Hour": "3:00 PM"
@@ -68,6 +70,7 @@
       "Hour": "9:00 PM"
     },
     {
+      "Type": "HONDURAS",
       "Order": 12,
       "Name": "La Diaria 9PM",
       "Hour": "9:00 PM"

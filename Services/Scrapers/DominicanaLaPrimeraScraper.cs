@@ -5,8 +5,8 @@ namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class DominicanaLaPrimeraScraper: BaseScraper
 	{
-		public DominicanaLaPrimeraScraper(HttpClient httpClient)
-			: base(httpClient, "https://www.yelu.do/leidsa/results/la-primera")
+		public DominicanaLaPrimeraScraper(HttpClient httpClient, TimeProvider timeProvider)
+			: base(httpClient, "https://www.yelu.do/leidsa/results/la-primera", timeProvider)
 		{
 		}
 
@@ -21,7 +21,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			var extractedDate = DateTime.Parse(dateNode?.InnerText.Trim().Split('-')[0]
 								?? throw new InvalidOperationException("No se pudo extraer la fecha."));
 
-			if(extractedDate.Date != DateTime.Today)
+			if(extractedDate.Date != _timeProvider.GetLocalNow().Date)
 				return awardLines;
 
 			var lotteryNodes = doc.DocumentNode.SelectNodes("//div[@class='lotto_numbers']")

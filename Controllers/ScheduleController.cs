@@ -1,4 +1,5 @@
 ﻿using LaLlamaDelBosque.Models;
+using LaLlamaDelBosque.Interfaces;
 using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,9 +10,13 @@ namespace LaLlamaDelBosque.Controllers
     public class ScheduleController: Controller
     {
         private ScheduleModel _schedules;
+        private readonly IJsonRepository _repository;
+        private readonly TimeProvider _timeProvider;
 
-        public ScheduleController()
+        public ScheduleController(IJsonRepository repository, TimeProvider timeProvider)
         {
+            _repository = repository;
+            _timeProvider = timeProvider;
             _schedules = GetSchedules();
         }
 
@@ -26,18 +31,18 @@ namespace LaLlamaDelBosque.Controllers
         // GET: Schedule/Turn
         public ActionResult Turn(DateTime? shiftDate)
         {
-            var selectedDate = shiftDate?.Date ?? DateTime.Today;
+            var selectedDate = shiftDate?.Date ?? _timeProvider.GetLocalNow().Date;
             var schedules = _schedules.Schedules.Where(x =>
                 !x.IsCompleted &&
                 x.CreatedDate.Date == selectedDate);
 
             foreach(var schedule in schedules)
             {
-                schedule.FinishDate = DateTime.Now;
+                schedule.FinishDate = _timeProvider.GetLocalNow().DateTime;
             }
 
             ViewBag.ShiftDate = selectedDate.ToString("yyyy-MM-dd");
-            var cashRegister = JsonFile.Read<CashRegisterModel>("CashRegister", new CashRegisterModel());
+            var cashRegister = _repository.Read<CashRegisterModel>("CashRegister", new CashRegisterModel());
             ViewBag.DailyClosings = cashRegister.CashClosings
                 .Where(close => close.ShiftDate.Date == selectedDate)
                 .OrderBy(close => close.ClosedAt == default ? close.ShiftDate : close.ClosedAt)
@@ -55,7 +60,7 @@ namespace LaLlamaDelBosque.Controllers
             if(schedule.CreatedDate.Hour < schedule.FinishDate.Hour)
             {
                 _schedules.Schedules.First(x => x.Id == id).IsCompleted = true;
-                _schedules.Schedules.First(x => x.Id == id).FinishDate = DateTime.Now;
+                _schedules.Schedules.First(x => x.Id == id).FinishDate = _timeProvider.GetLocalNow().DateTime;
                 SetSchedules(_schedules);
             }
             return RedirectToAction(nameof(Turn), new { shiftDate = schedule.CreatedDate.ToString("yyyy-MM-dd") });
@@ -160,19 +165,19 @@ namespace LaLlamaDelBosque.Controllers
 
         private List<Worker> GetWorkers()
         {
-            var workers = JsonFile.Read<WorkerModel>("Workers", new WorkerModel());
+            var workers = _repository.Read<WorkerModel>("Workers", new WorkerModel());
             return workers.Workers;
         }
 
         private ScheduleModel GetSchedules()
         {
-            var schedules = JsonFile.Read<ScheduleModel>("Schedules", new ScheduleModel());
+            var schedules = _repository.Read<ScheduleModel>("Schedules", new ScheduleModel());
             return schedules;
         }
 
         private void SetSchedules(ScheduleModel schedules)
         {
-            JsonFile.Write<ScheduleModel>("Schedules", schedules);
+            _repository.Write<ScheduleModel>("Schedules", schedules);
         }
 
         private string GetMessage(IList<Schedule> schedules)

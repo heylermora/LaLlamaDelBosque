@@ -8,11 +8,13 @@ namespace LaLlamaDelBosque.Services.Scrapers
 	{
 		protected readonly HttpClient _httpClient;
 		protected readonly string _url;
+		protected readonly TimeProvider _timeProvider;
 
-		protected BaseScraper(HttpClient httpClient, string url)
+		protected BaseScraper(HttpClient httpClient, string url, TimeProvider timeProvider)
 		{
 			_httpClient = httpClient;
 			_url = url;
+			_timeProvider = timeProvider;
 		}
 
 		public virtual async Task<List<AwardLine>> ScrapeAwards(
@@ -61,7 +63,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		{
 			var filteredPapers = papers
 				.Where(x => x.Lottery == description
-							&& x.DrawDate.ToShortDateString() == DateTime.Today.ToShortDateString()
+							&& x.DrawDate.Date == _timeProvider.GetLocalNow().Date
 							&& x.Numbers.Any(n => n.Value == number))
 				.ToList();
 

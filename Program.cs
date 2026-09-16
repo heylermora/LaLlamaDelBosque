@@ -1,3 +1,6 @@
+using LaLlamaDelBosque.Interfaces;
+using LaLlamaDelBosque.Services;
+using LaLlamaDelBosque.Services.Scrapers;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Rotativa.AspNetCore;
 
@@ -7,6 +10,28 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddRazorPages();
+
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<IJsonRepository, JsonRepository>();
+builder.Services.AddScoped<IScrapingService, ScrapingService>();
+builder.Services.AddHttpClient("LotteryResults", client =>
+{
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36");
+    client.DefaultRequestHeaders.Accept.ParseAdd("text/html,application/json");
+    client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("es-CR,es;q=0.9,en;q=0.8");
+});
+builder.Services.AddTransient<IScraperStrategy>(services => new JpsNuevosTiemposScraper(
+    services.GetRequiredService<IHttpClientFactory>().CreateClient("LotteryResults"),
+    services.GetRequiredService<TimeProvider>()));
+builder.Services.AddTransient<IScraperStrategy>(services => new NicaraguaLotoDiariaScraper(
+    services.GetRequiredService<IHttpClientFactory>().CreateClient("LotteryResults"),
+    services.GetRequiredService<TimeProvider>()));
+builder.Services.AddTransient<IScraperStrategy>(services => new DominicanaLaPrimeraScraper(
+    services.GetRequiredService<IHttpClientFactory>().CreateClient("LotteryResults"),
+    services.GetRequiredService<TimeProvider>()));
+builder.Services.AddTransient<IScraperStrategy>(services => new HondurasLotoDiariaScraper(
+    services.GetRequiredService<IHttpClientFactory>().CreateClient("LotteryResults"),
+    services.GetRequiredService<TimeProvider>()));
 
 builder.Services.AddSession(options =>
 {
