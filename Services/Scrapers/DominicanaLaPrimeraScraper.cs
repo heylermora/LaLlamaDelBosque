@@ -9,12 +9,12 @@ namespace LaLlamaDelBosque.Services.Scrapers
 	public class DominicanaLaPrimeraScraper: MultiSourceScraper
 	{
 		private const string LaPrimeraOfficialUrl = "https://laprimera.do/";
-		private const string TuAzarUrl = "https://www.tuazar.com/loteria/resultados/la-primera";
+		private const string EnLoteriaUrl = "https://enloteria.com/loterias/la-primera";
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
 		private static readonly IReadOnlyList<ScrapingSource> Sources = new[]
 		{
 			new ScrapingSource(LaPrimeraOfficialUrl, "https://laprimera.do/"),
-			new ScrapingSource(TuAzarUrl, "https://www.tuazar.com/")
+			new ScrapingSource(EnLoteriaUrl, "https://enloteria.com/")
 		};
 
 		public DominicanaLaPrimeraScraper(HttpClient httpClient, TimeProvider timeProvider)
