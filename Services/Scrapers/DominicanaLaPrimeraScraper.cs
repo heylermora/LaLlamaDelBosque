@@ -8,13 +8,13 @@ namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class DominicanaLaPrimeraScraper: MultiSourceScraper
 	{
-		private const string LoteriasDominicanasUrl = "https://loteriasdominicanas.com/";
-		private const string ConectateUrl = "https://www.conectate.com.do/loterias/la-primera/";
+		private const string LoteriasDominicanasUrl = "https://r.jina.ai/http://loteriasdominicanas.com/";
+		private const string ConectateUrl = "https://r.jina.ai/http://www.conectate.com.do/loterias/la-primera/";
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
 		private static readonly IReadOnlyList<ScrapingSource> Sources = new[]
 		{
-			new ScrapingSource(LoteriasDominicanasUrl, "https://loteriasdominicanas.com/"),
-			new ScrapingSource(ConectateUrl, "https://www.conectate.com.do/")
+			new ScrapingSource(LoteriasDominicanasUrl, "https://r.jina.ai/"),
+			new ScrapingSource(ConectateUrl, "https://r.jina.ai/")
 		};
 
 		public DominicanaLaPrimeraScraper(HttpClient httpClient, TimeProvider timeProvider)
@@ -82,7 +82,9 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			return document.DocumentNode
 				.Descendants()
 				.Where(x => !x.HasChildNodes && !x.Ancestors("script").Any() && !x.Ancestors("style").Any())
-				.Select(x => Clean(x.InnerText))
+				.SelectMany(x => HtmlEntity.DeEntitize(x.InnerText ?? string.Empty)
+					.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries))
+				.Select(Clean)
 				.Where(x => !string.IsNullOrWhiteSpace(x))
 				.ToList();
 		}

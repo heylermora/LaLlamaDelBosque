@@ -17,7 +17,7 @@ builder.Services.AddScoped<IScrapingService, ScrapingService>();
 builder.Services.AddHttpClient("LotteryResults", client =>
 {
     client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36");
-    client.DefaultRequestHeaders.Accept.ParseAdd("text/html,application/json");
+    client.DefaultRequestHeaders.Accept.ParseAdd("text/html,text/plain,application/json");
     client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("es-CR,es;q=0.9,en;q=0.8");
 });
 builder.Services.AddTransient<IScraperStrategy>(services => new JpsNuevosTiemposScraper(
