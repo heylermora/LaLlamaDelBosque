@@ -2,6 +2,7 @@
 using LaLlamaDelBosque.Models;
 using LaLlamaDelBosque.Utils;
 using System.Globalization;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace LaLlamaDelBosque.Services.Scrapers
@@ -10,11 +11,14 @@ namespace LaLlamaDelBosque.Services.Scrapers
 	{
 		private const string YeluResultsUrl = "https://www.yelu.hn/lottery/results/la-diaria";
 		private const string OfficialResultsUrl = "https://loto.hn/?pag=diaria";
+		private const string OfficialApiUrl = "https://loto.hn/api/resultados_diaria_por_fecha.php";
+		private const string ApiUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1";
 		private static readonly CultureInfo HondurasCulture = CultureInfo.GetCultureInfo("es-HN");
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
-		private static readonly Regex OfficialDrawHeading = new(@"SORTEO\s+(\d{1,2}):00\s*([AP])\.?\s*M\.?", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		private static readonly Regex OfficialDrawHeading = new(@"^(?:SORTEO\s+)?(\d{1,2}):00\s*([AP])\.?\s*M\.?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		private static readonly IReadOnlyList<ScrapingSource> Sources = new[]
 		{
+			new ScrapingSource(OfficialApiUrl, OfficialResultsUrl),
 			new ScrapingSource(OfficialResultsUrl, "https://loto.hn/"),
 			new ScrapingSource(YeluResultsUrl, "https://www.yelu.hn/")
 		};
@@ -44,9 +48,165 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			List<Paper> papers,
 			ScrapingSource source)
 		{
+			if(source.Url == OfficialApiUrl)
+				return ProcessOfficialApi(htmlContent, scrapingLotteries, lotteries, papers);
+
 			return source.Url == YeluResultsUrl
 				? ProcessYeluHtml(htmlContent, scrapingLotteries, lotteries, papers)
 				: ProcessOfficialHtml(htmlContent, scrapingLotteries, lotteries, papers);
+		}
+
+		protected override async Task<string> DownloadSource(ScrapingSource source)
+		{
+			if(source.Url != OfficialApiUrl)
+				return await base.DownloadSource(source);
+
+			var date = _timeProvider.GetLocalNow().Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+			using var request = new HttpRequestMessage(HttpMethod.Get, $"{OfficialApiUrl}?fecha={date}");
+			request.Headers.Referrer = new Uri(OfficialResultsUrl);
+			request.Headers.UserAgent.ParseAdd(ApiUserAgent);
+			using var timeout = new CancellationTokenSource(source.Timeout);
+			using var response = await _httpClient.SendAsync(request, timeout.Token);
+			response.EnsureSuccessStatusCode();
+			return await response.Content.ReadAsStringAsync(timeout.Token);
+		}
+
+		private List<AwardLine> ProcessOfficialApi(
+			string jsonContent,
+			List<ScrapingLottery> scrapingLotteries,
+			List<Lottery> lotteries,
+			List<Paper> papers)
+		{
+			using var document = JsonDocument.Parse(jsonContent);
+			var objects = new List<JsonElement>();
+			CollectJsonObjects(document.RootElement, objects);
+			var apiResults = new Dictionary<string, string>();
+
+			foreach(var item in objects)
+			{
+				var values = item.EnumerateObject()
+					.Where(x => x.Value.ValueKind is JsonValueKind.String or JsonValueKind.Number)
+					.Select(x => (Name: Normalize(x.Name), Value: Clean(x.Value.ToString())))
+					.ToList();
+				var headingMatch = values
+					.Select(x => OfficialDrawHeading.Match(x.Value))
+					.FirstOrDefault(x => x.Success);
+				if(headingMatch == null || !headingMatch.Success)
+					continue;
+
+				var hour = $"{int.Parse(headingMatch.Groups[1].Value)}:00 {headingMatch.Groups[2].Value.ToUpperInvariant()}M";
+				var numberValues = values
+					.Where(x => (x.Name.Contains("NUM", StringComparison.Ordinal) || x.Name.Contains("RESULT", StringComparison.Ordinal))
+						&& !x.Name.Contains("EXTRA", StringComparison.Ordinal) && !x.Name.Contains("MAS", StringComparison.Ordinal))
+					.Select(x => x.Value)
+					.ToList();
+				var number = GetTwoDigitNumber(numberValues);
+				if(!string.IsNullOrWhiteSpace(number))
+					apiResults.TryAdd(hour, number);
+			}
+
+			var flattenedValues = new List<(string Name, string Value)>();
+			CollectJsonValues(document.RootElement, string.Empty, flattenedValues);
+			AddResultFromIdPrefix(apiResults, flattenedValues, "num11", "11:00 AM");
+			AddResultFromIdPrefix(apiResults, flattenedValues, "num15", "3:00 PM");
+			AddResultFromIdPrefix(apiResults, flattenedValues, "num21", "9:00 PM");
+
+			return CreateHondurasAwardLines(apiResults, scrapingLotteries, lotteries, papers);
+		}
+
+		private static void AddResultFromIdPrefix(
+			Dictionary<string, string> resultsByHour,
+			List<(string Name, string Value)> values,
+			string prefix,
+			string hour)
+		{
+			if(resultsByHour.ContainsKey(hour))
+				return;
+
+			var digits = values
+				.Where(x => x.Name.Contains(prefix, StringComparison.OrdinalIgnoreCase)
+					&& !x.Name.Contains("extra", StringComparison.OrdinalIgnoreCase))
+				.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+				.Select(x => x.Value)
+				.ToList();
+			var number = GetTwoDigitNumber(digits);
+			if(!string.IsNullOrWhiteSpace(number))
+				resultsByHour.Add(hour, number);
+		}
+
+		private List<AwardLine> CreateHondurasAwardLines(
+			Dictionary<string, string> resultsByHour,
+			List<ScrapingLottery> scrapingLotteries,
+			List<Lottery> lotteries,
+			List<Paper> papers)
+		{
+			var hourToLottery = scrapingLotteries
+				.Where(x => IsHonduranLottery(x) && IsDrawAvailable(x))
+				.GroupBy(x => NormalizeHour(x.Hour))
+				.ToDictionary(x => x.Key, x => x.First());
+			var orderToName = lotteries
+				.GroupBy(x => x.Order)
+				.ToDictionary(x => x.Key, x => x.First().Name);
+			var awardLines = new List<AwardLine>();
+
+			foreach(var result in resultsByHour)
+			{
+				if(!hourToLottery.TryGetValue(result.Key, out var configuredLottery))
+					continue;
+
+				var description = orderToName.TryGetValue(configuredLottery.Order, out var lotteryName)
+					? lotteryName
+					: string.Empty;
+				var awardLine = CreateAwardLine(configuredLottery.Order, description, result.Value, false, papers);
+				if(awardLine != null)
+					awardLines.Add(awardLine);
+			}
+
+			return awardLines;
+		}
+
+		private static string GetTwoDigitNumber(List<string> values)
+		{
+			var completeNumber = values.FirstOrDefault(x => Regex.IsMatch(x, @"^\d{2,3}$"));
+			if(!string.IsNullOrWhiteSpace(completeNumber))
+				return completeNumber[..2];
+
+			var digits = values.Where(x => Regex.IsMatch(x, @"^\d$")).Take(2).ToList();
+			return digits.Count == 2 ? string.Concat(digits) : string.Empty;
+		}
+
+		private static void CollectJsonObjects(JsonElement element, List<JsonElement> objects)
+		{
+			if(element.ValueKind == JsonValueKind.Object)
+			{
+				objects.Add(element);
+				foreach(var property in element.EnumerateObject())
+					CollectJsonObjects(property.Value, objects);
+			}
+			else if(element.ValueKind == JsonValueKind.Array)
+			{
+				foreach(var child in element.EnumerateArray())
+					CollectJsonObjects(child, objects);
+			}
+		}
+
+		private static void CollectJsonValues(JsonElement element, string path, List<(string Name, string Value)> values)
+		{
+			if(element.ValueKind == JsonValueKind.Object)
+			{
+				foreach(var property in element.EnumerateObject())
+					CollectJsonValues(property.Value, $"{path}.{property.Name}", values);
+			}
+			else if(element.ValueKind == JsonValueKind.Array)
+			{
+				var index = 0;
+				foreach(var child in element.EnumerateArray())
+					CollectJsonValues(child, $"{path}[{index++}]", values);
+			}
+			else if(element.ValueKind is JsonValueKind.String or JsonValueKind.Number)
+			{
+				values.Add((path, Clean(element.ToString())));
+			}
 		}
 
 		private List<AwardLine> ProcessYeluHtml(

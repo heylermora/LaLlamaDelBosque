@@ -2,6 +2,7 @@
 using LaLlamaDelBosque.Models;
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace LaLlamaDelBosque.Services.Scrapers
@@ -9,11 +10,13 @@ namespace LaLlamaDelBosque.Services.Scrapers
 	public class DominicanaLaPrimeraScraper: MultiSourceScraper
 	{
 		private const string LaPrimeraOfficialUrl = "https://laprimera.do/";
+		private const string LaPrimeraApiUrl = "https://laprimera.do/wp-admin/admin-ajax.php";
+		private const string ApiUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1";
 		private const string EnLoteriaUrl = "https://enloteria.com/loterias/la-primera";
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
 		private static readonly IReadOnlyList<ScrapingSource> Sources = new[]
 		{
-			new ScrapingSource(LaPrimeraOfficialUrl, "https://laprimera.do/"),
+			new ScrapingSource(LaPrimeraApiUrl, LaPrimeraOfficialUrl),
 			new ScrapingSource(EnLoteriaUrl, "https://enloteria.com/")
 		};
 
@@ -42,6 +45,9 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			List<Paper> papers,
 			ScrapingSource source)
 		{
+			if(source.Url == LaPrimeraApiUrl)
+				htmlContent = ExtractApiPayload(htmlContent);
+
 			var drawToLottery = scrapingLotteries
 				.Where(x => IsLaPrimera(x) && IsDrawAvailable(x))
 				.GroupBy(GetConfiguredDrawKey)
@@ -78,6 +84,78 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				.GroupBy(x => x.Order)
 				.Select(x => x.First())
 				.ToList();
+		}
+
+		protected override async Task<string> DownloadSource(ScrapingSource source)
+		{
+			if(source.Url != LaPrimeraApiUrl)
+				return await base.DownloadSource(source);
+
+			var nonce = await DownloadNonce(source.Timeout);
+			using var content = new MultipartFormDataContent
+			{
+				{ new StringContent("get_lotteries_results"), "action" },
+				{ new StringContent(nonce), "nonce" },
+				{ new StringContent(_timeProvider.GetLocalNow().Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)), "date" }
+			};
+			using var request = new HttpRequestMessage(HttpMethod.Post, LaPrimeraApiUrl) { Content = content };
+			request.Headers.Referrer = new Uri(LaPrimeraOfficialUrl);
+			request.Headers.UserAgent.ParseAdd(ApiUserAgent);
+			using var timeout = new CancellationTokenSource(source.Timeout);
+			using var response = await _httpClient.SendAsync(request, timeout.Token);
+			response.EnsureSuccessStatusCode();
+			return await response.Content.ReadAsStringAsync(timeout.Token);
+		}
+
+		private async Task<string> DownloadNonce(TimeSpan requestTimeout)
+		{
+			using var request = new HttpRequestMessage(HttpMethod.Get, LaPrimeraOfficialUrl);
+			request.Headers.Referrer = new Uri(LaPrimeraOfficialUrl);
+			request.Headers.UserAgent.ParseAdd(ApiUserAgent);
+			using var timeout = new CancellationTokenSource(requestTimeout);
+			using var response = await _httpClient.SendAsync(request, timeout.Token);
+			response.EnsureSuccessStatusCode();
+			var homepage = await response.Content.ReadAsStringAsync(timeout.Token);
+			var nonceMatch = Regex.Match(homepage, @"(?:data-)?nonce[""']?\s*(?:=|:)\s*[""'](?<nonce>[a-zA-Z0-9]+)", RegexOptions.IgnoreCase);
+			if(!nonceMatch.Success)
+				throw new InvalidOperationException("La página oficial de La Primera no publicó el nonce requerido por su API.");
+
+			return nonceMatch.Groups["nonce"].Value;
+		}
+
+		private static string ExtractApiPayload(string apiResponse)
+		{
+			try
+			{
+				using var document = JsonDocument.Parse(apiResponse);
+				var values = new List<string>();
+				CollectJsonStrings(document.RootElement, values);
+				return string.Join(Environment.NewLine, values);
+			}
+			catch(JsonException)
+			{
+				return apiResponse;
+			}
+		}
+
+		private static void CollectJsonStrings(JsonElement element, List<string> values)
+		{
+			if(element.ValueKind == JsonValueKind.String)
+			{
+				values.Add(element.GetString() ?? string.Empty);
+				return;
+			}
+
+			if(element.ValueKind == JsonValueKind.Object)
+			{
+				foreach(var property in element.EnumerateObject())
+					CollectJsonStrings(property.Value, values);
+			}
+			else if(element.ValueKind == JsonValueKind.Array)
+			{
+				foreach(var child in element.EnumerateArray())
+					CollectJsonStrings(child, values);
+			}
 		}
 
 		private static List<string> ExtractTextLines(HtmlDocument document)

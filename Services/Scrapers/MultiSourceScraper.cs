@@ -41,7 +41,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 					if(sourceAwardLines.Count == 0)
 						errors.Add(new InvalidOperationException($"La fuente {source.Url} respondió correctamente, pero no contenía resultados reconocibles."));
 				}
-				catch(Exception ex) when(ex is HttpRequestException or OperationCanceledException)
+				catch(Exception ex)
 				{
 					errors.Add(ex);
 				}
@@ -76,7 +76,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			return ProcessHtml(htmlContent, scrapingLotteries, lotteries, papers, _sources[0]);
 		}
 
-		private async Task<string> DownloadSource(ScrapingSource source)
+		protected virtual async Task<string> DownloadSource(ScrapingSource source)
 		{
 			using var request = new HttpRequestMessage(HttpMethod.Get, source.Url);
 			request.Headers.Referrer = new Uri(source.Referrer);
