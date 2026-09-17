@@ -1,5 +1,6 @@
-﻿using HtmlAgilityPack;
+using HtmlAgilityPack;
 using LaLlamaDelBosque.Models;
+using LaLlamaDelBosque.Interfaces;
 using LaLlamaDelBosque.Utils;
 using System.Globalization;
 using System.Text.Json;
@@ -9,22 +10,12 @@ namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class HondurasLotoDiariaScraper: MultiSourceScraper
 	{
-		private const string YeluResultsUrl = "https://www.yelu.hn/lottery/results/la-diaria";
-		private const string OfficialResultsUrl = "https://loto.hn/?pag=diaria";
-		private const string OfficialApiUrl = "https://loto.hn/api/resultados_diaria_por_fecha.php";
 		private const string ApiUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1";
 		private static readonly CultureInfo HondurasCulture = CultureInfo.GetCultureInfo("es-HN");
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
 		private static readonly Regex OfficialDrawHeading = new(@"^(?:SORTEO\s+)?(\d{1,2}):00\s*([AP])\.?\s*M\.?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		private static readonly IReadOnlyList<ScrapingSource> Sources = new[]
-		{
-			new ScrapingSource(OfficialApiUrl, OfficialResultsUrl),
-			new ScrapingSource(OfficialResultsUrl, "https://loto.hn/"),
-			new ScrapingSource(YeluResultsUrl, "https://www.yelu.hn/")
-		};
-
-		public HondurasLotoDiariaScraper(HttpClient httpClient, TimeProvider timeProvider)
-			: base(httpClient, Sources, timeProvider)
+		public HondurasLotoDiariaScraper(HttpClient httpClient, TimeProvider timeProvider, IJsonRepository repository)
+			: base(httpClient, ScrapingSourceCatalog.GetEnabled(repository, "HONDURAS"), timeProvider)
 		{
 		}
 
@@ -48,22 +39,22 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			List<Paper> papers,
 			ScrapingSource source)
 		{
-			if(source.Url == OfficialApiUrl)
+			if(source.Key.Equals("official-api", StringComparison.OrdinalIgnoreCase))
 				return ProcessOfficialApi(htmlContent, scrapingLotteries, lotteries, papers);
 
-			return source.Url == YeluResultsUrl
+			return source.Key.Equals("yelu", StringComparison.OrdinalIgnoreCase)
 				? ProcessYeluHtml(htmlContent, scrapingLotteries, lotteries, papers)
 				: ProcessOfficialHtml(htmlContent, scrapingLotteries, lotteries, papers);
 		}
 
 		protected override async Task<string> DownloadSource(ScrapingSource source)
 		{
-			if(source.Url != OfficialApiUrl)
+			if(!source.Key.Equals("official-api", StringComparison.OrdinalIgnoreCase))
 				return await base.DownloadSource(source);
 
 			var date = _timeProvider.GetLocalNow().Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-			using var request = new HttpRequestMessage(HttpMethod.Get, $"{OfficialApiUrl}?fecha={date}");
-			request.Headers.Referrer = new Uri(OfficialResultsUrl);
+			using var request = new HttpRequestMessage(HttpMethod.Get, $"{source.Url}?fecha={date}");
+			request.Headers.Referrer = new Uri(source.Referrer);
 			request.Headers.UserAgent.ParseAdd(ApiUserAgent);
 			using var timeout = new CancellationTokenSource(source.Timeout);
 			using var response = await _httpClient.SendAsync(request, timeout.Token);

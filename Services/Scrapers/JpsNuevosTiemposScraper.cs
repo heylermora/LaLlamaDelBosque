@@ -1,26 +1,17 @@
-﻿using HtmlAgilityPack;
+using HtmlAgilityPack;
 using LaLlamaDelBosque.Models;
+using LaLlamaDelBosque.Interfaces;
 using System.Text.RegularExpressions;
 
 namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class JpsNuevosTiemposScraper: MultiSourceScraper
 	{
-		private const string OfficialUrl = "https://www.jps.go.cr/resultados/nuevos-tiempos-reventados";
-		private const string CostaRicaResultsUrl = "https://loteriacostarica.org/nuevos-tiempos.php?periodo=3";
-		private const string NicaTiemposUrl = "https://nicatiempos.com/";
 		private static readonly Regex HourLine = new(@"^(?:Sorteo\s*)?(\d{1,2})(?::(\d{2}))?\s*([AP])\.?\s*M\.?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
 
-		private static readonly IReadOnlyList<ScrapingSource> Sources = new[]
-		{
-			new ScrapingSource(OfficialUrl, "https://www.jps.go.cr/", true),
-			new ScrapingSource(CostaRicaResultsUrl, "https://loteriacostarica.org/", true),
-			new ScrapingSource(NicaTiemposUrl, "https://nicatiempos.com/")
-		};
-
-		public JpsNuevosTiemposScraper(HttpClient httpClient, TimeProvider timeProvider)
-			: base(httpClient, Sources, timeProvider)
+		public JpsNuevosTiemposScraper(HttpClient httpClient, TimeProvider timeProvider, IJsonRepository repository)
+			: base(httpClient, ScrapingSourceCatalog.GetEnabled(repository, "TICA"), timeProvider)
 		{
 		}
 

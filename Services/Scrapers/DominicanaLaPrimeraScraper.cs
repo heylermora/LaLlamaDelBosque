@@ -1,5 +1,6 @@
-﻿using HtmlAgilityPack;
+using HtmlAgilityPack;
 using LaLlamaDelBosque.Models;
+using LaLlamaDelBosque.Interfaces;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
@@ -9,19 +10,10 @@ namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class DominicanaLaPrimeraScraper: MultiSourceScraper
 	{
-		private const string LaPrimeraOfficialUrl = "https://laprimera.do/";
-		private const string LaPrimeraApiUrl = "https://laprimera.do/wp-admin/admin-ajax.php";
 		private const string ApiUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1";
-		private const string EnLoteriaUrl = "https://enloteria.com/loterias/la-primera";
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
-		private static readonly IReadOnlyList<ScrapingSource> Sources = new[]
-		{
-			new ScrapingSource(LaPrimeraApiUrl, LaPrimeraOfficialUrl),
-			new ScrapingSource(EnLoteriaUrl, "https://enloteria.com/")
-		};
-
-		public DominicanaLaPrimeraScraper(HttpClient httpClient, TimeProvider timeProvider)
-			: base(httpClient, Sources, timeProvider)
+		public DominicanaLaPrimeraScraper(HttpClient httpClient, TimeProvider timeProvider, IJsonRepository repository)
+			: base(httpClient, ScrapingSourceCatalog.GetEnabled(repository, "LA PRIMERA"), timeProvider)
 		{
 		}
 
@@ -45,7 +37,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			List<Paper> papers,
 			ScrapingSource source)
 		{
-			if(source.Url == LaPrimeraApiUrl)
+			if(source.Key.Equals("official-api", StringComparison.OrdinalIgnoreCase))
 				return ProcessOfficialApi(htmlContent, scrapingLotteries, lotteries, papers);
 
 			var drawToLottery = scrapingLotteries
@@ -139,18 +131,18 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 		protected override async Task<string> DownloadSource(ScrapingSource source)
 		{
-			if(source.Url != LaPrimeraApiUrl)
+			if(!source.Key.Equals("official-api", StringComparison.OrdinalIgnoreCase))
 				return await base.DownloadSource(source);
 
-			var nonce = await DownloadNonce(source.Timeout);
+			var nonce = await DownloadNonce(source.Referrer, source.Timeout);
 			using var content = new MultipartFormDataContent
 			{
 				{ new StringContent("get_lotteries_results"), "action" },
 				{ new StringContent(nonce), "nonce" },
 				{ new StringContent(_timeProvider.GetLocalNow().Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)), "date" }
 			};
-			using var request = new HttpRequestMessage(HttpMethod.Post, LaPrimeraApiUrl) { Content = content };
-			request.Headers.Referrer = new Uri(LaPrimeraOfficialUrl);
+			using var request = new HttpRequestMessage(HttpMethod.Post, source.Url) { Content = content };
+			request.Headers.Referrer = new Uri(source.Referrer);
 			request.Headers.UserAgent.ParseAdd(ApiUserAgent);
 			using var timeout = new CancellationTokenSource(source.Timeout);
 			using var response = await _httpClient.SendAsync(request, timeout.Token);
@@ -158,10 +150,10 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			return await response.Content.ReadAsStringAsync(timeout.Token);
 		}
 
-		private async Task<string> DownloadNonce(TimeSpan requestTimeout)
+		private async Task<string> DownloadNonce(string officialUrl, TimeSpan requestTimeout)
 		{
-			using var request = new HttpRequestMessage(HttpMethod.Get, LaPrimeraOfficialUrl);
-			request.Headers.Referrer = new Uri(LaPrimeraOfficialUrl);
+			using var request = new HttpRequestMessage(HttpMethod.Get, officialUrl);
+			request.Headers.Referrer = new Uri(officialUrl);
 			request.Headers.UserAgent.ParseAdd(ApiUserAgent);
 			using var timeout = new CancellationTokenSource(requestTimeout);
 			using var response = await _httpClient.SendAsync(request, timeout.Token);
@@ -190,12 +182,24 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			if(result.ValueKind == JsonValueKind.Array)
 			{
 				var first = result.EnumerateArray().FirstOrDefault();
-				return NormalizeResultNumber(first);
+				return GetFirstResultValue(first);
 			}
 			if(result.ValueKind == JsonValueKind.Object)
 			{
-				var first = result.EnumerateObject().FirstOrDefault();
-				return NormalizeResultNumber(first.Value);
+				var properties = result.EnumerateObject().ToList();
+				var indexedValue = properties
+					.Where(x => int.TryParse(x.Name, out _))
+					.OrderBy(x => int.Parse(x.Name, CultureInfo.InvariantCulture))
+					.Select(x => x.Value)
+					.FirstOrDefault();
+				if(indexedValue.ValueKind != JsonValueKind.Undefined)
+					return GetFirstResultValue(indexedValue);
+
+				foreach(var propertyName in new[] { "numero", "number", "value" })
+					if(TryGetProperty(result, propertyName, out var namedValue))
+						return GetFirstResultValue(namedValue);
+
+				return properties.Count > 0 ? GetFirstResultValue(properties[0].Value) : string.Empty;
 			}
 
 			return NormalizeResultNumber(result);

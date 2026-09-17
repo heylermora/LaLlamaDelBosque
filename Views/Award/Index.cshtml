@@ -10,6 +10,14 @@
 @{
     ViewData["Title"] = "Premios";
     var availableAwardLotteries = ViewBag.AvailableAwardLotteries as Dictionary<int, List<Lottery>> ?? new Dictionary<int, List<Lottery>>();
+    var scrapingSources = ViewBag.ScrapingSources as Dictionary<string, List<ScrapingSourceConfiguration>> ?? new Dictionary<string, List<ScrapingSourceConfiguration>>();
+    var sourceLabels = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["TICA"] = "Tica",
+        ["NICA"] = "Nica",
+        ["HONDURAS"] = "Hondureña",
+        ["LA PRIMERA"] = "La Primera"
+    };
 }
 
 <div class="container py-2">
@@ -102,105 +110,32 @@
                 </div>
 
                 <div class="d-flex flex-wrap gap-2 align-items-center">
-                    <div class="dropdown">
-                        <button type="button"
-                                class="btn btn-sm btn-outline-dark rounded-pill px-3 d-inline-flex align-items-center gap-1 dropdown-toggle"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false">
-                            Tica
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow rounded-3">
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2"
-                                   href="https://www.jps.go.cr/resultados/nuevos-tiempos-reventados"
-                                   target="_blank"
-                                   rel="noopener noreferrer">
-                                    <span class="material-icons fs-6">open_in_new</span>
-                                    JPS oficial
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2"
-                                   href="https://loteriacostarica.org/nuevos-tiempos.php?periodo=3"
-                                   target="_blank"
-                                   rel="noopener noreferrer">
-                                    <span class="material-icons fs-6">open_in_new</span>
-                                    Lotería Costa Rica
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2"
-                                   href="https://nicatiempos.com/"
-                                   target="_blank"
-                                   rel="noopener noreferrer">
-                                    <span class="material-icons fs-6">open_in_new</span>
-                                    Nica Tiempos
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    <a href="https://nicatiempos.com/"
-                           target="_blank"
-                           rel="noopener noreferrer"
-                           class="btn btn-sm btn-outline-dark rounded-pill px-3">
-                        Nica
-                    </a>
-                    <div class="dropdown">
-                        <button type="button"
-                                class="btn btn-sm btn-outline-dark rounded-pill px-3 d-inline-flex align-items-center gap-1 dropdown-toggle"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false">
-                            Hondureña
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow rounded-3">
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2"
-                                   href="https://www.yelu.hn/lottery/results/la-diaria"
-                                   target="_blank"
-                                   rel="noopener noreferrer">
-                                    <span class="material-icons fs-6">open_in_new</span>
-                                    Yelu Honduras
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2"
-                                   href="https://loto.hn/?pag=diaria"
-                                   target="_blank"
-                                   rel="noopener noreferrer">
-                                    <span class="material-icons fs-6">open_in_new</span>
-                                    Loto oficial
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="dropdown">
-                        <button type="button"
-                                class="btn btn-sm btn-outline-dark rounded-pill px-3 d-inline-flex align-items-center gap-1 dropdown-toggle"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false">
-                            La Primera
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow rounded-3">
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2"
-                                   href="https://laprimera.do/"
-                                   target="_blank"
-                                   rel="noopener noreferrer">
-                                    <span class="material-icons fs-6">open_in_new</span>
-                                    La Primera oficial
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2"
-                                   href="https://enloteria.com/loterias/la-primera"
-                                   target="_blank"
-                                   rel="noopener noreferrer">
-                                    <span class="material-icons fs-6">open_in_new</span>
-                                    EnLotería
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                    @foreach(var sourceGroup in scrapingSources)
+                    {
+                        var label = sourceLabels.TryGetValue(sourceGroup.Key, out var sourceLabel) ? sourceLabel : sourceGroup.Key;
+                        <div class="dropdown">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-dark rounded-pill px-3 d-inline-flex align-items-center gap-1 dropdown-toggle"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false">
+                                @label
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow rounded-3">
+                                @foreach(var source in sourceGroup.Value)
+                                {
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2"
+                                           href="@source.Url"
+                                           target="_blank"
+                                           rel="noopener noreferrer">
+                                            <span class="material-icons fs-6">open_in_new</span>
+                                            @source.Name
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
                 </div>
             </div>
         </div>

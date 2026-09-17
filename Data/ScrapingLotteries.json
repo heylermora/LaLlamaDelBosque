@@ -77,5 +77,99 @@
       "Name": "La Diaria 9PM",
       "Hour": "9:00 PM"
     }
+  ],
+  "Sources": [
+    {
+      "LotteryType": "TICA",
+      "Key": "jps",
+      "Name": "JPS oficial",
+      "Url": "https://www.jps.go.cr/resultados/nuevos-tiempos-reventados",
+      "Referrer": "https://www.jps.go.cr/",
+      "Enabled": true,
+      "ShowToUser": true,
+      "IsDedicatedCostaRicaPage": true
+    },
+    {
+      "LotteryType": "TICA",
+      "Key": "loteria-cr",
+      "Name": "Lotería Costa Rica",
+      "Url": "https://loteriacostarica.org/nuevos-tiempos.php?periodo=3",
+      "Referrer": "https://loteriacostarica.org/",
+      "Enabled": true,
+      "ShowToUser": true,
+      "IsDedicatedCostaRicaPage": true
+    },
+    {
+      "LotteryType": "TICA",
+      "Key": "nica-tiempos",
+      "Name": "Nica Tiempos",
+      "Url": "https://nicatiempos.com/",
+      "Referrer": "https://nicatiempos.com/",
+      "Enabled": true,
+      "ShowToUser": true
+    },
+    {
+      "LotteryType": "NICA",
+      "Key": "nica-tiempos",
+      "Name": "Nica Tiempos",
+      "Url": "https://nicatiempos.com/",
+      "Referrer": "https://nicatiempos.com/",
+      "Enabled": true,
+      "ShowToUser": true
+    },
+    {
+      "LotteryType": "HONDURAS",
+      "Key": "official-api",
+      "Name": "API Loto Honduras",
+      "Url": "https://loto.hn/api/resultados_diaria_por_fecha.php",
+      "Referrer": "https://loto.hn/?pag=diaria",
+      "Enabled": true,
+      "ShowToUser": false
+    },
+    {
+      "LotteryType": "HONDURAS",
+      "Key": "official-page",
+      "Name": "Loto oficial",
+      "Url": "https://loto.hn/?pag=diaria",
+      "Referrer": "https://loto.hn/",
+      "Enabled": true,
+      "ShowToUser": true
+    },
+    {
+      "LotteryType": "HONDURAS",
+      "Key": "yelu",
+      "Name": "Yelu Honduras",
+      "Url": "https://www.yelu.hn/lottery/results/la-diaria",
+      "Referrer": "https://www.yelu.hn/",
+      "Enabled": true,
+      "ShowToUser": true
+    },
+    {
+      "LotteryType": "LA PRIMERA",
+      "Key": "official-api",
+      "Name": "API La Primera",
+      "Url": "https://laprimera.do/wp-admin/admin-ajax.php",
+      "Referrer": "https://laprimera.do/",
+      "Enabled": true,
+      "ShowToUser": false
+    },
+    {
+      "LotteryType": "LA PRIMERA",
+      "Key": "official-page",
+      "Name": "La Primera oficial",
+      "Url": "https://laprimera.do/",
+      "Referrer": "https://laprimera.do/",
+      "Enabled": false,
+      "ShowToUser": true
+    },
+    {
+      "LotteryType": "LA PRIMERA",
+      "Key": "enloteria",
+      "Name": "EnLotería",
+      "Url": "https://enloteria.com/loterias/la-primera",
+      "Referrer": "https://enloteria.com/",
+      "Enabled": false,
+      "ShowToUser": true
+    }
   ]
 }

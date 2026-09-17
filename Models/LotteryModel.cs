@@ -11,6 +11,7 @@ namespace LaLlamaDelBosque.Models
     public class ScrapingLotteryModel
     {
         public List<ScrapingLottery> Lotteries { get; set; } = new List<ScrapingLottery>();
+        public List<ScrapingSourceConfiguration> Sources { get; set; } = new List<ScrapingSourceConfiguration>();
     }
 
     public class Lottery
@@ -29,6 +30,18 @@ namespace LaLlamaDelBosque.Models
         public string Name { get; set; } = "";
         public string Hour { get; set; } = "";
         public string SourceKey { get; set; } = "";
+    }
+
+    public class ScrapingSourceConfiguration
+    {
+        public string LotteryType { get; set; } = "";
+        public string Key { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Url { get; set; } = "";
+        public string Referrer { get; set; } = "";
+        public bool Enabled { get; set; } = true;
+        public bool ShowToUser { get; set; } = true;
+        public bool IsDedicatedCostaRicaPage { get; set; }
     }
 
     public class Number
@@ -73,4 +86,3 @@ namespace LaLlamaDelBosque.Models
     }
 
 }
-

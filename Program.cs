@@ -22,16 +22,20 @@ builder.Services.AddHttpClient("LotteryResults", client =>
 });
 builder.Services.AddTransient<IScraperStrategy>(services => new JpsNuevosTiemposScraper(
     services.GetRequiredService<IHttpClientFactory>().CreateClient("LotteryResults"),
-    services.GetRequiredService<TimeProvider>()));
+    services.GetRequiredService<TimeProvider>(),
+    services.GetRequiredService<IJsonRepository>()));
 builder.Services.AddTransient<IScraperStrategy>(services => new NicaraguaLotoDiariaScraper(
     services.GetRequiredService<IHttpClientFactory>().CreateClient("LotteryResults"),
-    services.GetRequiredService<TimeProvider>()));
+    services.GetRequiredService<TimeProvider>(),
+    services.GetRequiredService<IJsonRepository>()));
 builder.Services.AddTransient<IScraperStrategy>(services => new DominicanaLaPrimeraScraper(
     services.GetRequiredService<IHttpClientFactory>().CreateClient("LotteryResults"),
-    services.GetRequiredService<TimeProvider>()));
+    services.GetRequiredService<TimeProvider>(),
+    services.GetRequiredService<IJsonRepository>()));
 builder.Services.AddTransient<IScraperStrategy>(services => new HondurasLotoDiariaScraper(
     services.GetRequiredService<IHttpClientFactory>().CreateClient("LotteryResults"),
-    services.GetRequiredService<TimeProvider>()));
+    services.GetRequiredService<TimeProvider>(),
+    services.GetRequiredService<IJsonRepository>()));
 
 builder.Services.AddSession(options =>
 {

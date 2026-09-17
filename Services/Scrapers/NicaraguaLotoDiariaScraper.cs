@@ -1,5 +1,6 @@
-﻿using HtmlAgilityPack;
+using HtmlAgilityPack;
 using LaLlamaDelBosque.Models;
+using LaLlamaDelBosque.Interfaces;
 using LaLlamaDelBosque.Utils;
 using System.Text.RegularExpressions;
 
@@ -12,8 +13,8 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
 		private static readonly Regex MultiXRegex = new(@"\b(JG|2X|3X|5X|7X|R)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-		public NicaraguaLotoDiariaScraper(HttpClient httpClient, TimeProvider timeProvider)
-			: base(httpClient, "https://nicatiempos.com/", timeProvider)
+		public NicaraguaLotoDiariaScraper(HttpClient httpClient, TimeProvider timeProvider, IJsonRepository repository)
+			: base(httpClient, ScrapingSourceCatalog.GetPrimary(repository, "NICA").Url, timeProvider)
 		{
 		}
 

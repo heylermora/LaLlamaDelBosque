@@ -104,6 +104,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 	}
 
 	public sealed record ScrapingSource(
+		string Key,
 		string Url,
 		string Referrer,
 		bool IsDedicatedCostaRicaPage = false,

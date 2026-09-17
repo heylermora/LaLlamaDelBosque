@@ -30,6 +30,10 @@ namespace LaLlamaDelBosque.Controllers
             var award = _awards.Awards.OrderByDescending(x => x.Date).ToList();
             var lotteries = GetLotteries();
             ViewBag.AvailableAwardLotteries = award.ToDictionary(x => x.Id, x => GetAvailableAwardLotteries(x, lotteries));
+            ViewBag.ScrapingSources = _repository.Read<ScrapingLotteryModel>("ScrapingLotteries").Sources
+                .Where(x => x.ShowToUser)
+                .GroupBy(x => x.LotteryType)
+                .ToDictionary(x => x.Key, x => x.ToList());
             return View(award);
         }
 
