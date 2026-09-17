@@ -33,6 +33,7 @@ namespace LaLlamaDelBosque.Services
 			var scrapingLotteries = _repository.Read<ScrapingLotteryModel>("ScrapingLotteries").Lotteries;
 			var lotteries = _repository.Read<LotteryModel>("Lotteries").Lotteries;
 			var papers = _repository.Read<PaperModel>("Papers").Papers;
+			var awardLinesByOrder = new Dictionary<int, AwardLine>();
 
 			var successfulScrapers = 0;
 			foreach(var scraper in _scrapers)
@@ -41,7 +42,7 @@ namespace LaLlamaDelBosque.Services
 				{
 					var awardLines = await scraper.ScrapeAwards(scrapingLotteries, lotteries, papers);
 					foreach(var awardLine in awardLines)
-						award.AwardLines.Add(awardLine);
+						awardLinesByOrder.TryAdd(awardLine.Order, awardLine);
 					successfulScrapers++;
 				}
 				catch(Exception ex)
@@ -53,7 +54,7 @@ namespace LaLlamaDelBosque.Services
 			if(successfulScrapers == 0 && _warnings.Count > 0)
 				throw new InvalidOperationException("No fue posible actualizar resultados desde ninguna fuente.", new AggregateException(_warnings.Select(x => new InvalidOperationException(x))));
 
-			award.AwardLines = award.AwardLines.OrderBy(x => x.Order).ToList();
+			award.AwardLines = awardLinesByOrder.Values.OrderBy(x => x.Order).ToList();
 			return award;
 		}
 	}

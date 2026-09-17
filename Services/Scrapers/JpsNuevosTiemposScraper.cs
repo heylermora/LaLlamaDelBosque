@@ -94,6 +94,9 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 		private static bool HasJpsSourceKey(ScrapingLottery scrapingLottery)
 		{
+			if(!scrapingLottery.Type.Equals("TICA", StringComparison.OrdinalIgnoreCase))
+				return false;
+
 			var sourceKey = NormalizeSourceKey(scrapingLottery.SourceKey);
 			return sourceKey is "manana" or "tarde" or "noche";
 		}
