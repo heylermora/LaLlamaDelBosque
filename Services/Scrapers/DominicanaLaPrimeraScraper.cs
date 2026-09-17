@@ -46,7 +46,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			ScrapingSource source)
 		{
 			if(source.Url == LaPrimeraApiUrl)
-				htmlContent = ExtractApiPayload(htmlContent);
+				return ProcessOfficialApi(htmlContent, scrapingLotteries, lotteries, papers);
 
 			var drawToLottery = scrapingLotteries
 				.Where(x => IsLaPrimera(x) && IsDrawAvailable(x))
@@ -74,6 +74,57 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 				var description = orderToName.TryGetValue(configuredLottery.Order, out var lotteryName)
 					? lotteryName
+					: string.Empty;
+				var awardLine = CreateAwardLine(configuredLottery.Order, description, number, false, papers);
+				if(awardLine != null)
+					awardLines.Add(awardLine);
+			}
+
+			return awardLines
+				.GroupBy(x => x.Order)
+				.Select(x => x.First())
+				.ToList();
+		}
+
+		private List<AwardLine> ProcessOfficialApi(
+			string jsonContent,
+			List<ScrapingLottery> scrapingLotteries,
+			List<Lottery> lotteries,
+			List<Paper> papers)
+		{
+			using var document = JsonDocument.Parse(jsonContent);
+			if(!TryFindProperty(document.RootElement, "la_primera", out var laPrimeraResults))
+				return new List<AwardLine>();
+
+			var configuredDraws = scrapingLotteries
+				.Where(x => IsLaPrimera(x) && IsDrawAvailable(x))
+				.GroupBy(GetConfiguredDrawKey)
+				.ToDictionary(x => x.Key, x => x.First());
+			var orderToName = lotteries
+				.GroupBy(x => x.Order)
+				.ToDictionary(x => x.Key, x => x.First().Name);
+			var resultObjects = new List<JsonElement>();
+			CollectJsonObjects(laPrimeraResults, resultObjects);
+			var awardLines = new List<AwardLine>();
+
+			foreach(var resultObject in resultObjects)
+			{
+				if(!TryGetString(resultObject, "loteria_nombre", out var lotteryName)
+					|| !lotteryName.Equals("LA PRIMERA", StringComparison.OrdinalIgnoreCase)
+					|| !TryGetString(resultObject, "hora_sorteo", out var drawHour)
+					|| !TryGetProperty(resultObject, "resultado", out var resultValue))
+					continue;
+
+				var drawKey = GetApiDrawKey(drawHour);
+				if(string.IsNullOrWhiteSpace(drawKey) || !configuredDraws.TryGetValue(drawKey, out var configuredLottery))
+					continue;
+
+				var number = GetFirstResultValue(resultValue);
+				if(string.IsNullOrWhiteSpace(number))
+					continue;
+
+				var description = orderToName.TryGetValue(configuredLottery.Order, out var configuredName)
+					? configuredName
 					: string.Empty;
 				var awardLine = CreateAwardLine(configuredLottery.Order, description, number, false, papers);
 				if(awardLine != null)
@@ -123,38 +174,105 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			return nonceMatch.Groups["nonce"].Value;
 		}
 
-		private static string ExtractApiPayload(string apiResponse)
+		private static string GetApiDrawKey(string drawHour)
 		{
-			try
+			var normalized = Regex.Replace(drawHour, @"[\s.]", string.Empty).ToLowerInvariant();
+			return normalized switch
 			{
-				using var document = JsonDocument.Parse(apiResponse);
-				var values = new List<string>();
-				CollectJsonStrings(document.RootElement, values);
-				return string.Join(Environment.NewLine, values);
-			}
-			catch(JsonException)
-			{
-				return apiResponse;
-			}
+				"12:00pm" => "dia",
+				"07:00pm" or "7:00pm" => "noche",
+				_ => string.Empty
+			};
 		}
 
-		private static void CollectJsonStrings(JsonElement element, List<string> values)
+		private static string GetFirstResultValue(JsonElement result)
 		{
-			if(element.ValueKind == JsonValueKind.String)
+			if(result.ValueKind == JsonValueKind.Array)
 			{
-				values.Add(element.GetString() ?? string.Empty);
-				return;
+				var first = result.EnumerateArray().FirstOrDefault();
+				return NormalizeResultNumber(first);
 			}
+			if(result.ValueKind == JsonValueKind.Object)
+			{
+				var first = result.EnumerateObject().FirstOrDefault();
+				return NormalizeResultNumber(first.Value);
+			}
+
+			return NormalizeResultNumber(result);
+		}
+
+		private static string NormalizeResultNumber(JsonElement result)
+		{
+			var rawValue = result.ValueKind == JsonValueKind.String ? result.GetString() : result.ToString();
+			var firstValue = Regex.Match(rawValue ?? string.Empty, @"\d{1,2}");
+			return firstValue.Success ? firstValue.Value.PadLeft(2, '0') : string.Empty;
+		}
+
+		private static bool TryFindProperty(JsonElement element, string propertyName, out JsonElement value)
+		{
+			if(TryGetProperty(element, propertyName, out value))
+				return true;
 
 			if(element.ValueKind == JsonValueKind.Object)
 			{
 				foreach(var property in element.EnumerateObject())
-					CollectJsonStrings(property.Value, values);
+					if(TryFindProperty(property.Value, propertyName, out value))
+						return true;
 			}
 			else if(element.ValueKind == JsonValueKind.Array)
 			{
 				foreach(var child in element.EnumerateArray())
-					CollectJsonStrings(child, values);
+					if(TryFindProperty(child, propertyName, out value))
+						return true;
+			}
+
+			value = default;
+			return false;
+		}
+
+		private static bool TryGetString(JsonElement element, string propertyName, out string value)
+		{
+			if(TryGetProperty(element, propertyName, out var property)
+				&& property.ValueKind is JsonValueKind.String or JsonValueKind.Number)
+			{
+				value = property.ToString();
+				return true;
+			}
+
+			value = string.Empty;
+			return false;
+		}
+
+		private static bool TryGetProperty(JsonElement element, string propertyName, out JsonElement value)
+		{
+			if(element.ValueKind == JsonValueKind.Object)
+			{
+				foreach(var property in element.EnumerateObject())
+				{
+					if(property.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase))
+					{
+						value = property.Value;
+						return true;
+					}
+				}
+			}
+
+			value = default;
+			return false;
+		}
+
+		private static void CollectJsonObjects(JsonElement element, List<JsonElement> objects)
+		{
+			if(element.ValueKind == JsonValueKind.Object)
+			{
+				objects.Add(element);
+				foreach(var property in element.EnumerateObject())
+					CollectJsonObjects(property.Value, objects);
+			}
+			else if(element.ValueKind == JsonValueKind.Array)
+			{
+				foreach(var child in element.EnumerateArray())
+					CollectJsonObjects(child, objects);
 			}
 		}
 
