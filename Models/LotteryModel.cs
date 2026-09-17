@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace LaLlamaDelBosque.Models
 {
@@ -8,10 +8,17 @@ namespace LaLlamaDelBosque.Models
         public List<Lottery> Lotteries { get; set; } = new List<Lottery>();
     }
 
-    public class ScrapingLotteryModel
+    public class ScrapingConfiguration
     {
-        public List<ScrapingLottery> Lotteries { get; set; } = new List<ScrapingLottery>();
-        public List<ScrapingSourceConfiguration> Sources { get; set; } = new List<ScrapingSourceConfiguration>();
+        public List<ScrapingProcessConfiguration> Processes { get; set; } = new();
+    }
+
+    public class ScrapingProcessConfiguration
+    {
+        public string Type { get; set; } = "";
+        public bool Enabled { get; set; } = true;
+        public List<ScrapingDrawConfiguration> Draws { get; set; } = new();
+        public List<ScrapingSourceConfiguration> Sources { get; set; } = new();
     }
 
     public class Lottery
@@ -23,18 +30,21 @@ namespace LaLlamaDelBosque.Models
         public List<string>? Days { get; set; }
     }
 
-    public class ScrapingLottery
+    public class ScrapingDrawConfiguration
     {
-        public string Type { get; set; } = "";
         public int Order { get; set; }
         public string Name { get; set; } = "";
         public string Hour { get; set; } = "";
         public string SourceKey { get; set; } = "";
+        public int SortOrder { get; set; }
+        public bool Enabled { get; set; } = true;
+        public bool Busted { get; set; }
+        public List<string> ScrapingNames { get; set; } = new();
+        public List<string> ScrapingHours { get; set; } = new();
     }
 
     public class ScrapingSourceConfiguration
     {
-        public string LotteryType { get; set; } = "";
         public string Key { get; set; } = "";
         public string Name { get; set; } = "";
         public string Url { get; set; } = "";
@@ -42,6 +52,7 @@ namespace LaLlamaDelBosque.Models
         public bool Enabled { get; set; } = true;
         public bool ShowToUser { get; set; } = true;
         public bool IsDedicatedCostaRicaPage { get; set; }
+        public int TimeoutSeconds { get; set; } = 15;
     }
 
     public class Number

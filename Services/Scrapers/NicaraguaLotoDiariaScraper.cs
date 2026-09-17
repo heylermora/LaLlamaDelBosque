@@ -8,6 +8,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class NicaraguaLotoDiariaScraper: BaseScraper
 	{
+		public override string LotteryType => "NICA";
 		private static readonly Regex HourLine = new(@"^(\d{1,2})(?::00)?\s*([AP])\.?\s*M\.?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		private static readonly Regex DrawNumber = new(@"\b(\d)\s+(\d)\b", RegexOptions.Compiled);
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
@@ -20,16 +21,18 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 		protected override List<AwardLine> ProcessHtml(
 			string htmlContent,
-			List<ScrapingLottery> scrapingLotteries,
+			List<ScrapingDrawConfiguration> scrapingLotteries,
 			List<Lottery> lotteries,
 			List<Paper> papers)
 		{
 			var awardLines = new List<AwardLine>();
 
 			var hourToLottery = scrapingLotteries
-				.Where(x => x.Type == "NICA" && !string.IsNullOrWhiteSpace(x.Hour))
-				.GroupBy(x => x.Hour.Trim().ToUpperInvariant())
-				.ToDictionary(x => x.Key, x => x.First());
+				.SelectMany(x => x.ScrapingHours.DefaultIfEmpty(x.Hour)
+					.Select(hour => new { Hour = hour.Trim().ToUpperInvariant(), Lottery = x }))
+				.Where(x => !string.IsNullOrWhiteSpace(x.Hour))
+				.GroupBy(x => x.Hour)
+				.ToDictionary(x => x.Key, x => x.First().Lottery);
 
 			if(hourToLottery.Count == 0)
 				return awardLines;

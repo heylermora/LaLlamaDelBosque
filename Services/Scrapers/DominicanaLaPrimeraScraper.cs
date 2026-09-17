@@ -10,6 +10,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class DominicanaLaPrimeraScraper: MultiSourceScraper
 	{
+		public override string LotteryType => "LA PRIMERA";
 		private const string ApiUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1";
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
 		public DominicanaLaPrimeraScraper(HttpClient httpClient, TimeProvider timeProvider, IJsonRepository repository)
@@ -17,10 +18,10 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		{
 		}
 
-		protected override IEnumerable<int> GetExpectedOrders(List<ScrapingLottery> scrapingLotteries)
+		protected override IEnumerable<int> GetExpectedOrders(List<ScrapingDrawConfiguration> scrapingLotteries)
 		{
 			return scrapingLotteries
-				.Where(x => IsLaPrimera(x) && IsDrawAvailable(x))
+				.Where(IsDrawAvailable)
 				.Select(x => x.Order)
 				.Distinct();
 		}
@@ -32,7 +33,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 		protected override List<AwardLine> ProcessHtml(
 			string htmlContent,
-			List<ScrapingLottery> scrapingLotteries,
+			List<ScrapingDrawConfiguration> scrapingLotteries,
 			List<Lottery> lotteries,
 			List<Paper> papers,
 			ScrapingSource source)
@@ -41,7 +42,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				return ProcessOfficialApi(htmlContent, scrapingLotteries, lotteries, papers);
 
 			var drawToLottery = scrapingLotteries
-				.Where(x => IsLaPrimera(x) && IsDrawAvailable(x))
+				.Where(IsDrawAvailable)
 				.GroupBy(GetConfiguredDrawKey)
 				.ToDictionary(x => x.Key, x => x.First());
 			var orderToName = lotteries
@@ -80,7 +81,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 		private List<AwardLine> ProcessOfficialApi(
 			string jsonContent,
-			List<ScrapingLottery> scrapingLotteries,
+			List<ScrapingDrawConfiguration> scrapingLotteries,
 			List<Lottery> lotteries,
 			List<Paper> papers)
 		{
@@ -89,7 +90,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				return new List<AwardLine>();
 
 			var configuredDraws = scrapingLotteries
-				.Where(x => IsLaPrimera(x) && IsDrawAvailable(x))
+				.Where(IsDrawAvailable)
 				.GroupBy(GetConfiguredDrawKey)
 				.ToDictionary(x => x.Key, x => x.First());
 			var orderToName = lotteries
@@ -107,8 +108,9 @@ namespace LaLlamaDelBosque.Services.Scrapers
 					|| !TryGetProperty(resultObject, "resultado", out var resultValue))
 					continue;
 
-				var drawKey = GetApiDrawKey(drawHour);
-				if(string.IsNullOrWhiteSpace(drawKey) || !configuredDraws.TryGetValue(drawKey, out var configuredLottery))
+				var configuredLottery = configuredDraws.Values.FirstOrDefault(x =>
+					x.ScrapingHours.Any(hour => NormalizeApiHour(hour) == NormalizeApiHour(drawHour)));
+				if(configuredLottery == null)
 					continue;
 
 				var number = GetFirstResultValue(resultValue);
@@ -166,15 +168,11 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			return nonceMatch.Groups["nonce"].Value;
 		}
 
-		private static string GetApiDrawKey(string drawHour)
+		private static string NormalizeApiHour(string drawHour)
 		{
-			var normalized = Regex.Replace(drawHour, @"[\s.]", string.Empty).ToLowerInvariant();
-			return normalized switch
-			{
-				"12:00pm" => "dia",
-				"07:00pm" or "7:00pm" => "noche",
-				_ => string.Empty
-			};
+			return Regex.Replace(drawHour, @"[\s.]", string.Empty)
+				.TrimStart('0')
+				.ToLowerInvariant();
 		}
 
 		private static string GetFirstResultValue(JsonElement result)
@@ -336,7 +334,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				: number;
 		}
 
-		private bool IsDrawAvailable(ScrapingLottery lottery)
+		private bool IsDrawAvailable(ScrapingDrawConfiguration lottery)
 		{
 			return DateTime.TryParseExact(
 				lottery.Hour,
@@ -347,12 +345,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				&& drawTime.TimeOfDay <= _timeProvider.GetLocalNow().TimeOfDay;
 		}
 
-		private static bool IsLaPrimera(ScrapingLottery lottery)
-		{
-			return lottery.Type.Equals("LA PRIMERA", StringComparison.OrdinalIgnoreCase);
-		}
-
-		private static string GetConfiguredDrawKey(ScrapingLottery lottery)
+		private static string GetConfiguredDrawKey(ScrapingDrawConfiguration lottery)
 		{
 			if(!string.IsNullOrWhiteSpace(lottery.SourceKey))
 				return Normalize(lottery.SourceKey);

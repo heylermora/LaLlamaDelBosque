@@ -1,4 +1,4 @@
-﻿using LaLlamaDelBosque.Models;
+using LaLlamaDelBosque.Models;
 
 namespace LaLlamaDelBosque.Services.Scrapers
 {
@@ -17,13 +17,15 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		}
 
 		public sealed override async Task<List<AwardLine>> ScrapeAwards(
-			List<ScrapingLottery> scrapingLotteries,
+			List<ScrapingDrawConfiguration> scrapingLotteries,
 			List<Lottery> lotteries,
 			List<Paper> papers)
 		{
 			var errors = new List<Exception>();
 			var awardLinesByOrder = new Dictionary<int, AwardLine>();
 			var expectedOrders = GetExpectedOrders(scrapingLotteries).ToHashSet();
+			if(_sources.Count == 0)
+				throw new InvalidOperationException($"No hay fuentes habilitadas para {LotteryType} en ScrapingLotteries.json.");
 
 			foreach(var source in _sources)
 			{
@@ -56,11 +58,11 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			throw new InvalidOperationException($"{GetAllSourcesFailedMessage()}{details}", new AggregateException(errors));
 		}
 
-		protected abstract IEnumerable<int> GetExpectedOrders(List<ScrapingLottery> scrapingLotteries);
+		protected abstract IEnumerable<int> GetExpectedOrders(List<ScrapingDrawConfiguration> scrapingLotteries);
 
 		protected abstract List<AwardLine> ProcessHtml(
 			string htmlContent,
-			List<ScrapingLottery> scrapingLotteries,
+			List<ScrapingDrawConfiguration> scrapingLotteries,
 			List<Lottery> lotteries,
 			List<Paper> papers,
 			ScrapingSource source);
@@ -72,7 +74,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 		protected sealed override List<AwardLine> ProcessHtml(
 			string htmlContent,
-			List<ScrapingLottery> scrapingLotteries,
+			List<ScrapingDrawConfiguration> scrapingLotteries,
 			List<Lottery> lotteries,
 			List<Paper> papers)
 		{
@@ -96,10 +98,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 		private static string GetPrimaryUrl(IReadOnlyList<ScrapingSource> sources)
 		{
-			if(sources.Count == 0)
-				throw new ArgumentException("Debe configurar al menos una fuente.", nameof(sources));
-
-			return sources[0].Url;
+			return sources.FirstOrDefault()?.Url ?? "about:blank";
 		}
 	}
 

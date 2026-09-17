@@ -10,6 +10,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class HondurasLotoDiariaScraper: MultiSourceScraper
 	{
+		public override string LotteryType => "HONDURAS";
 		private const string ApiUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1";
 		private static readonly CultureInfo HondurasCulture = CultureInfo.GetCultureInfo("es-HN");
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
@@ -19,10 +20,10 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		{
 		}
 
-		protected override IEnumerable<int> GetExpectedOrders(List<ScrapingLottery> scrapingLotteries)
+		protected override IEnumerable<int> GetExpectedOrders(List<ScrapingDrawConfiguration> scrapingLotteries)
 		{
 			return scrapingLotteries
-				.Where(x => IsHonduranLottery(x) && IsDrawAvailable(x))
+				.Where(IsDrawAvailable)
 				.Select(x => x.Order)
 				.Distinct();
 		}
@@ -34,7 +35,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 		protected override List<AwardLine> ProcessHtml(
 			string htmlContent,
-			List<ScrapingLottery> scrapingLotteries,
+			List<ScrapingDrawConfiguration> scrapingLotteries,
 			List<Lottery> lotteries,
 			List<Paper> papers,
 			ScrapingSource source)
@@ -64,7 +65,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 		private List<AwardLine> ProcessOfficialApi(
 			string jsonContent,
-			List<ScrapingLottery> scrapingLotteries,
+			List<ScrapingDrawConfiguration> scrapingLotteries,
 			List<Lottery> lotteries,
 			List<Paper> papers)
 		{
@@ -186,14 +187,11 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 		private List<AwardLine> CreateHondurasAwardLines(
 			Dictionary<string, string> resultsByHour,
-			List<ScrapingLottery> scrapingLotteries,
+			List<ScrapingDrawConfiguration> scrapingLotteries,
 			List<Lottery> lotteries,
 			List<Paper> papers)
 		{
-			var hourToLottery = scrapingLotteries
-				.Where(x => IsHonduranLottery(x) && IsDrawAvailable(x))
-				.GroupBy(x => NormalizeHour(x.Hour))
-				.ToDictionary(x => x.Key, x => x.First());
+			var hourToLottery = BuildHourMapping(scrapingLotteries);
 			var orderToName = lotteries
 				.GroupBy(x => x.Order)
 				.ToDictionary(x => x.Key, x => x.First().Name);
@@ -261,7 +259,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 		private List<AwardLine> ProcessYeluHtml(
 			string htmlContent,
-			List<ScrapingLottery> scrapingLotteries,
+			List<ScrapingDrawConfiguration> scrapingLotteries,
 			List<Lottery> lotteries,
 			List<Paper> papers)
 		{
@@ -272,9 +270,11 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				return new List<AwardLine>();
 
 			var configuredLotteries = scrapingLotteries
-				.Where(x => IsHonduranLottery(x) && IsDrawAvailable(x))
-				.GroupBy(x => Normalize(x.Name))
-				.ToDictionary(x => x.Key, x => x.First());
+				.Where(IsDrawAvailable)
+				.SelectMany(x => x.ScrapingNames.DefaultIfEmpty(x.Name)
+					.Select(name => new { Name = Normalize(name), Lottery = x }))
+				.GroupBy(x => x.Name)
+				.ToDictionary(x => x.Key, x => x.First().Lottery);
 			var orderToName = lotteries
 				.GroupBy(x => x.Order)
 				.ToDictionary(x => x.Key, x => x.First().Name);
@@ -321,15 +321,12 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 		private List<AwardLine> ProcessOfficialHtml(
 			string htmlContent,
-			List<ScrapingLottery> scrapingLotteries,
+			List<ScrapingDrawConfiguration> scrapingLotteries,
 			List<Lottery> lotteries,
 			List<Paper> papers,
 			bool validatePageDate = true)
 		{
-			var hourToLottery = scrapingLotteries
-				.Where(x => IsHonduranLottery(x) && IsDrawAvailable(x))
-				.GroupBy(x => NormalizeHour(x.Hour))
-				.ToDictionary(x => x.Key, x => x.First());
+			var hourToLottery = BuildHourMapping(scrapingLotteries);
 			var orderToName = lotteries
 				.GroupBy(x => x.Order)
 				.ToDictionary(x => x.Key, x => x.First().Name);
@@ -396,7 +393,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				&& containsCurrentYear;
 		}
 
-		private bool IsDrawAvailable(ScrapingLottery lottery)
+		private bool IsDrawAvailable(ScrapingDrawConfiguration lottery)
 		{
 			return DateTime.TryParseExact(
 				lottery.Hour,
@@ -419,13 +416,6 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			return parsed && resultDate.Date == _timeProvider.GetLocalNow().Date;
 		}
 
-		private static bool IsHonduranLottery(ScrapingLottery lottery)
-		{
-			return lottery.Type.Equals("HONDURAS", StringComparison.OrdinalIgnoreCase)
-				|| (string.IsNullOrWhiteSpace(lottery.Type)
-					&& lottery.Name.Contains("Diaria", StringComparison.OrdinalIgnoreCase));
-		}
-
 		private static string Normalize(string value)
 		{
 			return Clean(value).ToUpperInvariant();
@@ -434,6 +424,16 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		private static string NormalizeHour(string hour)
 		{
 			return hour.Trim().ToUpperInvariant();
+		}
+
+		private Dictionary<string, ScrapingDrawConfiguration> BuildHourMapping(IEnumerable<ScrapingDrawConfiguration> lotteries)
+		{
+			return lotteries
+				.Where(IsDrawAvailable)
+				.SelectMany(x => x.ScrapingHours.DefaultIfEmpty(x.Hour)
+					.Select(hour => new { Hour = NormalizeHour(hour), Lottery = x }))
+				.GroupBy(x => x.Hour)
+				.ToDictionary(x => x.Key, x => x.First().Lottery);
 		}
 
 		private static string Clean(string? value)

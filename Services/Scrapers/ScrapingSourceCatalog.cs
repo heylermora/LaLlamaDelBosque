@@ -1,4 +1,4 @@
-﻿using LaLlamaDelBosque.Interfaces;
+using LaLlamaDelBosque.Interfaces;
 using LaLlamaDelBosque.Models;
 
 namespace LaLlamaDelBosque.Services.Scrapers
@@ -7,22 +7,27 @@ namespace LaLlamaDelBosque.Services.Scrapers
 	{
 		public static IReadOnlyList<ScrapingSource> GetEnabled(IJsonRepository repository, string lotteryType)
 		{
-			return repository.Read<ScrapingLotteryModel>("ScrapingLotteries").Sources
+			var process = repository.Read<ScrapingConfiguration>("ScrapingLotteries").Processes
+				.FirstOrDefault(x => x.Type.Equals(lotteryType, StringComparison.OrdinalIgnoreCase));
+			if(process == null)
+				return Array.Empty<ScrapingSource>();
+
+			return process.Sources
 				.Where(x => x.Enabled
-					&& x.LotteryType.Equals(lotteryType, StringComparison.OrdinalIgnoreCase)
 					&& !string.IsNullOrWhiteSpace(x.Url))
 				.Select(x => new ScrapingSource(
 					x.Key,
 					x.Url,
 					string.IsNullOrWhiteSpace(x.Referrer) ? x.Url : x.Referrer,
-					x.IsDedicatedCostaRicaPage))
+					x.IsDedicatedCostaRicaPage,
+					TimeSpan.FromSeconds(x.TimeoutSeconds > 0 ? x.TimeoutSeconds : 15)))
 				.ToList();
 		}
 
 		public static ScrapingSource GetPrimary(IJsonRepository repository, string lotteryType)
 		{
 			return GetEnabled(repository, lotteryType).FirstOrDefault()
-				?? throw new InvalidOperationException($"No hay fuentes habilitadas para {lotteryType} en ScrapingLotteries.json.");
+				?? new ScrapingSource("disabled", "about:blank", "about:blank");
 		}
 	}
 }

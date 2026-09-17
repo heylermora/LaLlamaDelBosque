@@ -1,4 +1,4 @@
-﻿using LaLlamaDelBosque.Interfaces;
+using LaLlamaDelBosque.Interfaces;
 using LaLlamaDelBosque.Models;
 using System.Net.Sockets;
 
@@ -6,6 +6,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public abstract class BaseScraper: IScraperStrategy
 	{
+		public abstract string LotteryType { get; }
 		protected readonly HttpClient _httpClient;
 		protected readonly string _url;
 		protected readonly TimeProvider _timeProvider;
@@ -18,7 +19,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		}
 
 		public virtual async Task<List<AwardLine>> ScrapeAwards(
-				   List<ScrapingLottery> scrapingLotteries,
+				   List<ScrapingDrawConfiguration> scrapingLotteries,
 				   List<Lottery> lotteries,
 				   List<Paper> papers)
 		{
@@ -49,7 +50,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 		protected abstract List<AwardLine> ProcessHtml(
 			string htmlContent,
-			List<ScrapingLottery> scrapingLotteries,
+			List<ScrapingDrawConfiguration> scrapingLotteries,
 			List<Lottery> lotteries,
 			List<Paper> papers);
 
