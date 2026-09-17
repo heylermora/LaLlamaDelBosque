@@ -7,7 +7,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class JpsNuevosTiemposScraper: MultiSourceScraper
 	{
-		private static readonly Regex HourLine = new(@"^(?:Sorteo\s*)?(\d{1,2})(?::(\d{2}))?\s*([AP])\.?\s*M\.?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		private static readonly Regex HourLine = new(@"^(?:Sorteo\s*)?(\d{1,2})(?::(\d{2}))?\s*(?:([AP])\.?\s*M\.?)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
 
 		public JpsNuevosTiemposScraper(HttpClient httpClient, TimeProvider timeProvider, IJsonRepository repository)
@@ -64,10 +64,10 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				if(!sourceKeyToLottery.TryGetValue(sourceKey, out var scrapingLottery))
 					continue;
 
-				if(!source.IsDedicatedCostaRicaPage && !isOfficialJpsPage && !IsCostaRicaDraw(textLines, index + 1))
+				if(!source.IsDedicatedCostaRicaPage && !isOfficialJpsPage && !IsCostaRicaDraw(textLines, index, sourceKey))
 					continue;
 
-				var number = FindNextNumber(textLines, index + 1);
+				var number = FindNextNumber(textLines, index + 1, sourceKey);
 				if(string.IsNullOrWhiteSpace(number))
 					continue;
 
@@ -110,7 +110,12 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			{
 				(1, 0, "P") => "manana",
 				(4, 30, "P") => "tarde",
+				(7, 0, "P") => "noche",
 				(7, 30, "P") => "noche",
+				(13, 0, "") => "manana",
+				(16, 30, "") => "tarde",
+				(19, 0, "") => "noche",
+				(19, 30, "") => "noche",
 				_ => string.Empty
 			};
 		}
@@ -143,17 +148,24 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			return string.Empty;
 		}
 
-		private static bool IsCostaRicaDraw(List<string> textLines, int startIndex)
+		private static bool IsCostaRicaDraw(List<string> textLines, int startIndex, string expectedSourceKey)
 		{
 			for(var index = startIndex; index < textLines.Count; index++)
 			{
-				if(!string.IsNullOrWhiteSpace(GetSourceKey(textLines[index])))
-					return false;
-
 				if(textLines[index].Contains("Nuevos Tiempos", StringComparison.OrdinalIgnoreCase)
 					|| textLines[index].Contains("Costa Rica", StringComparison.OrdinalIgnoreCase)
-					|| textLines[index].Contains("CR", StringComparison.OrdinalIgnoreCase))
+					|| textLines[index].Equals("CR", StringComparison.OrdinalIgnoreCase))
 					return true;
+
+				var encounteredSourceKey = GetSourceKey(textLines[index]);
+				if(!string.IsNullOrWhiteSpace(encounteredSourceKey))
+				{
+					if(encounteredSourceKey.Equals(expectedSourceKey, StringComparison.Ordinal))
+						continue;
+
+					return false;
+				}
+
 			}
 
 			return false;
@@ -169,12 +181,20 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				.ToList();
 		}
 
-		private static string FindNextNumber(List<string> textLines, int startIndex)
+		private static string FindNextNumber(List<string> textLines, int startIndex, string expectedSourceKey)
 		{
 			for(var index = startIndex; index < textLines.Count; index++)
 			{
-				if(!string.IsNullOrWhiteSpace(GetSourceKey(textLines[index])))
-					return string.Empty;
+				var encounteredSourceKey = GetSourceKey(textLines[index]);
+				if(!string.IsNullOrWhiteSpace(encounteredSourceKey))
+				{
+					if(!encounteredSourceKey.Equals(expectedSourceKey, StringComparison.Ordinal))
+						return string.Empty;
+
+					// Algunas fuentes repiten "Noche" y luego "7:30 PM" antes del número.
+					// Ambos encabezados pertenecen al mismo sorteo y no deben cortar la búsqueda.
+					continue;
+				}
 
 				if(TwoDigits.IsMatch(textLines[index]))
 					return textLines[index];
