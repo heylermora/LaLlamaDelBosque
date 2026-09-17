@@ -77,41 +77,79 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			List<Lottery> lotteries,
 			List<Paper> papers)
 		{
-			using var document = JsonDocument.Parse(jsonContent);
-			var objects = new List<JsonElement>();
-			CollectJsonObjects(document.RootElement, objects);
-			var apiResults = new Dictionary<string, string>();
-
-			foreach(var item in objects)
+			JsonDocument document;
+			try
 			{
-				var values = item.EnumerateObject()
-					.Where(x => x.Value.ValueKind is JsonValueKind.String or JsonValueKind.Number)
-					.Select(x => (Name: Normalize(x.Name), Value: Clean(x.Value.ToString())))
-					.ToList();
-				var headingMatch = values
-					.Select(x => OfficialDrawHeading.Match(x.Value))
-					.FirstOrDefault(x => x.Success);
-				if(headingMatch == null || !headingMatch.Success)
-					continue;
-
-				var hour = $"{int.Parse(headingMatch.Groups[1].Value)}:00 {headingMatch.Groups[2].Value.ToUpperInvariant()}M";
-				var numberValues = values
-					.Where(x => (x.Name.Contains("NUM", StringComparison.Ordinal) || x.Name.Contains("RESULT", StringComparison.Ordinal))
-						&& !x.Name.Contains("EXTRA", StringComparison.Ordinal) && !x.Name.Contains("MAS", StringComparison.Ordinal))
-					.Select(x => x.Value)
-					.ToList();
-				var number = GetTwoDigitNumber(numberValues);
-				if(!string.IsNullOrWhiteSpace(number))
-					apiResults.TryAdd(hour, number);
+				document = JsonDocument.Parse(jsonContent);
+			}
+			catch(JsonException)
+			{
+				return ProcessOfficialHtml(jsonContent, scrapingLotteries, lotteries, papers, false);
 			}
 
-			var flattenedValues = new List<(string Name, string Value)>();
-			CollectJsonValues(document.RootElement, string.Empty, flattenedValues);
-			AddResultFromIdPrefix(apiResults, flattenedValues, "num11", "11:00 AM");
-			AddResultFromIdPrefix(apiResults, flattenedValues, "num15", "3:00 PM");
-			AddResultFromIdPrefix(apiResults, flattenedValues, "num21", "9:00 PM");
+			using(document)
+			{
+				var objects = new List<JsonElement>();
+				CollectJsonObjects(document.RootElement, objects);
+				var apiResults = new Dictionary<string, string>();
 
-			return CreateHondurasAwardLines(apiResults, scrapingLotteries, lotteries, papers);
+				foreach(var item in objects)
+				{
+					var values = item.EnumerateObject()
+						.Where(x => x.Value.ValueKind is JsonValueKind.String or JsonValueKind.Number)
+						.Select(x => (Name: Normalize(x.Name), Value: Clean(x.Value.ToString())))
+						.ToList();
+					var hour = GetApiHour(values.Select(x => x.Value));
+					if(string.IsNullOrWhiteSpace(hour))
+						continue;
+
+					var numberValues = values
+						.Where(x => (x.Name.Contains("NUM", StringComparison.Ordinal) || x.Name.Contains("RESULT", StringComparison.Ordinal))
+							&& !x.Name.Contains("EXTRA", StringComparison.Ordinal) && !x.Name.Contains("MAS", StringComparison.Ordinal))
+						.Select(x => x.Value)
+						.ToList();
+					var number = GetTwoDigitNumber(numberValues);
+					if(!string.IsNullOrWhiteSpace(number))
+						apiResults.TryAdd(hour, number);
+				}
+
+				var flattenedValues = new List<(string Name, string Value)>();
+				CollectJsonValues(document.RootElement, string.Empty, flattenedValues);
+				AddResultFromIdPrefix(apiResults, flattenedValues, "num11", "11:00 AM");
+				AddResultFromIdPrefix(apiResults, flattenedValues, "num15", "3:00 PM");
+				AddResultFromIdPrefix(apiResults, flattenedValues, "num21", "9:00 PM");
+				AddResultFromHourContext(apiResults, flattenedValues, "11", "11:00 AM");
+				AddResultFromHourContext(apiResults, flattenedValues, "15", "3:00 PM");
+				AddResultFromHourContext(apiResults, flattenedValues, "3", "3:00 PM");
+				AddResultFromHourContext(apiResults, flattenedValues, "21", "9:00 PM");
+				AddResultFromHourContext(apiResults, flattenedValues, "9", "9:00 PM");
+
+				return CreateHondurasAwardLines(apiResults, scrapingLotteries, lotteries, papers);
+			}
+		}
+
+		private static string GetApiHour(IEnumerable<string> values)
+		{
+			foreach(var value in values)
+			{
+				var headingMatch = OfficialDrawHeading.Match(value);
+				if(headingMatch.Success)
+					return $"{int.Parse(headingMatch.Groups[1].Value)}:00 {headingMatch.Groups[2].Value.ToUpperInvariant()}M";
+
+				var twentyFourHourMatch = Regex.Match(value, @"^(11|15|21)(?::00(?::00)?)?$");
+				if(twentyFourHourMatch.Success)
+				{
+					return twentyFourHourMatch.Groups[1].Value switch
+					{
+						"11" => "11:00 AM",
+						"15" => "3:00 PM",
+						"21" => "9:00 PM",
+						_ => string.Empty
+					};
+				}
+			}
+
+			return string.Empty;
 		}
 
 		private static void AddResultFromIdPrefix(
@@ -130,6 +168,27 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				.Select(x => x.Value)
 				.ToList();
 			var number = GetTwoDigitNumber(digits);
+			if(!string.IsNullOrWhiteSpace(number))
+				resultsByHour.Add(hour, number);
+		}
+
+		private static void AddResultFromHourContext(
+			Dictionary<string, string> resultsByHour,
+			List<(string Name, string Value)> values,
+			string hourToken,
+			string hour)
+		{
+			if(resultsByHour.ContainsKey(hour))
+				return;
+
+			var contextPattern = $@"(?:^|[.\[]){Regex.Escape(hourToken)}(?:am|pm)?(?:[.\]]|$)";
+			var candidates = values
+				.Where(x => Regex.IsMatch(x.Name, contextPattern, RegexOptions.IgnoreCase)
+					&& !Regex.IsMatch(x.Name, @"(?:extra|mas|num(?:ero)?3|_3)(?:\D|$)", RegexOptions.IgnoreCase))
+				.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+				.Select(x => x.Value)
+				.ToList();
+			var number = GetTwoDigitNumber(candidates);
 			if(!string.IsNullOrWhiteSpace(number))
 				resultsByHour.Add(hour, number);
 		}
@@ -273,7 +332,8 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			string htmlContent,
 			List<ScrapingLottery> scrapingLotteries,
 			List<Lottery> lotteries,
-			List<Paper> papers)
+			List<Paper> papers,
+			bool validatePageDate = true)
 		{
 			var hourToLottery = scrapingLotteries
 				.Where(x => IsHonduranLottery(x) && IsDrawAvailable(x))
@@ -285,7 +345,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			var document = new HtmlDocument();
 			document.LoadHtml(htmlContent);
 
-			if(!ContainsOfficialResultsForToday(document))
+			if(validatePageDate && !ContainsOfficialResultsForToday(document))
 				return new List<AwardLine>();
 
 			var drawNodes = document.DocumentNode.SelectNodes(

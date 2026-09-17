@@ -50,7 +50,10 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			if(awardLinesByOrder.Count > 0)
 				return OrderResults(awardLinesByOrder);
 
-			throw new InvalidOperationException(GetAllSourcesFailedMessage(), new AggregateException(errors));
+			var details = errors.Count > 0
+				? $" Detalles: {string.Join(" | ", errors.Select(x => x.Message))}"
+				: string.Empty;
+			throw new InvalidOperationException($"{GetAllSourcesFailedMessage()}{details}", new AggregateException(errors));
 		}
 
 		protected abstract IEnumerable<int> GetExpectedOrders(List<ScrapingLottery> scrapingLotteries);
