@@ -1,33 +1,27 @@
-﻿using HtmlAgilityPack;
+using HtmlAgilityPack;
 using LaLlamaDelBosque.Models;
+using LaLlamaDelBosque.Interfaces;
+using System.Globalization;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class JpsNuevosTiemposScraper: MultiSourceScraper
 	{
-		private const string OfficialUrl = "https://www.jps.go.cr/resultados/nuevos-tiempos-reventados";
-		private const string CostaRicaResultsUrl = "https://loteriacostarica.org/nuevos-tiempos.php?periodo=3";
-		private const string NicaTiemposUrl = "https://nicatiempos.com/";
-		private static readonly Regex HourLine = new(@"^(?:Sorteo\s*)?(\d{1,2})(?::(\d{2}))?\s*([AP])\.?\s*M\.?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		public override string LotteryType => "TICA";
+		private static readonly Regex HourLine = new(@"^(?:Sorteo\s*)?(\d{1,2})(?::(\d{2}))?\s*(?:([AP])\.?\s*M\.?)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
 
-		private static readonly IReadOnlyList<ScrapingSource> Sources = new[]
-		{
-			new ScrapingSource(OfficialUrl, "https://www.jps.go.cr/", true),
-			new ScrapingSource(CostaRicaResultsUrl, "https://loteriacostarica.org/", true),
-			new ScrapingSource(NicaTiemposUrl, "https://nicatiempos.com/")
-		};
-
-		public JpsNuevosTiemposScraper(HttpClient httpClient)
-			: base(httpClient, Sources)
+		public JpsNuevosTiemposScraper(HttpClient httpClient, TimeProvider timeProvider, IJsonRepository repository)
+			: base(httpClient, ScrapingSourceCatalog.GetEnabled(repository, "TICA"), timeProvider)
 		{
 		}
 
-		protected override IEnumerable<int> GetExpectedOrders(List<ScrapingLottery> scrapingLotteries)
+		protected override IEnumerable<int> GetExpectedOrders(List<ScrapingDrawConfiguration> scrapingLotteries)
 		{
 			return scrapingLotteries
-				.Where(HasJpsSourceKey)
+				.Where(x => HasJpsSourceKey(x) && IsDrawAvailable(x))
 				.Select(x => x.Order)
 				.Distinct();
 		}
@@ -39,16 +33,20 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 		protected override List<AwardLine> ProcessHtml(
 			string htmlContent,
-			List<ScrapingLottery> scrapingLotteries,
+			List<ScrapingDrawConfiguration> scrapingLotteries,
 			List<Lottery> lotteries,
 			List<Paper> papers,
 			ScrapingSource source)
 		{
+			if(source.Key.Equals("loteria-cr-api", StringComparison.OrdinalIgnoreCase))
+				return ProcessCostaRicaApi(htmlContent, scrapingLotteries, lotteries, papers);
+
 			var awardLines = new List<AwardLine>();
 			var sourceKeyToLottery = scrapingLotteries
-				.Where(HasJpsSourceKey)
+				.Where(x => HasJpsSourceKey(x) && IsDrawAvailable(x))
 				.GroupBy(x => NormalizeSourceKey(x.SourceKey))
 				.ToDictionary(x => x.Key, x => x.First());
+			var configuredAliases = BuildConfiguredAliases(scrapingLotteries);
 
 			if(sourceKeyToLottery.Count == 0)
 				return awardLines;
@@ -66,17 +64,17 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 			for(var index = 0; index < textLines.Count; index++)
 			{
-				var sourceKey = GetSourceKey(textLines[index]);
+				var sourceKey = GetSourceKey(textLines[index], configuredAliases);
 				if(string.IsNullOrWhiteSpace(sourceKey))
 					continue;
 
 				if(!sourceKeyToLottery.TryGetValue(sourceKey, out var scrapingLottery))
 					continue;
 
-				if(!source.IsDedicatedCostaRicaPage && !isOfficialJpsPage && !IsCostaRicaDraw(textLines, index + 1))
+				if(!source.IsDedicatedCostaRicaPage && !isOfficialJpsPage && !IsCostaRicaDraw(textLines, index, sourceKey, configuredAliases))
 					continue;
 
-				var number = FindNextNumber(textLines, index + 1);
+				var number = FindNextNumber(textLines, index + 1, sourceKey, configuredAliases);
 				if(string.IsNullOrWhiteSpace(number))
 					continue;
 
@@ -92,10 +90,68 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				.ToList();
 		}
 
-		private static bool HasJpsSourceKey(ScrapingLottery scrapingLottery)
+		private List<AwardLine> ProcessCostaRicaApi(
+			string jsonContent,
+			List<ScrapingDrawConfiguration> configuredDraws,
+			List<Lottery> lotteries,
+			List<Paper> papers)
+		{
+			using var document = JsonDocument.Parse(jsonContent);
+			var root = document.RootElement;
+			if(!root.TryGetProperty("ok", out var ok) || !ok.GetBoolean()
+				|| !root.TryGetProperty("resultadoMasReciente", out var latest)
+				|| !latest.TryGetProperty("fecha", out var dateValue)
+				|| !DateTime.TryParseExact(dateValue.GetString(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var resultDate)
+				|| resultDate.Date != _timeProvider.GetLocalNow().Date)
+				return new List<AwardLine>();
+
+			var drawByApiKey = configuredDraws
+				.Where(IsDrawAvailable)
+				.SelectMany(draw => draw.ScrapingKeys.Select(key => new { Key = key, Draw = draw }))
+				.GroupBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
+				.ToDictionary(x => x.Key, x => x.First().Draw, StringComparer.OrdinalIgnoreCase);
+			var namesByOrder = lotteries.GroupBy(x => x.Order).ToDictionary(x => x.Key, x => x.First().Name);
+			var awardLines = new List<AwardLine>();
+
+			foreach(var configuredDraw in drawByApiKey)
+			{
+				if(!latest.TryGetProperty(configuredDraw.Key, out var apiResult)
+					|| !apiResult.TryGetProperty("numero", out var numberValue)
+					|| numberValue.ValueKind != JsonValueKind.String)
+					continue;
+
+				var number = numberValue.GetString() ?? string.Empty;
+				if(!TwoDigits.IsMatch(number))
+					continue;
+
+				var isBusted = configuredDraw.Value.Busted
+					&& apiResult.TryGetProperty("reventado", out var bustedValue)
+					&& bustedValue.ValueKind is JsonValueKind.True or JsonValueKind.False
+					&& bustedValue.GetBoolean();
+				var description = namesByOrder.GetValueOrDefault(configuredDraw.Value.Order, string.Empty);
+				var awardLine = CreateAwardLine(configuredDraw.Value.Order, description, number, isBusted, papers);
+				if(awardLine != null)
+					awardLines.Add(awardLine);
+			}
+
+			return awardLines;
+		}
+
+		private static bool HasJpsSourceKey(ScrapingDrawConfiguration scrapingLottery)
 		{
 			var sourceKey = NormalizeSourceKey(scrapingLottery.SourceKey);
 			return sourceKey is "manana" or "tarde" or "noche";
+		}
+
+		private bool IsDrawAvailable(ScrapingDrawConfiguration draw)
+		{
+			return DateTime.TryParseExact(
+				draw.Hour,
+				new[] { "h:mm tt", "hh:mm tt" },
+				CultureInfo.InvariantCulture,
+				DateTimeStyles.AllowWhiteSpaces,
+				out var drawTime)
+				&& drawTime.TimeOfDay <= _timeProvider.GetLocalNow().TimeOfDay;
 		}
 
 		private static string NormalizeSourceKey(string sourceKey)
@@ -116,13 +172,22 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			{
 				(1, 0, "P") => "manana",
 				(4, 30, "P") => "tarde",
+				(7, 0, "P") => "noche",
 				(7, 30, "P") => "noche",
+				(13, 0, "") => "manana",
+				(16, 30, "") => "tarde",
+				(19, 0, "") => "noche",
+				(19, 30, "") => "noche",
 				_ => string.Empty
 			};
 		}
 
-		private static string GetSourceKey(string textLine)
+		private static string GetSourceKey(string textLine, IReadOnlyDictionary<string, string>? configuredAliases = null)
 		{
+			var configuredValue = NormalizeAlias(textLine);
+			if(configuredAliases != null && configuredAliases.TryGetValue(configuredValue, out var configuredSourceKey))
+				return configuredSourceKey;
+
 			var hourMatch = HourLine.Match(textLine);
 			if(hourMatch.Success)
 				return ToSourceKey(hourMatch);
@@ -149,17 +214,28 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			return string.Empty;
 		}
 
-		private static bool IsCostaRicaDraw(List<string> textLines, int startIndex)
+		private static bool IsCostaRicaDraw(
+			List<string> textLines,
+			int startIndex,
+			string expectedSourceKey,
+			IReadOnlyDictionary<string, string> configuredAliases)
 		{
 			for(var index = startIndex; index < textLines.Count; index++)
 			{
-				if(!string.IsNullOrWhiteSpace(GetSourceKey(textLines[index])))
-					return false;
-
 				if(textLines[index].Contains("Nuevos Tiempos", StringComparison.OrdinalIgnoreCase)
 					|| textLines[index].Contains("Costa Rica", StringComparison.OrdinalIgnoreCase)
-					|| textLines[index].Contains("CR", StringComparison.OrdinalIgnoreCase))
+					|| textLines[index].Equals("CR", StringComparison.OrdinalIgnoreCase))
 					return true;
+
+				var encounteredSourceKey = GetSourceKey(textLines[index], configuredAliases);
+				if(!string.IsNullOrWhiteSpace(encounteredSourceKey))
+				{
+					if(encounteredSourceKey.Equals(expectedSourceKey, StringComparison.Ordinal))
+						continue;
+
+					return false;
+				}
+
 			}
 
 			return false;
@@ -175,12 +251,24 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				.ToList();
 		}
 
-		private static string FindNextNumber(List<string> textLines, int startIndex)
+		private static string FindNextNumber(
+			List<string> textLines,
+			int startIndex,
+			string expectedSourceKey,
+			IReadOnlyDictionary<string, string> configuredAliases)
 		{
 			for(var index = startIndex; index < textLines.Count; index++)
 			{
-				if(!string.IsNullOrWhiteSpace(GetSourceKey(textLines[index])))
-					return string.Empty;
+				var encounteredSourceKey = GetSourceKey(textLines[index], configuredAliases);
+				if(!string.IsNullOrWhiteSpace(encounteredSourceKey))
+				{
+					if(!encounteredSourceKey.Equals(expectedSourceKey, StringComparison.Ordinal))
+						return string.Empty;
+
+					// Algunas fuentes repiten "Noche" y luego "7:30 PM" antes del número.
+					// Ambos encabezados pertenecen al mismo sorteo y no deben cortar la búsqueda.
+					continue;
+				}
 
 				if(TwoDigits.IsMatch(textLines[index]))
 					return textLines[index];
@@ -199,6 +287,25 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		private static string Clean(string? value)
 		{
 			return Regex.Replace(HtmlEntity.DeEntitize(value ?? string.Empty).Replace('\u00A0', ' '), @"\s+", " ").Trim();
+		}
+
+		private static IReadOnlyDictionary<string, string> BuildConfiguredAliases(IEnumerable<ScrapingDrawConfiguration> draws)
+		{
+			return draws
+				.SelectMany(draw => draw.ScrapingNames.Concat(draw.ScrapingHours).Concat(draw.ScrapingKeys)
+					.Select(alias => new { Alias = NormalizeAlias(alias), draw.SourceKey }))
+				.Where(x => !string.IsNullOrWhiteSpace(x.Alias) && !string.IsNullOrWhiteSpace(x.SourceKey))
+				.GroupBy(x => x.Alias)
+				.Where(x => x.Select(value => value.SourceKey).Distinct(StringComparer.OrdinalIgnoreCase).Count() == 1)
+				.ToDictionary(x => x.Key, x => NormalizeSourceKey(x.First().SourceKey));
+		}
+
+		private static string NormalizeAlias(string value)
+		{
+			return Clean(value)
+				.ToLowerInvariant()
+				.Replace("ñ", "n")
+				.Replace("í", "i");
 		}
 	}
 }

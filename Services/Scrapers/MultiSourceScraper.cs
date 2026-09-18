@@ -1,4 +1,4 @@
-﻿using LaLlamaDelBosque.Models;
+using LaLlamaDelBosque.Models;
 
 namespace LaLlamaDelBosque.Services.Scrapers
 {
@@ -10,20 +10,22 @@ namespace LaLlamaDelBosque.Services.Scrapers
 	{
 		private readonly IReadOnlyList<ScrapingSource> _sources;
 
-		protected MultiSourceScraper(HttpClient httpClient, IReadOnlyList<ScrapingSource> sources)
-			: base(httpClient, GetPrimaryUrl(sources))
+		protected MultiSourceScraper(HttpClient httpClient, IReadOnlyList<ScrapingSource> sources, TimeProvider timeProvider)
+			: base(httpClient, GetPrimaryUrl(sources), timeProvider)
 		{
 			_sources = sources;
 		}
 
 		public sealed override async Task<List<AwardLine>> ScrapeAwards(
-			List<ScrapingLottery> scrapingLotteries,
+			List<ScrapingDrawConfiguration> scrapingLotteries,
 			List<Lottery> lotteries,
 			List<Paper> papers)
 		{
 			var errors = new List<Exception>();
 			var awardLinesByOrder = new Dictionary<int, AwardLine>();
 			var expectedOrders = GetExpectedOrders(scrapingLotteries).ToHashSet();
+			if(_sources.Count == 0)
+				throw new InvalidOperationException($"No hay fuentes habilitadas para {LotteryType} en ScrapingLotteries.json.");
 
 			foreach(var source in _sources)
 			{
@@ -41,7 +43,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 					if(sourceAwardLines.Count == 0)
 						errors.Add(new InvalidOperationException($"La fuente {source.Url} respondió correctamente, pero no contenía resultados reconocibles."));
 				}
-				catch(Exception ex) when(ex is HttpRequestException or OperationCanceledException)
+				catch(Exception ex)
 				{
 					errors.Add(ex);
 				}
@@ -50,14 +52,17 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			if(awardLinesByOrder.Count > 0)
 				return OrderResults(awardLinesByOrder);
 
-			throw new InvalidOperationException(GetAllSourcesFailedMessage(), new AggregateException(errors));
+			var details = errors.Count > 0
+				? $" Detalles: {string.Join(" | ", errors.Select(x => x.Message))}"
+				: string.Empty;
+			throw new InvalidOperationException($"{GetAllSourcesFailedMessage()}{details}", new AggregateException(errors));
 		}
 
-		protected abstract IEnumerable<int> GetExpectedOrders(List<ScrapingLottery> scrapingLotteries);
+		protected abstract IEnumerable<int> GetExpectedOrders(List<ScrapingDrawConfiguration> scrapingLotteries);
 
 		protected abstract List<AwardLine> ProcessHtml(
 			string htmlContent,
-			List<ScrapingLottery> scrapingLotteries,
+			List<ScrapingDrawConfiguration> scrapingLotteries,
 			List<Lottery> lotteries,
 			List<Paper> papers,
 			ScrapingSource source);
@@ -69,14 +74,14 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 		protected sealed override List<AwardLine> ProcessHtml(
 			string htmlContent,
-			List<ScrapingLottery> scrapingLotteries,
+			List<ScrapingDrawConfiguration> scrapingLotteries,
 			List<Lottery> lotteries,
 			List<Paper> papers)
 		{
 			return ProcessHtml(htmlContent, scrapingLotteries, lotteries, papers, _sources[0]);
 		}
 
-		private async Task<string> DownloadSource(ScrapingSource source)
+		protected virtual async Task<string> DownloadSource(ScrapingSource source)
 		{
 			using var request = new HttpRequestMessage(HttpMethod.Get, source.Url);
 			request.Headers.Referrer = new Uri(source.Referrer);
@@ -93,14 +98,12 @@ namespace LaLlamaDelBosque.Services.Scrapers
 
 		private static string GetPrimaryUrl(IReadOnlyList<ScrapingSource> sources)
 		{
-			if(sources.Count == 0)
-				throw new ArgumentException("Debe configurar al menos una fuente.", nameof(sources));
-
-			return sources[0].Url;
+			return sources.FirstOrDefault()?.Url ?? "about:blank";
 		}
 	}
 
 	public sealed record ScrapingSource(
+		string Key,
 		string Url,
 		string Referrer,
 		bool IsDedicatedCostaRicaPage = false,

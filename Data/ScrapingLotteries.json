@@ -1,76 +1,377 @@
 {
-  "Lotteries": [
+  "Processes": [
     {
       "Type": "LA PRIMERA",
-      "Order": 1,
-      "Name": "Lotería La Primera Día Resultado",
-      "Hour": "10:00 AM"
+      "Enabled": true,
+      "Draws": [
+        {
+          "Order": 1,
+          "SortOrder": 1,
+          "Enabled": true,
+          "Name": "Lotería La Primera Día Resultado",
+          "SourceKey": "dia",
+          "Hour": "10:00 AM",
+          "ScrapingNames": [
+            "TRIPLETA  PRIMERA"
+          ],
+          "ScrapingLotteryNames": [
+            "LA PRIMERA"
+          ],
+          "ScrapingHours": [
+            "12:00pm"
+          ],
+          "Busted": false,
+          "ScrapingKeys": [
+            "dia"
+          ]
+        },
+        {
+          "Order": 8,
+          "SortOrder": 8,
+          "Enabled": true,
+          "Name": "Lotería La Primera Noche Resultado",
+          "SourceKey": "noche",
+          "Hour": "5:00 PM",
+          "ScrapingNames": [
+            "TRIPLETA  PRIMERA"
+          ],
+          "ScrapingLotteryNames": [
+            "LA PRIMERA"
+          ],
+          "ScrapingHours": [
+            "07:00pm",
+            "7:00pm"
+          ],
+          "Busted": false,
+          "ScrapingKeys": [
+            "noche"
+          ]
+        }
+      ],
+      "Sources": [
+        {
+          "Key": "official-api",
+          "Name": "API La Primera",
+          "Url": "https://laprimera.do/wp-admin/admin-ajax.php",
+          "Referrer": "https://laprimera.do/",
+          "Enabled": true,
+          "ShowToUser": false,
+          "TimeoutSeconds": 15
+        },
+        {
+          "Key": "official-page",
+          "Name": "La Primera oficial",
+          "Url": "https://laprimera.do/",
+          "Referrer": "https://laprimera.do/",
+          "Enabled": false,
+          "ShowToUser": true,
+          "TimeoutSeconds": 15
+        },
+        {
+          "Key": "enloteria",
+          "Name": "EnLotería",
+          "Url": "https://enloteria.com/loterias/la-primera",
+          "Referrer": "https://enloteria.com/",
+          "Enabled": false,
+          "ShowToUser": true,
+          "TimeoutSeconds": 15
+        }
+      ]
     },
     {
       "Type": "NICA",
-      "Order": 2,
-      "Name": "Lotería Nica 11AM",
-      "Hour": "11:00 AM"
+      "Enabled": true,
+      "Draws": [
+        {
+          "Order": 2,
+          "SortOrder": 2,
+          "Enabled": true,
+          "Name": "Lotería Nica 11AM",
+          "SourceKey": "",
+          "Hour": "11:00 AM",
+          "ScrapingNames": [
+            "NICA",
+            "LOTO DIARIA"
+          ],
+          "ScrapingHours": [
+            "11:00 AM"
+          ],
+          "Busted": false,
+          "ScrapingKeys": [
+            "11am"
+          ]
+        },
+        {
+          "Order": 5,
+          "SortOrder": 5,
+          "Enabled": true,
+          "Name": "Lotería Nica 3PM",
+          "SourceKey": "",
+          "Hour": "3:00 PM",
+          "ScrapingNames": [
+            "NICA",
+            "LOTO DIARIA"
+          ],
+          "ScrapingHours": [
+            "3:00 PM"
+          ],
+          "Busted": false,
+          "ScrapingKeys": [
+            "3pm"
+          ]
+        },
+        {
+          "Order": 9,
+          "SortOrder": 9,
+          "Enabled": true,
+          "Name": "Lotería Nica 6PM",
+          "SourceKey": "",
+          "Hour": "6:00 PM",
+          "ScrapingNames": [
+            "NICA",
+            "LOTO DIARIA"
+          ],
+          "ScrapingHours": [
+            "6:00 PM"
+          ],
+          "Busted": false,
+          "ScrapingKeys": [
+            "6pm"
+          ]
+        },
+        {
+          "Order": 11,
+          "SortOrder": 11,
+          "Enabled": true,
+          "Name": "Lotería Nica 9PM",
+          "SourceKey": "",
+          "Hour": "9:00 PM",
+          "ScrapingNames": [
+            "NICA",
+            "LOTO DIARIA"
+          ],
+          "ScrapingHours": [
+            "9:00 PM"
+          ],
+          "Busted": false,
+          "ScrapingKeys": [
+            "9pm"
+          ]
+        }
+      ],
+      "Sources": [
+        {
+          "Key": "nica-tiempos",
+          "Name": "Nica Tiempos",
+          "Url": "https://nicatiempos.com/",
+          "Referrer": "https://nicatiempos.com/",
+          "Enabled": true,
+          "ShowToUser": true,
+          "TimeoutSeconds": 15
+        }
+      ]
     },
     {
-      "Order": 3,
-      "Name": "La Diaria 11AM",
-      "Hour": "11:00 AM"
+      "Type": "HONDURAS",
+      "Enabled": true,
+      "Draws": [
+        {
+          "Order": 3,
+          "SortOrder": 3,
+          "Enabled": true,
+          "Name": "La Diaria 11AM",
+          "SourceKey": "",
+          "Hour": "11:00 AM",
+          "ScrapingNames": [
+            "SORTEO 11:00 A.M.",
+            "LA DIARIA 11AM"
+          ],
+          "ScrapingHours": [
+            "11:00 AM"
+          ],
+          "Busted": false,
+          "ScrapingKeys": [
+            "11"
+          ]
+        },
+        {
+          "Order": 6,
+          "SortOrder": 6,
+          "Enabled": true,
+          "Name": "La Diaria 3PM",
+          "SourceKey": "",
+          "Hour": "3:00 PM",
+          "ScrapingNames": [
+            "SORTEO 3:00 P.M.",
+            "LA DIARIA 3PM"
+          ],
+          "ScrapingHours": [
+            "3:00 PM",
+            "15:00"
+          ],
+          "Busted": false,
+          "ScrapingKeys": [
+            "15"
+          ]
+        },
+        {
+          "Order": 12,
+          "SortOrder": 12,
+          "Enabled": true,
+          "Name": "La Diaria 9PM",
+          "SourceKey": "",
+          "Hour": "9:00 PM",
+          "ScrapingNames": [
+            "SORTEO 9:00 P.M.",
+            "LA DIARIA 9PM"
+          ],
+          "ScrapingHours": [
+            "9:00 PM",
+            "21:00"
+          ],
+          "Busted": false,
+          "ScrapingKeys": [
+            "21"
+          ]
+        }
+      ],
+      "Sources": [
+        {
+          "Key": "official-api",
+          "Name": "API Loto Honduras",
+          "Url": "https://loto.hn/api/resultados_diaria_por_fecha.php",
+          "Referrer": "https://loto.hn/?pag=diaria",
+          "Enabled": true,
+          "ShowToUser": false,
+          "TimeoutSeconds": 15
+        },
+        {
+          "Key": "official-page",
+          "Name": "Loto oficial",
+          "Url": "https://loto.hn/?pag=diaria",
+          "Referrer": "https://loto.hn/",
+          "Enabled": true,
+          "ShowToUser": true,
+          "TimeoutSeconds": 15
+        },
+        {
+          "Key": "yelu",
+          "Name": "Yelu Honduras",
+          "Url": "https://www.yelu.hn/lottery/results/la-diaria",
+          "Referrer": "https://www.yelu.hn/",
+          "Enabled": true,
+          "ShowToUser": true,
+          "TimeoutSeconds": 15
+        }
+      ]
     },
     {
       "Type": "TICA",
-      "Order": 4,
-      "Name": "Medio día",
-      "Hour": "12:55 PM",
-      "SourceKey": "manana"
-    },
-    {
-      "Type": "NICA",
-      "Order": 5,
-      "Name": "Lotería Nica 3PM",
-      "Hour": "3:00 PM"
-    },
-    {
-      "Order": 6,
-      "Name": "La Diaria 3PM",
-      "Hour": "3:00 PM"
-    },
-    {
-      "Type": "TICA",
-      "Order": 7,
-      "Name": "Tarde",
-      "Hour": "4:30 PM",
-      "SourceKey": "tarde"
-    },
-    {
-      "Type": "LA PRIMERA",
-      "Order": 8,
-      "Name": "Lotería La Primera Noche Resultado",
-      "Hour": "6:00 PM"
-    },
-    {
-      "Type": "NICA",
-      "Order": 9,
-      "Name": "Lotería Nica 6PM",
-      "Hour": "6:00 PM"
-    },
-    {
-      "Type": "TICA",
-      "Order": 10,
-      "Name": "Noche",
-      "Hour": "7:30 PM",
-      "SourceKey": "noche"
-    },
-    {
-      "Type": "NICA",
-      "Order": 11,
-      "Name": "Lotería Nica 9PM",
-      "Hour": "9:00 PM"
-    },
-    {
-      "Order": 12,
-      "Name": "La Diaria 9PM",
-      "Hour": "9:00 PM"
+      "Enabled": true,
+      "Draws": [
+        {
+          "Order": 4,
+          "SortOrder": 4,
+          "Enabled": true,
+          "Name": "Medio día",
+          "SourceKey": "manana",
+          "Hour": "12:55 PM",
+          "ScrapingNames": [
+            "NUEVOS TIEMPOS",
+            "MEDIO DÍA",
+            "MAÑANA"
+          ],
+          "ScrapingHours": [
+            "1:00 PM",
+            "13:00"
+          ],
+          "Busted": true,
+          "ScrapingKeys": [
+            "mediodia"
+          ]
+        },
+        {
+          "Order": 7,
+          "SortOrder": 7,
+          "Enabled": true,
+          "Name": "Tarde",
+          "SourceKey": "tarde",
+          "Hour": "4:30 PM",
+          "ScrapingNames": [
+            "NUEVOS TIEMPOS",
+            "TARDE"
+          ],
+          "ScrapingHours": [
+            "4:30 PM",
+            "16:30"
+          ],
+          "Busted": true,
+          "ScrapingKeys": [
+            "tarde"
+          ]
+        },
+        {
+          "Order": 10,
+          "SortOrder": 10,
+          "Enabled": true,
+          "Name": "Noche",
+          "SourceKey": "noche",
+          "Hour": "7:30 PM",
+          "ScrapingNames": [
+            "NUEVOS TIEMPOS",
+            "NOCHE"
+          ],
+          "ScrapingHours": [
+            "7:30 PM",
+            "19:30"
+          ],
+          "Busted": true,
+          "ScrapingKeys": [
+            "noche"
+          ]
+        }
+      ],
+      "Sources": [
+        {
+          "Key": "loteria-cr-api",
+          "Name": "API Lotería Costa Rica",
+          "Url": "https://loteriacostarica.org/api/v1/nuevos-tiempos.php?periodo=3",
+          "Referrer": "https://loteriacostarica.org/nuevos-tiempos.php?periodo=3",
+          "Enabled": true,
+          "ShowToUser": false,
+          "IsDedicatedCostaRicaPage": true,
+          "TimeoutSeconds": 15
+        },
+        {
+          "Key": "jps",
+          "Name": "JPS oficial",
+          "Url": "https://www.jps.go.cr/resultados/nuevos-tiempos-reventados",
+          "Referrer": "https://www.jps.go.cr/",
+          "Enabled": true,
+          "ShowToUser": true,
+          "IsDedicatedCostaRicaPage": true,
+          "TimeoutSeconds": 15
+        },
+        {
+          "Key": "loteria-cr",
+          "Name": "Lotería Costa Rica",
+          "Url": "https://loteriacostarica.org/nuevos-tiempos.php?periodo=3",
+          "Referrer": "https://loteriacostarica.org/",
+          "Enabled": true,
+          "ShowToUser": true,
+          "IsDedicatedCostaRicaPage": true,
+          "TimeoutSeconds": 15
+        },
+        {
+          "Key": "nica-tiempos",
+          "Name": "Nica Tiempos",
+          "Url": "https://nicatiempos.com/",
+          "Referrer": "https://nicatiempos.com/",
+          "Enabled": true,
+          "ShowToUser": true,
+          "TimeoutSeconds": 15
+        }
+      ]
     }
   ]
 }

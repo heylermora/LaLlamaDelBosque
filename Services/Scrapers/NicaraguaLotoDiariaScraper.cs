@@ -1,5 +1,6 @@
-﻿using HtmlAgilityPack;
+using HtmlAgilityPack;
 using LaLlamaDelBosque.Models;
+using LaLlamaDelBosque.Interfaces;
 using LaLlamaDelBosque.Utils;
 using System.Text.RegularExpressions;
 
@@ -7,28 +8,31 @@ namespace LaLlamaDelBosque.Services.Scrapers
 {
 	public class NicaraguaLotoDiariaScraper: BaseScraper
 	{
+		public override string LotteryType => "NICA";
 		private static readonly Regex HourLine = new(@"^(\d{1,2})(?::00)?\s*([AP])\.?\s*M\.?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		private static readonly Regex DrawNumber = new(@"\b(\d)\s+(\d)\b", RegexOptions.Compiled);
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
 		private static readonly Regex MultiXRegex = new(@"\b(JG|2X|3X|5X|7X|R)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-		public NicaraguaLotoDiariaScraper(HttpClient httpClient)
-			: base(httpClient, "https://nicatiempos.com/")
+		public NicaraguaLotoDiariaScraper(HttpClient httpClient, TimeProvider timeProvider, IJsonRepository repository)
+			: base(httpClient, ScrapingSourceCatalog.GetPrimary(repository, "NICA").Url, timeProvider)
 		{
 		}
 
 		protected override List<AwardLine> ProcessHtml(
 			string htmlContent,
-			List<ScrapingLottery> scrapingLotteries,
+			List<ScrapingDrawConfiguration> scrapingLotteries,
 			List<Lottery> lotteries,
 			List<Paper> papers)
 		{
 			var awardLines = new List<AwardLine>();
 
 			var hourToLottery = scrapingLotteries
-				.Where(x => x.Type == "NICA" && !string.IsNullOrWhiteSpace(x.Hour))
-				.GroupBy(x => x.Hour.Trim().ToUpperInvariant())
-				.ToDictionary(x => x.Key, x => x.First());
+				.SelectMany(x => x.ScrapingHours.DefaultIfEmpty(x.Hour)
+					.Select(hour => new { Hour = hour.Trim().ToUpperInvariant(), Lottery = x }))
+				.Where(x => !string.IsNullOrWhiteSpace(x.Hour))
+				.GroupBy(x => x.Hour)
+				.ToDictionary(x => x.Key, x => x.First().Lottery);
 
 			if(hourToLottery.Count == 0)
 				return awardLines;
@@ -51,7 +55,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				if(!hourToLottery.TryGetValue(hourKey, out var matchedLottery))
 					continue;
 
-				if(matchedLottery.Order == 9 && DateTime.Today.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
+				if(matchedLottery.Order == 9 && _timeProvider.GetLocalNow().DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
 					continue;
 
 				var drawResult = FindDrawResult(textLines, index + 1);

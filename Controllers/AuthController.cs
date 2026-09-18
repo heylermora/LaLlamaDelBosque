@@ -1,4 +1,5 @@
 ﻿using LaLlamaDelBosque.Models;
+using LaLlamaDelBosque.Interfaces;
 using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -10,9 +11,13 @@ namespace LaLlamaDelBosque.Controllers;
 public class AuthController: Controller
 {
     private AuthModel _auth;
+    private readonly IJsonRepository _repository;
+    private readonly TimeProvider _timeProvider;
 
-    public AuthController()
+    public AuthController(IJsonRepository repository, TimeProvider timeProvider)
     {
+        _repository = repository;
+        _timeProvider = timeProvider;
         _auth = GetAuth();
     }
 
@@ -46,7 +51,7 @@ public class AuthController: Controller
             ClaimsPrincipal user = new ClaimsPrincipal(identity);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, user, new AuthenticationProperties
             {
-                ExpiresUtc = DateTime.Now.AddMinutes(120)
+                ExpiresUtc = _timeProvider.GetUtcNow().AddMinutes(120)
             });
 
             return RedirectToAction("Index", "Home");
@@ -69,7 +74,7 @@ public class AuthController: Controller
 
     private AuthModel GetAuth()
     {
-        var auth = JsonFile.Read<AuthModel>("Auth", new AuthModel());
+        var auth = _repository.Read<AuthModel>("Auth", new AuthModel());
         return auth;
     }
 

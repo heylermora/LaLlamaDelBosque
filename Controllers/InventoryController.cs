@@ -1,4 +1,5 @@
 ﻿using LaLlamaDelBosque.Models;
+using LaLlamaDelBosque.Interfaces;
 using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,9 +13,11 @@ namespace LaLlamaDelBosque.Controllers
 		private InventoryModel _inventory;
 		private FamilyModel _families;
 		private DepartmentModel _departments;
+		private readonly IJsonRepository _repository;
 
-		public InventoryController()
+		public InventoryController(IJsonRepository repository)
 		{
+			_repository = repository;
 			_inventory = GetInventory();
 			_families = GetFamilies();
 			_departments = GetDepartments();
@@ -37,25 +40,25 @@ namespace LaLlamaDelBosque.Controllers
 
 		private InventoryModel GetInventory()
 		{
-			var inventory = JsonFile.Read("Inventory", new InventoryModel());
+			var inventory = _repository.Read("Inventory", new InventoryModel());
 			return inventory;
 		}
 
 		private FamilyModel GetFamilies()
 		{
-			var families = JsonFile.Read("Family", new FamilyModel());
+			var families = _repository.Read("Family", new FamilyModel());
 			return families;
 		}
 
 		private DepartmentModel GetDepartments()
 		{
-			var departments = JsonFile.Read("Department", new DepartmentModel());
+			var departments = _repository.Read("Department", new DepartmentModel());
 			return departments;
 		}
 
 		private void SetInventory(InventoryModel inventory)
 		{
-			JsonFile.Write("Inventory", inventory);
+			_repository.Write("Inventory", inventory);
 		}
 	}
 }

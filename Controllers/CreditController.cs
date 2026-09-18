@@ -1,4 +1,5 @@
 ﻿using LaLlamaDelBosque.Models;
+using LaLlamaDelBosque.Interfaces;
 using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,9 +14,13 @@ namespace LaLlamaDelBosque.Controllers
     public class CreditController: Controller
     {
         private CreditModel _credits;
+        private readonly IJsonRepository _repository;
+        private readonly TimeProvider _timeProvider;
 
-        public CreditController()
+        public CreditController(IJsonRepository repository, TimeProvider timeProvider)
         {
+            _repository = repository;
+            _timeProvider = timeProvider;
             _credits = GetCredits();
 
         }
@@ -54,8 +59,8 @@ namespace LaLlamaDelBosque.Controllers
             ViewBag.LimitExceededClientName = TempData["LimitExceededClientName"] as string;
             ViewBag.LimitExceededClientTotal = TempData["LimitExceededClientTotal"] as string;
             ViewBag.LimitExceededClientLimit = TempData["LimitExceededClientLimit"] as string;
-            ViewBag.ShowFortnightReminder = IsFortnightCollectionWindow(DateTime.Today);
-            ViewBag.FortnightReminderKey = GetFortnightCollectionReminderKey(DateTime.Today);
+            ViewBag.ShowFortnightReminder = IsFortnightCollectionWindow(_timeProvider.GetLocalNow().Date);
+            ViewBag.FortnightReminderKey = GetFortnightCollectionReminderKey(_timeProvider.GetLocalNow().Date);
 
             ViewBag.TotalPages = totalPages;
             ViewBag.CurrentPage = currentPage;
@@ -70,7 +75,7 @@ namespace LaLlamaDelBosque.Controllers
             return new ViewAsPdf("_Report", _credits.Credits)
             {
                 PageSize = Size.A4,
-                FileName = $"Resumen del {DateTime.Today.ToShortDateString()}.pdf",
+                FileName = $"Resumen del {_timeProvider.GetLocalNow().Date.ToShortDateString()}.pdf",
                 PageMargins = new Margins(10, 20, 10, 20)
             };
         }
@@ -167,7 +172,7 @@ namespace LaLlamaDelBosque.Controllers
                     var creditLine = new CreditLine()
                     {
                         Id = credit?.CreditLines.LastOrDefault()?.Id + 1 ?? 1,
-                        CreatedDate = DateTime.Now,
+                        CreatedDate = _timeProvider.GetLocalNow().DateTime,
                         Description = collection["description"],
                         Amount = double.Parse(collection["amount"])
                     };
@@ -208,7 +213,7 @@ namespace LaLlamaDelBosque.Controllers
                     var creditLine = new CreditLine()
                     {
                         Id = credit?.CreditLines.LastOrDefault()?.Id + 1 ?? 1,
-                        CreatedDate = DateTime.Now,
+                        CreatedDate = _timeProvider.GetLocalNow().DateTime,
                         Description = collection["description"],
                         Amount = -(double.Parse(collection["amount"]))
                     };
@@ -326,13 +331,13 @@ namespace LaLlamaDelBosque.Controllers
 
         private CreditModel GetCredits()
         {
-            var credits = JsonFile.Read("Credits", new CreditModel());
+            var credits = _repository.Read("Credits", new CreditModel());
             return credits;
         }
 
         private void SetCredits(CreditModel credits)
         {
-            JsonFile.Write("Credits", credits);
+            _repository.Write("Credits", credits);
         }
 
         private string GetMessage(IList<Credit> credits)
