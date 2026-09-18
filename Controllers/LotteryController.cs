@@ -1,12 +1,14 @@
 ﻿using LaLlamaDelBosque.Models;
 using LaLlamaDelBosque.Utils;
 using LaLlamaDelBosque.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace LaLlamaDelBosque.Controllers
 {
+	[Authorize]
 	public class LotteryController: Controller
 	{
 		private static readonly Regex NumberTokenPattern = new(@"^\d{1,2}$", RegexOptions.Compiled);

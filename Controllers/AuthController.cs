@@ -3,11 +3,13 @@ using LaLlamaDelBosque.Interfaces;
 using LaLlamaDelBosque.Utils;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
 namespace LaLlamaDelBosque.Controllers;
 
+[AllowAnonymous]
 public class AuthController: Controller
 {
     private AuthModel _auth;
