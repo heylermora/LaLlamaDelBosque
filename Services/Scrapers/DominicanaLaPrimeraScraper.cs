@@ -103,13 +103,13 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			foreach(var resultObject in resultObjects)
 			{
 				if(!TryGetString(resultObject, "loteria_nombre", out var lotteryName)
-					|| !lotteryName.Equals("LA PRIMERA", StringComparison.OrdinalIgnoreCase)
 					|| !TryGetString(resultObject, "hora_sorteo", out var drawHour)
 					|| !TryGetProperty(resultObject, "resultado", out var resultValue))
 					continue;
 
 				var configuredLottery = configuredDraws.Values.FirstOrDefault(x =>
-					x.ScrapingHours.Any(hour => NormalizeApiHour(hour) == NormalizeApiHour(drawHour)));
+					x.ScrapingNames.Any(name => Normalize(name) == Normalize(lotteryName))
+					&& x.ScrapingHours.Any(hour => NormalizeApiHour(hour) == NormalizeApiHour(drawHour)));
 				if(configuredLottery == null)
 					continue;
 
@@ -197,7 +197,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 					if(TryGetProperty(result, propertyName, out var namedValue))
 						return GetFirstResultValue(namedValue);
 
-				return properties.Count > 0 ? GetFirstResultValue(properties[0].Value) : string.Empty;
+				return string.Empty;
 			}
 
 			return NormalizeResultNumber(result);
