@@ -41,6 +41,7 @@ namespace LaLlamaDelBosque.Models
         public bool Busted { get; set; }
         public List<string> ScrapingNames { get; set; } = new();
         public List<string> ScrapingHours { get; set; } = new();
+        public List<string> ScrapingKeys { get; set; } = new();
     }
 
     public class ScrapingSourceConfiguration

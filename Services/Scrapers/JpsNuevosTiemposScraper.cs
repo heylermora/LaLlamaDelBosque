@@ -1,6 +1,8 @@
 using HtmlAgilityPack;
 using LaLlamaDelBosque.Models;
 using LaLlamaDelBosque.Interfaces;
+using System.Globalization;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace LaLlamaDelBosque.Services.Scrapers
@@ -19,7 +21,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		protected override IEnumerable<int> GetExpectedOrders(List<ScrapingDrawConfiguration> scrapingLotteries)
 		{
 			return scrapingLotteries
-				.Where(HasJpsSourceKey)
+				.Where(x => HasJpsSourceKey(x) && IsDrawAvailable(x))
 				.Select(x => x.Order)
 				.Distinct();
 		}
@@ -36,9 +38,12 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			List<Paper> papers,
 			ScrapingSource source)
 		{
+			if(source.Key.Equals("loteria-cr-api", StringComparison.OrdinalIgnoreCase))
+				return ProcessCostaRicaApi(htmlContent, scrapingLotteries, lotteries, papers);
+
 			var awardLines = new List<AwardLine>();
 			var sourceKeyToLottery = scrapingLotteries
-				.Where(HasJpsSourceKey)
+				.Where(x => HasJpsSourceKey(x) && IsDrawAvailable(x))
 				.GroupBy(x => NormalizeSourceKey(x.SourceKey))
 				.ToDictionary(x => x.Key, x => x.First());
 			var configuredAliases = BuildConfiguredAliases(scrapingLotteries);
@@ -85,10 +90,68 @@ namespace LaLlamaDelBosque.Services.Scrapers
 				.ToList();
 		}
 
+		private List<AwardLine> ProcessCostaRicaApi(
+			string jsonContent,
+			List<ScrapingDrawConfiguration> configuredDraws,
+			List<Lottery> lotteries,
+			List<Paper> papers)
+		{
+			using var document = JsonDocument.Parse(jsonContent);
+			var root = document.RootElement;
+			if(!root.TryGetProperty("ok", out var ok) || !ok.GetBoolean()
+				|| !root.TryGetProperty("resultadoMasReciente", out var latest)
+				|| !latest.TryGetProperty("fecha", out var dateValue)
+				|| !DateTime.TryParseExact(dateValue.GetString(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var resultDate)
+				|| resultDate.Date != _timeProvider.GetLocalNow().Date)
+				return new List<AwardLine>();
+
+			var drawByApiKey = configuredDraws
+				.Where(IsDrawAvailable)
+				.SelectMany(draw => draw.ScrapingKeys.Select(key => new { Key = key, Draw = draw }))
+				.GroupBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
+				.ToDictionary(x => x.Key, x => x.First().Draw, StringComparer.OrdinalIgnoreCase);
+			var namesByOrder = lotteries.GroupBy(x => x.Order).ToDictionary(x => x.Key, x => x.First().Name);
+			var awardLines = new List<AwardLine>();
+
+			foreach(var configuredDraw in drawByApiKey)
+			{
+				if(!latest.TryGetProperty(configuredDraw.Key, out var apiResult)
+					|| !apiResult.TryGetProperty("numero", out var numberValue)
+					|| numberValue.ValueKind != JsonValueKind.String)
+					continue;
+
+				var number = numberValue.GetString() ?? string.Empty;
+				if(!TwoDigits.IsMatch(number))
+					continue;
+
+				var isBusted = configuredDraw.Value.Busted
+					&& apiResult.TryGetProperty("reventado", out var bustedValue)
+					&& bustedValue.ValueKind is JsonValueKind.True or JsonValueKind.False
+					&& bustedValue.GetBoolean();
+				var description = namesByOrder.GetValueOrDefault(configuredDraw.Value.Order, string.Empty);
+				var awardLine = CreateAwardLine(configuredDraw.Value.Order, description, number, isBusted, papers);
+				if(awardLine != null)
+					awardLines.Add(awardLine);
+			}
+
+			return awardLines;
+		}
+
 		private static bool HasJpsSourceKey(ScrapingDrawConfiguration scrapingLottery)
 		{
 			var sourceKey = NormalizeSourceKey(scrapingLottery.SourceKey);
 			return sourceKey is "manana" or "tarde" or "noche";
+		}
+
+		private bool IsDrawAvailable(ScrapingDrawConfiguration draw)
+		{
+			return DateTime.TryParseExact(
+				draw.Hour,
+				new[] { "h:mm tt", "hh:mm tt" },
+				CultureInfo.InvariantCulture,
+				DateTimeStyles.AllowWhiteSpaces,
+				out var drawTime)
+				&& drawTime.TimeOfDay <= _timeProvider.GetLocalNow().TimeOfDay;
 		}
 
 		private static string NormalizeSourceKey(string sourceKey)
@@ -229,7 +292,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		private static IReadOnlyDictionary<string, string> BuildConfiguredAliases(IEnumerable<ScrapingDrawConfiguration> draws)
 		{
 			return draws
-				.SelectMany(draw => draw.ScrapingNames.Concat(draw.ScrapingHours)
+				.SelectMany(draw => draw.ScrapingNames.Concat(draw.ScrapingHours).Concat(draw.ScrapingKeys)
 					.Select(alias => new { Alias = NormalizeAlias(alias), draw.SourceKey }))
 				.Where(x => !string.IsNullOrWhiteSpace(x.Alias) && !string.IsNullOrWhiteSpace(x.SourceKey))
 				.GroupBy(x => x.Alias)
