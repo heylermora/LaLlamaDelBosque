@@ -1,6 +1,7 @@
 using LaLlamaDelBosque.Interfaces;
 using LaLlamaDelBosque.Services;
 using LaLlamaDelBosque.Services.Scrapers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Rotativa.AspNetCore;
 
@@ -50,17 +51,15 @@ builder.Services.AddAuthentication(options =>
 }).AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, config =>
 {
 	config.ExpireTimeSpan = TimeSpan.FromMinutes(1);
-	config.Events = new CookieAuthenticationEvents
-	{
-		OnRedirectToLogin = context =>
-		{
-			context.Response.Redirect("https://localhost:7262/");
-			return Task.CompletedTask;
-		}
-	};
-	config.AccessDeniedPath = "/Manage/ErrorAcceso";
+	config.LoginPath = "/Auth/Index";
+	config.AccessDeniedPath = "/Auth/Index";
 });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 var app = builder.Build();
 

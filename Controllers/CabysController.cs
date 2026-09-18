@@ -1,8 +1,10 @@
 ﻿using LaLlamaDelBosque.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LaLlamaDelBosque.Controllers
 {
+    [Authorize]
     public class CabysController: Controller
     {
 		private readonly IJsonRepository _repository;

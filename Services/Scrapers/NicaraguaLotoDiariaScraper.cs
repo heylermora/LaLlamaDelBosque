@@ -12,7 +12,8 @@ namespace LaLlamaDelBosque.Services.Scrapers
 		private static readonly Regex HourLine = new(@"^(\d{1,2})(?::00)?\s*([AP])\.?\s*M\.?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		private static readonly Regex DrawNumber = new(@"\b(\d)\s+(\d)\b", RegexOptions.Compiled);
 		private static readonly Regex TwoDigits = new(@"^\d{2}$", RegexOptions.Compiled);
-		private static readonly Regex MultiXRegex = new(@"\b(JG|2X|3X|5X|7X|R)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		private static readonly Regex MultiXRegex = new(@"^(?:\(Multi\s*X\)\s*=\s*)?(JG|2X|3X|5X|7X|R)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		private const int ResultMetadataLineLimit = 4;
 
 		public NicaraguaLotoDiariaScraper(HttpClient httpClient, TimeProvider timeProvider, IJsonRepository repository)
 			: base(httpClient, ScrapingSourceCatalog.GetPrimary(repository, "NICA").Url, timeProvider)
@@ -92,10 +93,16 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			var digits = new List<string>();
 			var number = string.Empty;
 			var multiX = string.Empty;
+			var numberLineIndex = -1;
 
 			for(var index = startIndex; index < textLines.Count; index++)
 			{
 				if(HourLine.IsMatch(textLines[index]))
+					return (number, multiX);
+
+				// The last draw of the day has no following hour to delimit its block. Do not
+				// let unrelated text near the page footer mark that result as reventado.
+				if(numberLineIndex >= 0 && index > numberLineIndex + ResultMetadataLineLimit)
 					return (number, multiX);
 
 				var multiXMatch = MultiXRegex.Match(textLines[index]);
@@ -107,6 +114,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 					if(TwoDigits.IsMatch(textLines[index]))
 					{
 						number = textLines[index];
+						numberLineIndex = index;
 						continue;
 					}
 
@@ -114,6 +122,7 @@ namespace LaLlamaDelBosque.Services.Scrapers
 					if(numberMatch.Success)
 					{
 						number = $"{numberMatch.Groups[1].Value}{numberMatch.Groups[2].Value}";
+						numberLineIndex = index;
 						continue;
 					}
 
@@ -121,7 +130,10 @@ namespace LaLlamaDelBosque.Services.Scrapers
 					{
 						digits.Add(textLines[index]);
 						if(digits.Count == 2)
+						{
 							number = string.Join(string.Empty, digits);
+							numberLineIndex = index;
+						}
 					}
 					else if(digits.Count > 0)
 					{
