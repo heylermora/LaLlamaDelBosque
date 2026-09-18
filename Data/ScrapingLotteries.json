@@ -28,7 +28,7 @@
           "Enabled": true,
           "Name": "Lotería La Primera Noche Resultado",
           "SourceKey": "noche",
-          "Hour": "7:00 PM",
+          "Hour": "5:00 PM",
           "ScrapingNames": [
             "LA PRIMERA"
           ],
