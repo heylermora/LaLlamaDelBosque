@@ -14,6 +14,9 @@
           "ScrapingNames": [
             "TRIPLETA  PRIMERA"
           ],
+          "ScrapingLotteryNames": [
+            "LA PRIMERA"
+          ],
           "ScrapingHours": [
             "12:00pm"
           ],
@@ -31,6 +34,9 @@
           "Hour": "5:00 PM",
           "ScrapingNames": [
             "TRIPLETA  PRIMERA"
+          ],
+          "ScrapingLotteryNames": [
+            "LA PRIMERA"
           ],
           "ScrapingHours": [
             "07:00pm",

@@ -40,6 +40,7 @@ namespace LaLlamaDelBosque.Models
         public bool Enabled { get; set; } = true;
         public bool Busted { get; set; }
         public List<string> ScrapingNames { get; set; } = new();
+        public List<string> ScrapingLotteryNames { get; set; } = new();
         public List<string> ScrapingHours { get; set; } = new();
         public List<string> ScrapingKeys { get; set; } = new();
     }
