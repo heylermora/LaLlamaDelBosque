@@ -229,6 +229,11 @@ namespace LaLlamaDelBosque.Services.Scrapers
 					if(TryFindProperty(child, propertyName, out value))
 						return true;
 			}
+			else if(TryParseEmbeddedJson(element, out var embeddedJson)
+				&& TryFindProperty(embeddedJson, propertyName, out value))
+			{
+				return true;
+			}
 
 			value = default;
 			return false;
@@ -277,6 +282,32 @@ namespace LaLlamaDelBosque.Services.Scrapers
 			{
 				foreach(var child in element.EnumerateArray())
 					CollectJsonObjects(child, objects);
+			}
+			else if(TryParseEmbeddedJson(element, out var embeddedJson))
+			{
+				CollectJsonObjects(embeddedJson, objects);
+			}
+		}
+
+		private static bool TryParseEmbeddedJson(JsonElement element, out JsonElement embeddedJson)
+		{
+			embeddedJson = default;
+			if(element.ValueKind != JsonValueKind.String)
+				return false;
+
+			var content = element.GetString()?.Trim().TrimStart('\uFEFF');
+			if(string.IsNullOrWhiteSpace(content) || (content[0] != '{' && content[0] != '['))
+				return false;
+
+			try
+			{
+				using var document = JsonDocument.Parse(content);
+				embeddedJson = document.RootElement.Clone();
+				return true;
+			}
+			catch(JsonException)
+			{
+				return false;
 			}
 		}
 
